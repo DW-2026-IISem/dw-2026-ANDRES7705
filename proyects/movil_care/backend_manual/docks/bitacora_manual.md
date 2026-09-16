@@ -192,4 +192,7 @@ npm-debug.log*
 *.tsbuildinfo
 EOF_BACKEND_IA
 ```
+<p align="center">
+  <img src="capturas/Captura 35.PNG">
+</p>
 
