@@ -513,3 +513,62 @@ EOF_BACKEND_IA
 <p align="center">
   <img src="capturas/Captura 416.PNG">
 </p>
+
+### 4.2 Excepciones `common/exceptions`
+
+> ⚙️ `transversal` — jerarquía de errores de negocio → códigos HTTP.
+
+```bash
+cat > src/common/exceptions/application.exception.ts <<'EOF_BACKEND_IA'
+export class ApplicationException extends Error {
+  constructor(
+    public readonly statusCode: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = this.constructor.name;
+  }
+}
+EOF_BACKEND_IA
+```
+
+```bash
+cat > src/common/exceptions/business-rule.exception.ts <<'EOF_BACKEND_IA'
+import { ApplicationException } from './application.exception.js';
+
+export class BusinessRuleException extends ApplicationException {
+  constructor(message: string) {
+    super(409, message);
+  }
+}
+EOF_BACKEND_IA
+```
+
+```bash
+cat > src/common/exceptions/domain.exception.ts <<'EOF_BACKEND_IA'
+import { ApplicationException } from './application.exception.js';
+
+export class DomainException extends ApplicationException {
+  constructor(message: string) {
+    super(400, message);
+  }
+}
+EOF_BACKEND_IA
+```
+
+```bash
+cat > src/common/exceptions/entity-not-found.exception.ts <<'EOF_BACKEND_IA'
+import { ApplicationException } from './application.exception.js';
+
+export class EntityNotFoundException extends ApplicationException {
+  constructor(message = 'Entidad no encontrada') {
+    super(404, message);
+  }
+}
+EOF_BACKEND_IA
+```
+
+
+<p align="center">
+  <img src="capturas/Captura 42.PNG">
+</p>
