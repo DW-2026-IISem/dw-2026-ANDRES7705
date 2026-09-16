@@ -397,3 +397,30 @@ EOF_BACKEND_IA
   <img src="capturas/Captura 412.PNG">
 </p>
 
+
+**4.1.3 Selector de BD (`db-env.ts`):**
+
+```bash
+cat > src/config/environment/db-env.ts <<'EOF_BACKEND_IA'
+import { IDbBlock, IEnvConfig } from './env.interface.js';
+
+export function getDbBlock(cfg: IEnvConfig): IDbBlock {
+  switch (cfg.dbDialect) {
+    case 'mysql':
+      return cfg.mysql;
+    case 'postgres':
+      return cfg.postgres;
+    case 'mssql':
+      return cfg.mssql;
+    case 'oracle':
+      return cfg.oracle;
+    default:
+      throw new Error(`Dialecto no soportado: ${String(cfg.dbDialect)}`);
+  }
+}
+EOF_BACKEND_IA
+```
+
+<p align="center">
+  <img src="capturas/Captura413.PNG">
+</p>
