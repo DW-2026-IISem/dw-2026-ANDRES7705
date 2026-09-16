@@ -634,3 +634,77 @@ EOF_BACKEND_IA
 <p align="center">
   <img src="capturas/Captura43.PNG">
 </p>
+
+### 4.5 Persistencia Sequelize
+
+> ⚙️ `transversal` — factoría y módulo global de base de datos.
+
+```bash
+cat > src/infrastructure/database/sequelize/sequelize.factory.ts <<'EOF_BACKEND_IA'
+import { Sequelize } from 'sequelize-typescript';
+import { getDbBlock } from '../../../config/environment/db-env.js';
+import { IEnvConfig } from '../../../config/environment/env.interface.js';
+
+// TODO: importa aquí los modelos a medida que crees cada feature.
+// En ISS-03..ISS-06 se añaden los modelos de business.
+
+export const ALL_MODELS: any[] = [];
+
+export function sequelizeFactory(cfg: IEnvConfig): Sequelize {
+  const block = getDbBlock(cfg);
+  const options: Record<string, unknown> = {
+    dialect: cfg.dbDialect,
+    host: block.host,
+    port: block.port,
+    username: block.username,
+    password: block.password,
+    database: block.name,
+    models: ALL_MODELS,
+    logging: false,
+  };
+  if (cfg.dbDialect === 'oracle' && block.connectString) {
+    options.connectString = block.connectString;
+  }
+  return new Sequelize(options);
+}
+EOF_BACKEND_IA
+```
+
+```bash
+cat > src/infrastructure/database/sequelize/sequelize.module.ts <<'EOF_BACKEND_IA'
+import { Global, Logger, Module } from '@nestjs/common';
+import { getDbBlock } from '../../../config/environment/db-env.js';
+import { envConfig } from '../../../config/environment/env.config.js';
+import { IEnvConfig } from '../../../config/environment/env.interface.js';
+import { sequelizeFactory } from './sequelize.factory.js';
+
+export const SEQUELIZE = 'SEQUELIZE';
+
+@Global()
+@Module({
+  providers: [
+    {
+      provide: SEQUELIZE,
+      inject: [envConfig.KEY],
+      useFactory: async (cfg: IEnvConfig) => {
+        const sequelize = sequelizeFactory(cfg);
+        await sequelize.authenticate();
+        await sequelize.sync({ alter: false });
+        const block = getDbBlock(cfg);
+        Logger.log(
+          `Conexión exitosa a la base de datos (${cfg.dbDialect}) ${block.host}:${block.port}/${block.name}`,
+          'Sequelize',
+        );
+        return sequelize;
+      },
+    },
+  ],
+  exports: [SEQUELIZE],
+})
+export class SequelizeModule {}
+EOF_BACKEND_IA
+```
+<p align="center">
+  <img src="capturas/Captura 45.PNG">
+</p>
+
