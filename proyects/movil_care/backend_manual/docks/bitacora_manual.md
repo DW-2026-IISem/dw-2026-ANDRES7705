@@ -472,3 +472,27 @@ EOF_BACKEND_IA
 <p align="center">
   <img src="capturas/Captura 414.PNG">
 </p>
+
+**4.1.5 Módulo global (`environment.module.ts`):**
+
+```bash
+cat > src/config/environment/environment.module.ts <<'EOF_BACKEND_IA'
+import { Global, Module } from '@nestjs/common';
+import { envConfig, loadEnvConfig } from './env.config.js';
+
+@Global()
+@Module({
+  providers: [
+    {
+      provide: envConfig.KEY,
+      useFactory: () => loadEnvConfig(),
+    },
+  ],
+  exports: [envConfig.KEY],
+})
+export class EnvironmentModule {}
+EOF_BACKEND_IA
+```
+<p align="center">
+  <img src="capturas/Captura 415.PNG">
+</p>
