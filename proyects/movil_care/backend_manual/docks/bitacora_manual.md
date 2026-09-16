@@ -287,3 +287,34 @@ done
 > ⚙️ `transversal` — carga, valida y tipa las variables de entorno.
 
 
+**4.1.1 Tipos (`env.interface.ts`):**
+
+```bash
+cat > src/config/environment/env.interface.ts <<'EOF_BACKEND_IA'
+export type DbDialect = 'mysql' | 'postgres' | 'mssql' | 'oracle';
+
+export interface IDbBlock {
+  host: string;
+  port: number;
+  username: string;
+  password: string;
+  name: string;
+  connectString?: string;
+}
+
+export interface IEnvConfig {
+  port: number;
+  nodeEnv: string;
+  dbDialect: DbDialect;
+  mysql: IDbBlock;
+  postgres: IDbBlock;
+  mssql: IDbBlock;
+  oracle: IDbBlock;
+}
+EOF_BACKEND_IA
+```
+
+
+<p align="center">
+  <img src="capturas/411.PNG">
+</p>
