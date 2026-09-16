@@ -277,3 +277,13 @@ done
 <p align="center">
   <img src="capturas/Captura 37.PNG">
 </p>
+
+## 4. ISS-02 · Entorno Sequelize y common
+
+> **Segmento:** configuración validada, manejo uniforme de errores, interceptores y conexión a BD (todo transversal).
+
+### 4.1 Capa de configuración `config/environment`
+
+> ⚙️ `transversal` — carga, valida y tipa las variables de entorno.
+
+
