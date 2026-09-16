@@ -496,3 +496,20 @@ EOF_BACKEND_IA
 <p align="center">
   <img src="capturas/Captura 415.PNG">
 </p>
+
+
+**4.1.6 Barrel (`index.ts`):**
+
+```bash
+cat > src/config/environment/index.ts <<'EOF_BACKEND_IA'
+export * from './env.interface.js';
+export * from './env.validation.js';
+export * from './db-env.js';
+export * from './env.config.js';
+export * from './environment.module.js';
+EOF_BACKEND_IA
+```
+
+<p align="center">
+  <img src="capturas/Captura 416.PNG">
+</p>
