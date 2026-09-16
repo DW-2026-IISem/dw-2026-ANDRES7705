@@ -196,3 +196,56 @@ EOF_BACKEND_IA
   <img src="capturas/Captura 35.PNG">
 </p>
 
+ ## 3.6 Script auxiliar y variables de entorno
+
+```bash
+mkdir -p scripts
+cat > scripts/free-port.js <<'EOF_BACKEND_IA'
+import { execSync } from 'node:child_process';
+
+const port = process.env.PORT ?? 3002;
+const label = `[free-port]`;
+
+function findAndKill(p) {
+  const commands = [`lsof -ti tcp:${p}`, `fuser ${p}/tcp 2>/dev/null`];
+  for (const cmd of commands) {
+    try {
+      const out = execSync(cmd, { encoding: 'utf8' }).trim();
+      if (!out) continue;
+      for (const pid of out.split(/\s+/).filter(Boolean)) {
+        try {
+          execSync(`kill -9 ${pid}`, { stdio: 'ignore' });
+          console.log(`${label} liberado: mató PID ${pid} en el puerto ${p}`);
+        } catch { /* ya no existe */ }
+      }
+      return;
+    } catch { /* comando no disponible o puerto libre */ }
+  }
+  console.log(`${label} puerto ${p} libre`);
+}
+
+findAndKill(port);
+EOF_BACKEND_IA
+```
+
+```bash
+cat > .env.example <<'EOF_BACKEND_IA'
+PORT=3002
+NODE_ENV=development
+DB_DIALECT=mysql
+DB_MYSQL_HOST=<IP_HOST_DOCKER>
+DB_MYSQL_PORT=3306
+DB_MYSQL_USERNAME=admin
+DB_MYSQL_PASSWORD=<PASSWORD>
+DB_MYSQL_NAME=tecnogua_ia
+EOF_BACKEND_IA
+```
+
+
+```bash
+cp .env.example .env
+```
+
+<p align="center">
+  <img src="capturas/Captura 36.PNG">
+</p>
