@@ -249,3 +249,31 @@ cp .env.example .env
 <p align="center">
   <img src="capturas/Captura 36.PNG">
 </p>
+
+### 3.7 Estructura de carpetas
+
+```bash
+mkdir -p src/common/exceptions src/common/filters src/common/interceptors
+mkdir -p src/config/environment
+mkdir -p src/infrastructure/database/sequelize src/infrastructure/database/seeders
+mkdir -p src/health
+mkdir -p src/features/business
+for f in clients product-types products sales; do
+  mkdir -p "src/features/business/$f/domain/entities" \
+           "src/features/business/$f/domain/interfaces" \
+           "src/features/business/$f/domain/exceptions" \
+           "src/features/business/$f/application/dto" \
+           "src/features/business/$f/application/mappers" \
+           "src/features/business/$f/application/use-cases" \
+           "src/features/business/$f/infrastructure/persistence/models" \
+           "src/features/business/$f/infrastructure/persistence/repositories" \
+           "src/features/business/$f/infrastructure/persistence/seeders" \
+           "src/features/business/$f/presentation/http/controllers"
+done
+```
+
+> ✅ **Fin de ISS-01**: el proyecto arranca (aún sin features). El resto de capas se crean en los siguientes segmentos.
+
+<p align="center">
+  <img src="capturas/Captura 37.PNG">
+</p>
