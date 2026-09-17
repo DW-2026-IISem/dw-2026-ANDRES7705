@@ -795,4 +795,8 @@ EOF_BACKEND_IA
   <img src="capturas/Captura 46.PNG">
 </p>
 
+## 5. ISS-03 · Feature clients
+
+> **Segmento:** primera feature completa. Fija el patrón Clean Architecture que se repite en las demás. Orden: `domain → application → infrastructure → presentation`.
+
 
