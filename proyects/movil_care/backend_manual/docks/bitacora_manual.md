@@ -1497,6 +1497,226 @@ EOF_BACKEND_IA
   <img src="capturas/Captura 62.PNG">
 </p>
 
+### 6.3 Capa de infraestructura
+
+> 🟠 `infrastructure`
+
+```bash
+cat > src/features/business/product-types/infrastructure/persistence/models/product-type.model.ts <<'EOF_BACKEND_IA'
+import { Column, DataType, Model, Table } from 'sequelize-typescript';
+
+@Table({ tableName: 'product_types', timestamps: true })
+export class ProductTypeModel extends Model {
+  @Column({ type: DataType.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true })
+  declare id: number;
+
+  @Column({ type: DataType.STRING(100), allowNull: false, unique: true })
+  declare name: string;
+
+  @Column({ type: DataType.STRING(255), allowNull: true })
+  declare description: string | null;
+
+  @Column({ type: DataType.STRING(20), allowNull: false, defaultValue: 'active' })
+  declare status: string;
+}
+EOF_BACKEND_IA
+```
+
+**Registrar el modelo** en `sequelize.factory.ts`:
+
+```ts
+import { ProductTypeModel } from '../../../features/business/product-types/infrastructure/persistence/models/product-type.model.js';
+
+export const ALL_MODELS: any[] = [
+  ClientModel,
+  ProductTypeModel,
+];
+```
+
+```bash
+cat > src/features/business/product-types/infrastructure/persistence/repositories/product-type.repository.ts <<'EOF_BACKEND_IA'
+import { Inject, Injectable } from '@nestjs/common';
+import { Sequelize } from 'sequelize-typescript';
+import { SEQUELIZE } from '../../../../../../infrastructure/database/sequelize/sequelize.module.js';
+import { ProductType } from '../../../domain/entities/product-type.entity.js';
+import type { ProductTypeStatus } from '../../../domain/entities/product-type.entity.js';
+import { IProductTypeRepository } from '../../../domain/interfaces/product-type.repository.js';
+import { ProductTypeModel } from '../models/product-type.model.js';
+
+@Injectable()
+export class ProductTypeRepository implements IProductTypeRepository {
+  constructor(@Inject(SEQUELIZE) private readonly sequelize: Sequelize) {}
+
+  private get repo() {
+    return this.sequelize.getRepository(ProductTypeModel);
+  }
+
+  async create(pt: ProductType): Promise<ProductType> {
+    const created = await this.repo.create({
+      name: pt.name,
+      description: pt.description,
+      status: pt.status,
+    });
+    return this.toDomain(created);
+  }
+
+  async findAll(page: number, limit: number) {
+    const { rows, count } = await this.repo.findAndCountAll({
+      offset: (page - 1) * limit,
+      limit,
+      order: [['id', 'ASC']],
+    });
+    return { items: rows.map((r) => this.toDomain(r)), total: count };
+  }
+
+  async findById(id: number): Promise<ProductType | null> {
+    const found = await this.repo.findByPk(id);
+    return found ? this.toDomain(found) : null;
+  }
+
+  async findByName(name: string): Promise<ProductType | null> {
+    const found = await this.repo.findOne({ where: { name } });
+    return found ? this.toDomain(found) : null;
+  }
+
+  async count(): Promise<number> {
+    return this.repo.count();
+  }
+
+  private toDomain(m: ProductTypeModel): ProductType {
+    return new ProductType({
+      id: m.id,
+      name: m.name,
+      description: m.description ?? null,
+      status: (m.status as ProductTypeStatus) ?? 'active',
+    });
+  }
+}
+EOF_BACKEND_IA
+```
+
+```bash
+cat > src/features/business/product-types/infrastructure/persistence/seeders/product-type.seeder.ts <<'EOF_BACKEND_IA'
+import { Inject, Injectable, Logger } from "@nestjs/common";
+import { ProductType } from '../../../domain/entities/product-type.entity.js';
+import { PRODUCT_TYPE_REPOSITORY } from '../../../domain/interfaces/product-type.repository.js';
+import type { IProductTypeRepository } from '../../../domain/interfaces/product-type.repository.js';
+
+@Injectable()
+export class ProductTypeSeeder {
+  private readonly logger = new Logger(ProductTypeSeeder.name);
+
+  constructor(
+    @Inject(PRODUCT_TYPE_REPOSITORY) private readonly repo: IProductTypeRepository,
+  ) {}
+
+  async seed(): Promise<void> {
+    const name = 'Bebidas';
+    const existing = await this.repo.findByName(name);
+    if (existing) {
+      this.logger.log('Seeder product-types: ya existía el tipo demo (idempotente)');
+      return;
+    }
+    await this.repo.create(
+      new ProductType({ name, description: 'Bebidas y refrescos', status: 'active' }),
+    );
+    this.logger.log('Seeder product-types: tipo demo creado');
+  }
+}
+EOF_BACKEND_IA
+```
+<p align="center">
+  <img src="capturas/Captura 63.PNG">
+</p>
+
+### 6.4 Capa de presentación + módulo
+
+> 🟣 `presentation`
+
+```bash
+cat > src/features/business/product-types/presentation/http/controllers/product-types.controller.ts <<'EOF_BACKEND_IA'
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  ParseIntPipe,
+  Post,
+  Query,
+} from '@nestjs/common';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { CreateProductTypeDto } from '../../../application/dto/create-product-type.dto.js';
+import { ProductTypeMapper } from '../../../application/mappers/product-type.mapper.js';
+import { CreateProductTypeUseCase } from '../../../application/use-cases/create-product-type.use-case.js';
+import { GetProductTypeByIdUseCase } from '../../../application/use-casetype-by-id.use-case.js';
+import { ListProductTypesUseCase } from '../../../application/use-cases/list-product-types.use-case.js';
+
+@ApiTags('product-types')
+@Controller('product-types')
+export class ProductTypesController {
+  constructor(
+    private readonly createProductType: CreateProductTypeUseCase,
+    private readonly listProductTypes: ListProductTypesUseCase,
+    private readonly getProductType: GetProductTypeByIdUseCase,
+  ) {}
+
+  @Post()
+  @HttpCode(201)
+  @ApiOperation({ summary: 'Crear tipo de producto' })
+  async create(@Body() dto: CreateProductTypeDto) {
+    const pt = await this.createProductType.execute(dto);
+    return ProductTypeMapper.toResponse(pt);
+  }
+
+  @Get()
+  @ApiOperation({ summary: 'Listar tipos de producto (paginado)' })
+  async list(@Query('page') page = '1', @Query('limit') limit = '10') {
+    return this.listProductTypes.execute(Number(page), Number(limit));
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Obtener tipo de producto por id' })
+  async findOne(@Param('id', ParseIntPipe) id: number) {
+    const pt = await this.getProductType.execute(id);
+    return ProductTypeMapper.toResponse(pt);
+  }
+}
+EOF_BACKEND_IA
+```
+
+```bash
+cat > src/features/business/product-types/product-types.module.ts <<'EOF_BACKEND_IA'
+import { Module } from '@nestjs/common';
+import { CreateProductTypeUseCase } from './application/use-cases/create-product-type.use-case.js';
+import { GetProductTypeByIdUseCase } from './application/use-cases/get-product-type-by-id.use-case.js';
+import { ListProductTypesUseCase } from './application/use-cases/list-product-types.use-case.js';
+import { PRODUCT_TYPE_REPOSITORY } from './domain/interfaces/product-type.repository.js';
+import { ProductTypeRepository } from './infrastructure/persistence/repositories/product-type.repository.js';
+import { ProductTypeSeeder } from './infrastructure/persistence/seeders/product-type.seeder.js';
+import { ProductTypesController } from './presentation/http/controllers/product-types.controller.js';
+
+@Module({
+  controllers: [ProductTypesController],
+  providers: [
+    CreateProductTypeUseCase,
+    ListProductTypesUseCase,
+    GetProductTypeByIdUseCase,
+    ProductTypeSeeder,
+    { provide: PRODUCT_TYPE_REPOSITORY, useClass: ProductTypeRepository },
+  ],
+  exports: [PRODUCT_TYPE_REPOSITORY, ProductTypeSeeder],
+})
+export class ProductTypesModule {}
+EOF_BACKEND_IA
+```
+
+> ✅ **Fin de ISS-04**: feature `product-types` completa.
+
+<p align="center">
+  <img src="capturas/Captura 64.PNG">
+</p>
+
 
 
 
