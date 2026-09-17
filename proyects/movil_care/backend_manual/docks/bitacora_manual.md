@@ -1717,126 +1717,135 @@ EOF_BACKEND_IA
   <img src="capturas/Captura 64.PNG">
 </p>
 
-## 7. ISS-05 · Feature products
+# 7. ISS-05 · Feature products
 
-> **Segmento:** productos con **FK** a `product-types` y una **regla de dominio** (`reduceStock`) que protege el stock.
+> **Segmento:** productos comercializados por MóvilCare, con información de identificación comercial y una relación posterior con las unidades serializadas.
 
-### 7.1 Capa de dominio
+## 7.1 Capa de dominio
 
-> 🟢 `domain` — la entidad encapsula la regla de stock.
+>  `domain` — la entidad `Product` representa los equipos y accesorios que comercializa MóvilCare.
 
 ```bash
+mkdir -p src/features/business/products/domain/entities
+mkdir -p src/features/business/products/domain/interfaces
+mkdir -p src/features/business/products/domain/exceptions
+
 cat > src/features/business/products/domain/entities/product.entity.ts <<'EOF_BACKEND_IA'
-import { InsufficientStockException } from '../exceptions/insufficient-stock.exception.js';
-
-export type ProductStatus = 'active' | 'inactive';
-
 export interface ProductProps {
   id?: number | null;
-  name: string;
-  brand?: string | null;
-  price: number;
-  minStock: number;
-  quantity: number;
-  productTypeId: number;
-  status?: ProductStatus;
+  sku: string;
+  nombre: string;
+  descripcion?: string | null;
+  precio: number;
+  isActive?: boolean;
 }
 
 export class Product {
   readonly id: number | null;
-  readonly name: string;
-  readonly brand: string | null;
-  readonly price: number;
-  readonly minStock: number;
-  quantity: number;
-  readonly productTypeId: number;
-  readonly status: ProductStatus;
+  readonly sku: string;
+  readonly nombre: string;
+  readonly descripcion: string | null;
+  readonly precio: number;
+  readonly isActive: boolean;
 
   constructor(props: ProductProps) {
     this.id = props.id ?? null;
-    this.name = props.name;
-    this.brand = props.brand ?? null;
-    this.price = props.price;
-    this.minStock = props.minStock;
-    this.quantity = props.quantity;
-    this.productTypeId = props.productTypeId;
-    this.status = props.status ?? 'active';
-  }
-
-  reduceStock(n: number): void {
-    if (n < 0) {
-      throw new InsufficientStockException(this.id, this.quantity, n);
-    }
-    if (this.quantity - n < 0) {
-      throw new InsufficientStockException(this.id, this.quantity, n);
-    }
-    this.quantity -= n;
+    this.sku = props.sku;
+    this.nombre = props.nombre;
+    this.descripcion = props.descripcion ?? null;
+    this.precio = props.precio;
+    this.isActive = props.isActive ?? true;
   }
 }
 EOF_BACKEND_IA
-```
+
+cat > src/features/business/products/domain/interfaces/product.repository.ts <<'EOF_BACKEND_IA'
+import { Product } from '../entities/product.entity.js';
+
+export const PRODUCT_REPOSITORY = 'IProductRepository';
+
+export interface IProductRepository {
+  create(product: Product): Promise<Product>;
+
+  findAll(
+    page: number,
+    limit: number,
+  ): Promise<{
+    items: Product[];
+    total: number;
+  }>;
+
+  findById(id: number): Promise<Product | null>;
+
+  count(): Promise<number>;
+}
+EOF_BACKEND_IA
+
+cat > src/features/business/products/domain/exceptions/product-not-found.exception.ts <<'EOF_BACKEND_IA'
+import { EntityNotFoundException } from '../../../../../common/exceptions/entity-not-found.exception.js';
+
+export class ProductNotFoundException extends EntityNotFoundException {
+  constructor(id: number) {
+    super(`Producto con id ${id} no encontrado`);
+  }
+}
+EOF_BACKEND_IA
 
 <p align="center">
   <img src="capturas/Captura 71.PNG">
 </p>
 
-### 7.2 Capa de aplicación
 
-> 🔵 `application` — el caso de uso de creación valida el tipo de producto.
 
-```bash
+
+## 7.2 Capa de aplicación
+
+mkdir -p src/features/business/products/application/dto
+mkdir -p src/features/business/products/application/mappers
+mkdir -p src/features/business/products/application/use-cases
+
 cat > src/features/business/products/application/dto/create-product.dto.ts <<'EOF_BACKEND_IA'
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  IsInt,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsPositive,
   IsString,
   MaxLength,
-  Min,
 } from 'class-validator';
 
 export class CreateProductDto {
-  @ApiProperty({ example: 'Agua Cristal 600ml' })
+  @ApiProperty({ example: 'IPH15-128-BLK' })
   @IsString()
-  @IsNotEmpty({ message: 'name es requerido' })
+  @IsNotEmpty({ message: 'sku es requerido' })
+  @MaxLength(50)
+  sku!: string;
+
+  @ApiProperty({ example: 'iPhone 15 128GB' })
+  @IsString()
+  @IsNotEmpty({ message: 'nombre es requerido' })
   @MaxLength(150)
-  name!: string;
+  nombre!: string;
 
-  @ApiPropertyOptional({ example: 'Cristal' })
+  @ApiPropertyOptional({
+    example: 'Dispositivo móvil de 128GB',
+  })
   @IsOptional()
   @IsString()
-  @MaxLength(100)
-  brand?: string;
+  @MaxLength(500)
+  descripcion?: string;
 
-  @ApiProperty({ example: 2500 })
-  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'price debe ser un número' })
-  @IsPositive({ message: 'price debe ser mayor que 0' })
-  price!: number;
-
-  @ApiPropertyOptional({ example: 1 })
-  @IsOptional()
-  @IsInt({ message: 'minStock debe ser entero' })
-  @Min(0, { message: 'minStock no puede ser negativo' })
-  minStock?: number;
-
-  @ApiPropertyOptional({ example: 5 })
-  @IsOptional()
-  @IsInt({ message: 'quantity debe ser entero' })
-  @Min(0, { message: 'quantity no puede ser negativo' })
-  quantity?: number;
-
-  @ApiProperty({ example: 1 })
-  @IsInt({ message: 'productTypeId debe ser entero' })
-  @Min(1, { message: 'productTypeId es requerido' })
-  productTypeId!: number;
+  @ApiProperty({ example: 2500000 })
+  @IsNumber(
+    { maxDecimalPlaces: 2 },
+    { message: 'precio debe ser un número' },
+  )
+  @IsPositive({ message: 'precio debe ser mayor que 0' })
+  precio!: number;
 }
 EOF_BACKEND_IA
-```
 
-```bash
 cat > src/features/business/products/application/mappers/product.mapper.ts <<'EOF_BACKEND_IA'
 import { Product } from '../../domain/entities/product.entity.js';
 import { CreateProductDto } from '../dto/create-product.dto.js';
@@ -1844,39 +1853,29 @@ import { CreateProductDto } from '../dto/create-product.dto.js';
 export class ProductMapper {
   static toEntity(dto: CreateProductDto): Product {
     return new Product({
-      name: dto.name,
-      brand: dto.brand ?? null,
-      price: dto.price,
-      minStock: dto.minStock ?? 0,
-      quantity: dto.quantity ?? 0,
-      productTypeId: dto.productTypeId,
-      status: 'active',
+      sku: dto.sku,
+      nombre: dto.nombre,
+      descripcion: dto.descripcion ?? null,
+      precio: dto.precio,
+      isActive: true,
     });
   }
 
-  static toResponse(p: Product) {
+  static toResponse(product: Product) {
     return {
-      id: p.id,
-      name: p.name,
-      brand: p.brand,
-      price: p.price,
-      minStock: p.minStock,
-      quantity: p.quantity,
-      productTypeId: p.productTypeId,
-      status: p.status,
+      id: product.id,
+      sku: product.sku,
+      nombre: product.nombre,
+      descripcion: product.descripcion,
+      precio: product.precio,
+      isActive: product.isActive,
     };
   }
 }
 EOF_BACKEND_IA
-```
 
-```bash
 cat > src/features/business/products/application/use-cases/create-product.use-case.ts <<'EOF_BACKEND_IA'
 import { Inject, Injectable } from '@nestjs/common';
-import { PRODUCT_TYPE_REPOSITORY } from '../../../product-types/domain/interfaces/product-type.repository.js';
-import type { IProductTypeRepository } from '../../../product-types/domain/interfaces/product-type.repository.js';
-import { ProductTypeNotFoundException } from '../../../product-types/domain/exceptions/product-type-not-found.exception.js';
-import { ProductTypeInactiveException } from '../../domain/exceptions/product-type-inactive.exception.js';
 import { PRODUCT_REPOSITORY } from '../../domain/interfaces/product.repository.js';
 import type { IProductRepository } from '../../domain/interfaces/product.repository.js';
 import type { Product } from '../../domain/entities/product.entity.js';
@@ -1886,25 +1885,16 @@ import { ProductMapper } from '../mappers/product.mapper.js';
 @Injectable()
 export class CreateProductUseCase {
   constructor(
-    @Inject(PRODUCT_REPOSITORY) private readonly productRepo: IProductRepository,
-    @Inject(PRODUCT_TYPE_REPOSITORY) private readonly typeRepo: IProductTypeRepository,
+    @Inject(PRODUCT_REPOSITORY)
+    private readonly productRepo: IProductRepository,
   ) {}
 
   async execute(dto: CreateProductDto): Promise<Product> {
-    const type = await this.typeRepo.findById(dto.productTypeId);
-    if (!type) {
-      throw new ProductTypeNotFoundException(dto.productTypeId);
-    }
-    if (type.status !== 'active') {
-      throw new ProductTypeInactiveException(dto.productTypeId);
-    }
     return this.productRepo.create(ProductMapper.toEntity(dto));
   }
 }
 EOF_BACKEND_IA
-```
 
-```bash
 cat > src/features/business/products/application/use-cases/get-product-by-id.use-case.ts <<'EOF_BACKEND_IA'
 import { Inject, Injectable } from '@nestjs/common';
 import { ProductNotFoundException } from '../../domain/exceptions/product-not-found.exception.js';
@@ -1915,21 +1905,22 @@ import type { Product } from '../../domain/entities/product.entity.js';
 @Injectable()
 export class GetProductByIdUseCase {
   constructor(
-    @Inject(PRODUCT_REPOSITORY) private readonly productRepo: IProductRepository,
+    @Inject(PRODUCT_REPOSITORY)
+    private readonly productRepo: IProductRepository,
   ) {}
 
   async execute(id: number): Promise<Product> {
     const product = await this.productRepo.findById(id);
+
     if (!product) {
       throw new ProductNotFoundException(id);
     }
+
     return product;
   }
 }
 EOF_BACKEND_IA
-```
 
-```bash
 cat > src/features/business/products/application/use-cases/list-products.use-case.ts <<'EOF_BACKEND_IA'
 import { Inject, Injectable } from '@nestjs/common';
 import { PRODUCT_REPOSITORY } from '../../domain/interfaces/product.repository.js';
@@ -1939,19 +1930,466 @@ import { ProductMapper } from '../mappers/product.mapper.js';
 @Injectable()
 export class ListProductsUseCase {
   constructor(
-    @Inject(PRODUCT_REPOSITORY) private readonly productRepo: IProductRepository,
+    @Inject(PRODUCT_REPOSITORY)
+    private readonly productRepo: IProductRepository,
   ) {}
 
   async execute(page: number, limit: number) {
     const { items, total } = await this.productRepo.findAll(page, limit);
+
     return {
       items: items.map(ProductMapper.toResponse),
-      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 }
 EOF_BACKEND_IA
-```
-<p align="center">
-  <img src="capturas/Captura 71.PNG">
-</p>
+
+## 7.3 Capa de infraestructura
+
+mkdir -p src/features/business/products/infrastructure/persistence/models
+mkdir -p src/features/business/products/infrastructure/persistence/repositories
+mkdir -p src/features/business/products/infrastructure/persistence/seeders
+
+cat > src/features/business/products/infrastructure/persistence/models/product.model.ts <<'EOF_BACKEND_IA'
+import {
+  Column,
+  DataType,
+  Model,
+  Table,
+} from 'sequelize-typescript';
+
+@Table({
+  tableName: 'products',
+  timestamps: true,
+})
+export class ProductModel extends Model {
+  @Column({
+    type: DataType.INTEGER.UNSIGNED,
+    autoIncrement: true,
+    primaryKey: true,
+  })
+  declare id: number;
+
+  @Column({
+    type: DataType.STRING(50),
+    allowNull: false,
+    unique: true,
+  })
+  declare sku: string;
+
+  @Column({
+    type: DataType.STRING(150),
+    allowNull: false,
+  })
+  declare nombre: string;
+
+  @Column({
+    type: DataType.STRING(500),
+    allowNull: true,
+  })
+  declare descripcion: string | null;
+
+  @Column({
+    type: DataType.DECIMAL(12, 2),
+    allowNull: false,
+  })
+  declare precio: number;
+
+  @Column({
+    type: DataType.BOOLEAN,
+    allowNull: false,
+    defaultValue: true,
+  })
+  declare isActive: boolean;
+}
+EOF_BACKEND_IA
+
+import { ProductModel } from '../../../features/business/products/infrastructure/persistence/models/product.model.js';
+
+export const ALL_MODELS: any[] = [
+  ClientModel,
+  ProductModel,
+];
+
+## 7.4 Repositorio de productos
+
+cat > src/features/business/products/infrastructure/persistence/repositories/product.repository.ts <<'EOF_BACKEND_IA'
+import { Inject, Injectable } from '@nestjs/common';
+import { Sequelize } from 'sequelize-typescript';
+import { SEQUELIZE } from '../../../../../../infrastructure/database/sequelize/sequelize.module.js';
+import { Product } from '../../../domain/entities/product.entity.js';
+import type { IProductRepository } from '../../../domain/interfaces/product.repository.js';
+import { ProductModel } from '../models/product.model.js';
+
+@Injectable()
+export class ProductRepository implements IProductRepository {
+  constructor(
+    @Inject(SEQUELIZE)
+    private readonly sequelize: Sequelize,
+  ) {}
+
+  private get repo() {
+    return this.sequelize.getRepository(ProductModel);
+  }
+
+  async create(product: Product): Promise<Product> {
+    const created = await this.repo.create({
+      sku: product.sku,
+      nombre: product.nombre,
+      descripcion: product.descripcion,
+      precio: product.precio,
+      isActive: product.isActive,
+    });
+
+    return this.toDomain(created);
+  }
+
+  async findAll(page: number, limit: number) {
+    const { rows, count } = await this.repo.findAndCountAll({
+      offset: (page - 1) * limit,
+      limit,
+      order: [['id', 'ASC']],
+    });
+
+    return {
+      items: rows.map((row) => this.toDomain(row)),
+      total: count,
+    };
+  }
+
+  async findById(id: number): Promise<Product | null> {
+    const found = await this.repo.findByPk(id);
+
+    return found ? this.toDomain(found) : null;
+  }
+
+  async count(): Promise<number> {
+    return this.repo.count();
+  }
+
+  private toDomain(model: ProductModel): Product {
+    return new Product({
+      id: model.id,
+      sku: model.sku,
+      nombre: model.nombre,
+      descripcion: model.descripcion ?? null,
+      precio: Number(model.precio),
+      isActive: model.isActive,
+    });
+  }
+}
+EOF_BACKEND_IA
+
+## 7.5 Seeder
+
+cat > src/features/business/products/infrastructure/persistence/seeders/product.seeder.ts <<'EOF_BACKEND_IA'
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Product } from '../../../domain/entities/product.entity.js';
+import { PRODUCT_REPOSITORY } from '../../../domain/interfaces/product.repository.js';
+import type { IProductRepository } from '../../../domain/interfaces/product.repository.js';
+
+@Injectable()
+export class ProductSeeder {
+  private readonly logger = new Logger(ProductSeeder.name);
+
+  constructor(
+    @Inject(PRODUCT_REPOSITORY)
+    private readonly productRepo: IProductRepository,
+  ) {}
+
+  async seed(): Promise<void> {
+    const { items: products } = await this.productRepo.findAll(1, 100);
+
+    if (
+      products.some(
+        (product) => product.sku === 'IPH15-128-BLK',
+      )
+    ) {
+      this.logger.log(
+        'Seeder products: ya existía el producto demo (idempotente)',
+      );
+      return;
+    }
+
+    await this.productRepo.create(
+      new Product({
+        sku: 'IPH15-128-BLK',
+        nombre: 'iPhone 15 128GB',
+        descripcion: 'Dispositivo móvil de 128GB',
+        precio: 2500000,
+        isActive: true,
+      }),
+    );
+
+    this.logger.log(
+      'Seeder products: producto demo creado',
+    );
+  }
+}
+EOF_BACKEND_IA
+
+## 7.6 Capa de presentación + módulo
+
+mkdir -p src/features/business/products/presentation/http/controllers
+
+cat > src/features/business/products/presentation/http/controllers/products.controller.ts <<'EOF_BACKEND_IA'
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  ParseIntPipe,
+  Post,
+  Query,
+} from '@nestjs/common';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { CreateProductDto } from '../../../application/dto/create-product.dto.js';
+import { ProductMapper } from '../../../application/mappers/product.mapper.js';
+import { CreateProductUseCase } from '../../../application/use-cases/create-product.use-case.js';
+import { GetProductByIdUseCase } from '../../../application/use-cases/get-product-by-id.use-case.js';
+import { ListProductsUseCase } from '../../../application/use-cases/list-products.use-case.js';
+
+@ApiTags('products')
+@Controller('products')
+export class ProductsController {
+  constructor(
+    private readonly createProduct: CreateProductUseCase,
+    private readonly listProducts: ListProductsUseCase,
+    private readonly getProduct: GetProductByIdUseCase,
+  ) {}
+
+  @Post()
+  @HttpCode(201)
+  @ApiOperation({
+    summary: 'Registrar producto de MóvilCare',
+  })
+  async create(@Body() dto: CreateProductDto) {
+    const product = await this.createProduct.execute(dto);
+
+    return ProductMapper.toResponse(product);
+  }
+
+  @Get()
+  @ApiOperation({
+    summary: 'Consultar productos de MóvilCare',
+  })
+  async list(
+    @Query('page') page = '1',
+    @Query('limit') limit = '10',
+  ) {
+    return this.listProducts.execute(
+      Number(page),
+      Number(limit),
+    );
+  }
+
+  @Get(':id')
+  @ApiOperation({
+    summary: 'Consultar producto por ID',
+  })
+  async findOne(
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    const product = await this.getProduct.execute(id);
+
+    return ProductMapper.toResponse(product);
+  }
+}
+EOF_BACKEND_IA
+
+## 7.7 Módulo de productos
+
+cat > src/features/business/products/products.module.ts <<'EOF_BACKEND_IA'
+import { Module } from '@nestjs/common';
+import { CreateProductUseCase } from './application/use-cases/create-product.use-case.js';
+import { GetProductByIdUseCase } from './application/use-cases/get-product-by-id.use-case.js';
+import { ListProductsUseCase } from './application/use-cases/list-products.use-case.js';
+import { PRODUCT_REPOSITORY } from './domain/interfaces/product.repository.js';
+import { ProductRepository } from './infrastructure/persistence/repositories/product.repository.js';
+import { ProductSeeder } from './infrastructure/persistence/seeders/product.seeder.js';
+import { ProductsController } from './presentation/http/controllers/products.controller.js';
+
+@Module({
+  controllers: [ProductsController],
+  providers: [
+    CreateProductUseCase,
+    ListProductsUseCase,
+    GetProductByIdUseCase,
+    ProductSeeder,
+    {
+      provide: PRODUCT_REPOSITORY,
+      useClass: ProductRepository,
+    },
+  ],
+  exports: [
+    PRODUCT_REPOSITORY,
+    ProductSeeder,
+  ],
+})
+export class ProductsModule {}
+EOF_BACKEND_IA
+
+## 7.8 Integración con el módulo principal
+
+import { ProductsModule } from './products/products.module.js';
+
+@Module({
+  imports: [
+    ProductsModule,
+  ],
+})
+export class BusinessModule {}
+
+## 7.9 Endpoints de la feature
+
+{
+  "sku": "IPH15-128-BLK",
+  "nombre": "iPhone 15 128GB",
+  "descripcion": "Dispositivo móvil de 128GB",
+  "precio": 2500000
+}
+
+{
+  "id": 1,
+  "sku": "IPH15-128-BLK",
+  "nombre": "iPhone 15 128GB",
+  "descripcion": "Dispositivo móvil de 128GB",
+  "precio": 2500000,
+  "isActive": true
+}
+
+## 7.10 Pruebas rápidas
+
+curl -X POST http://localhost:3000/products \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sku": "SAMS-A55-128",
+    "nombre": "Samsung Galaxy A55 128GB",
+    "descripcion": "Dispositivo móvil Samsung",
+    "precio": 1450000
+  }'
+
+
+  curl "http://localhost:3000/products?page=1&limit=10"
+
+  curl "http://localhost:3000/products/1"
+
+## 7.11 Relación con el dominio de MóvilCare
+
+##La feature products representa la entidad Producto dentro del sistema MóvilCare.
+##El producto puede relacionarse dentro del modelo general con las siguientes entidades:
+
+Producto 1:N UnidadSerializada
+Cliente 1:N Venta
+Venta 1:N VentaDetalle
+VentaDetalle 0..N Garantia
+Cliente 1:N OrdenServicio
+UnidadSerializada 1:N OrdenServicio
+OrdenServicio 1:N Diagnostico
+OrdenServicio N:M Repuesto mediante ConsumoRepuesto
+Venta y OrdenServicio tienen relación con Pago
+
+## 7.12 Estructura final de la feature
+
+products/
+│
+├── domain/
+│   ├── entities/
+│   │   └── product.entity.ts
+│   │
+│   ├── interfaces/
+│   │   └── product.repository.ts
+│   │
+│   └── exceptions/
+│       └── product-not-found.exception.ts
+│
+├── application/
+│   ├── dto/
+│   │   └── create-product.dto.ts
+│   │
+│   ├── mappers/
+│   │   └── product.mapper.ts
+│   │
+│   └── use-cases/
+│       ├── create-product.use-case.ts
+│       ├── get-product-by-id.use-case.ts
+│       └── list-products.use-case.ts
+│
+├── infrastructure/
+│   └── persistence/
+│       ├── models/
+│       │   └── product.model.ts
+│       │
+│       ├── repositories/
+│       │   └── product.repository.ts
+│       │
+│       └── seeders/
+│           └── product.seeder.ts
+│
+├── presentation/
+│   └── http/
+│       └── controllers/
+│           └── products.controller.ts
+│
+└── products.module.ts
+
+## 7.13 Modelo de datos de Producto
+
+Product
+│
+├── id
+├── sku
+├── nombre
+├── descripcion
+├── precio
+└── isActive
+
+## 7.14 Flujo de la feature
+
+
+                  MÓVILCARE
+                      │
+                      ▼
+                   PRODUCTO
+                      │
+        ┌─────────────┼─────────────┐
+        │             │             │
+        ▼             ▼             ▼
+       SKU          Nombre        Precio
+        │
+        ▼
+UnidadSerializada
+        │
+        ▼
+      Venta
+        │
+        ▼
+  VentaDetalle
+        │
+        ▼
+     Garantía
+
+
+
+              CLIENTE
+                 │
+                 ▼
+          ORDEN SERVICIO
+                 │
+        ┌────────┴────────┐
+        ▼                 ▼
+   DIAGNÓSTICO        REPUESTOS
+                          │
+                          ▼
+                 CONSUMO REPUESTO
+                          │
+                          ▼
+                        PAGO
+
