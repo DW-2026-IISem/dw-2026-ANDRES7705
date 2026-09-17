@@ -1363,4 +1363,7 @@ export class ProductTypeNameAlreadyExistsException extends BusinessRuleException
 }
 EOF_BACKEND_IA
 ```
+<p align="center">
+  <img src="capturas/Captura 61.PNG">
+</p>
 
