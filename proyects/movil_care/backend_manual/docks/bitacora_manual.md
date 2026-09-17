@@ -1780,3 +1780,178 @@ EOF_BACKEND_IA
   <img src="capturas/Captura 71.PNG">
 </p>
 
+### 7.2 Capa de aplicación
+
+> 🔵 `application` — el caso de uso de creación valida el tipo de producto.
+
+```bash
+cat > src/features/business/products/application/dto/create-product.dto.ts <<'EOF_BACKEND_IA'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsInt,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsPositive,
+  IsString,
+  MaxLength,
+  Min,
+} from 'class-validator';
+
+export class CreateProductDto {
+  @ApiProperty({ example: 'Agua Cristal 600ml' })
+  @IsString()
+  @IsNotEmpty({ message: 'name es requerido' })
+  @MaxLength(150)
+  name!: string;
+
+  @ApiPropertyOptional({ example: 'Cristal' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  brand?: string;
+
+  @ApiProperty({ example: 2500 })
+  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'price debe ser un número' })
+  @IsPositive({ message: 'price debe ser mayor que 0' })
+  price!: number;
+
+  @ApiPropertyOptional({ example: 1 })
+  @IsOptional()
+  @IsInt({ message: 'minStock debe ser entero' })
+  @Min(0, { message: 'minStock no puede ser negativo' })
+  minStock?: number;
+
+  @ApiPropertyOptional({ example: 5 })
+  @IsOptional()
+  @IsInt({ message: 'quantity debe ser entero' })
+  @Min(0, { message: 'quantity no puede ser negativo' })
+  quantity?: number;
+
+  @ApiProperty({ example: 1 })
+  @IsInt({ message: 'productTypeId debe ser entero' })
+  @Min(1, { message: 'productTypeId es requerido' })
+  productTypeId!: number;
+}
+EOF_BACKEND_IA
+```
+
+```bash
+cat > src/features/business/products/application/mappers/product.mapper.ts <<'EOF_BACKEND_IA'
+import { Product } from '../../domain/entities/product.entity.js';
+import { CreateProductDto } from '../dto/create-product.dto.js';
+
+export class ProductMapper {
+  static toEntity(dto: CreateProductDto): Product {
+    return new Product({
+      name: dto.name,
+      brand: dto.brand ?? null,
+      price: dto.price,
+      minStock: dto.minStock ?? 0,
+      quantity: dto.quantity ?? 0,
+      productTypeId: dto.productTypeId,
+      status: 'active',
+    });
+  }
+
+  static toResponse(p: Product) {
+    return {
+      id: p.id,
+      name: p.name,
+      brand: p.brand,
+      price: p.price,
+      minStock: p.minStock,
+      quantity: p.quantity,
+      productTypeId: p.productTypeId,
+      status: p.status,
+    };
+  }
+}
+EOF_BACKEND_IA
+```
+
+```bash
+cat > src/features/business/products/application/use-cases/create-product.use-case.ts <<'EOF_BACKEND_IA'
+import { Inject, Injectable } from '@nestjs/common';
+import { PRODUCT_TYPE_REPOSITORY } from '../../../product-types/domain/interfaces/product-type.repository.js';
+import type { IProductTypeRepository } from '../../../product-types/domain/interfaces/product-type.repository.js';
+import { ProductTypeNotFoundException } from '../../../product-types/domain/exceptions/product-type-not-found.exception.js';
+import { ProductTypeInactiveException } from '../../domain/exceptions/product-type-inactive.exception.js';
+import { PRODUCT_REPOSITORY } from '../../domain/interfaces/product.repository.js';
+import type { IProductRepository } from '../../domain/interfaces/product.repository.js';
+import type { Product } from '../../domain/entities/product.entity.js';
+import { CreateProductDto } from '../dto/create-product.dto.js';
+import { ProductMapper } from '../mappers/product.mapper.js';
+
+@Injectable()
+export class CreateProductUseCase {
+  constructor(
+    @Inject(PRODUCT_REPOSITORY) private readonly productRepo: IProductRepository,
+    @Inject(PRODUCT_TYPE_REPOSITORY) private readonly typeRepo: IProductTypeRepository,
+  ) {}
+
+  async execute(dto: CreateProductDto): Promise<Product> {
+    const type = await this.typeRepo.findById(dto.productTypeId);
+    if (!type) {
+      throw new ProductTypeNotFoundException(dto.productTypeId);
+    }
+    if (type.status !== 'active') {
+      throw new ProductTypeInactiveException(dto.productTypeId);
+    }
+    return this.productRepo.create(ProductMapper.toEntity(dto));
+  }
+}
+EOF_BACKEND_IA
+```
+
+```bash
+cat > src/features/business/products/application/use-cases/get-product-by-id.use-case.ts <<'EOF_BACKEND_IA'
+import { Inject, Injectable } from '@nestjs/common';
+import { ProductNotFoundException } from '../../domain/exceptions/product-not-found.exception.js';
+import { PRODUCT_REPOSITORY } from '../../domain/interfaces/product.repository.js';
+import type { IProductRepository } from '../../domain/interfaces/product.repository.js';
+import type { Product } from '../../domain/entities/product.entity.js';
+
+@Injectable()
+export class GetProductByIdUseCase {
+  constructor(
+    @Inject(PRODUCT_REPOSITORY) private readonly productRepo: IProductRepository,
+  ) {}
+
+  async execute(id: number): Promise<Product> {
+    const product = await this.productRepo.findById(id);
+    if (!product) {
+      throw new ProductNotFoundException(id);
+    }
+    return product;
+  }
+}
+EOF_BACKEND_IA
+```
+
+```bash
+cat > src/features/business/products/application/use-cases/list-products.use-case.ts <<'EOF_BACKEND_IA'
+import { Inject, Injectable } from '@nestjs/common';
+import { PRODUCT_REPOSITORY } from '../../domain/interfaces/product.repository.js';
+import type { IProductRepository } from '../../domain/interfaces/product.repository.js';
+import { ProductMapper } from '../mappers/product.mapper.js';
+
+@Injectable()
+export class ListProductsUseCase {
+  constructor(
+    @Inject(PRODUCT_REPOSITORY) private readonly productRepo: IProductRepository,
+  ) {}
+
+  async execute(page: number, limit: number) {
+    const { items, total } = await this.productRepo.findAll(page, limit);
+    return {
+      items: items.map(ProductMapper.toResponse),
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
+  }
+}
+EOF_BACKEND_IA
+```
+<p align="center">
+  <img src="capturas/Captura 71.PNG">
+</p>
