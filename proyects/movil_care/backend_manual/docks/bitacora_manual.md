@@ -1289,4 +1289,78 @@ EOF_BACKEND_IA
   <img src="capturas/Captura 55.PNG">
 </p>
 
+## 6. ISS-04 · Feature product-types
+
+> **Segmento:** segunda feature (mismo patrón que `clients`). La unicidad es por **`name`**.
+
+### 6.1 Capa de dominio
+
+> 🟢 `domain`
+
+```bash
+cat > src/features/business/product-types/domain/entities/product-type.entity.ts <<'EOF_BACKEND_IA'
+export type ProductTypeStatus = 'active' | 'inactive';
+
+export interface ProductTypeProps {
+  id?: number | null;
+  name: string;
+  description?: string | null;
+  status?: ProductTypeStatus;
+}
+
+export class ProductType {
+  readonly id: number | null;
+  readonly name: string;
+  readonly description: string | null;
+  readonly status: ProductTypeStatus;
+
+  constructor(props: ProductTypeProps) {
+    this.id = props.id ?? null;
+    this.name = props.name;
+    this.description = props.description ?? null;
+    this.status = props.status ?? 'active';
+  }
+}
+EOF_BACKEND_IA
+```
+
+```bash
+cat > src/features/business/product-types/domain/interfaces/product-type.repository.ts <<'EOF_BACKEND_IA'
+import { ProductType } from '../entities/product-type.entity.js';
+
+export const PRODUCT_TYPE_REPOSITORY = 'IProductTypeRepository';
+
+export interface IProductTypeRepository {
+  create(productType: ProductType): Promise<ProductType>;
+  findAll(page: number, limit: number): Promise<{ items: ProductType[]; total: number }>;
+  findById(id: number): Promise<ProductType | null>;
+  findByName(name: string): Promise<ProductType | null>;
+  count(): Promise<number>;
+}
+EOF_BACKEND_IA
+```
+
+```bash
+cat > src/features/business/product-types/domain/exceptions/product-type-not-found.exception.ts <<'EOF_BACKEND_IA'
+import { EntityNotFoundException } from '../../../../../common/exceptions/entity-not-found.exception.js';
+
+export class ProductTypeNotFoundException extends EntityNotFoundException {
+  constructor(id: number) {
+    super(`Tipo de producto con id ${id} no encontrado`);
+  }
+}
+EOF_BACKEND_IA
+```
+
+```bash
+cat > src/features/business/product-types/domain/exceptions/product-type-name-already-exists.exception.ts <<'EOF_BACKEND_IA'
+import { BusinessRuleException } from '../../../../../common/exceptions/business-rule.exception.js';
+
+export class ProductTypeNameAlreadyExistsException extends BusinessRuleException {
+  constructor(name: string) {
+    super(`Ya existe un tipo de producto con el nombre ${name}`);
+  }
+}
+EOF_BACKEND_IA
+```
 
