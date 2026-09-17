@@ -1252,3 +1252,41 @@ EOF_BACKEND_IA
 <p align="center">
   <img src="capturas/Captura 54.PNG">
 </p>
+
+### 5.5 Módulo de la feature
+
+```bash
+cat > src/features/business/clients/clients.module.ts <<'EOF_BACKEND_IA'
+import { Module } from '@nestjs/common';
+import { CreateClientUseCase } from './application/use-cases/create-client.use-case.js';
+import { GetClientByIdUseCase } from './application/use-cases/get-client-by-id.use-case.js';
+import { ListClientsUseCase } from './application/use-cases/list-clients.use-case.js';
+import { CLIENT_REPOSITORY } from './domain/interfaces/client.repository.js';
+import { ClientRepository } from './infrastructure/persistence/repositories/client.repository.js';
+import { ClientSeeder } from './infrastructure/persistence/seeders/client.seeder.js';
+import { ClientsController } from './presentation/http/controllers/clients.controller.js';
+
+@Module({
+  controllers: [ClientsController],
+  providers: [
+    CreateClientUseCase,
+    ListClientsUseCase,
+    GetClientByIdUseCase,
+    ClientSeeder,
+    { provide: CLIENT_REPOSITORY, useClass: ClientRepository },
+  ],
+  exports: [CLIENT_REPOSITORY, ClientSeeder],
+})
+export class ClientsModule {}
+EOF_BACKEND_IA
+```
+
+- `{ provide: CLIENT_REPOSITORY, useClass: ClientRepository }`: **inversión de dependencias** — liga el puerto a su implementación.
+
+> ✅ **Fin de ISS-03**: feature `clients` completa. El patrón se repite en ISS-04, ISS-05 e ISS-06.
+ 
+ <p align="center">
+  <img src="capturas/Captura 55.PNG">
+</p>
+
+
