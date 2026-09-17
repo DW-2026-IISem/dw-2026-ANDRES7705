@@ -885,3 +885,158 @@ EOF_BACKEND_IA
   <img src="capturas/Captura 51.PNG">
 </p>
 
+### 5.2 Capa de aplicación
+
+> 🔵 `application` — DTOs, mappers y casos de uso (depende de `domain`).
+
+**DTO:**
+
+```bash
+cat > src/features/business/clients/application/dto/create-client.dto.ts <<'EOF_BACKEND_IA'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+
+export class CreateClientDto {
+  @ApiProperty({ example: 'Ana María Pérez' })
+  @IsString()
+  @IsNotEmpty({ message: 'name es requerido' })
+  @MaxLength(150)
+  name!: string;
+
+  @ApiPropertyOptional({ example: 'ana@demo.com' })
+  @IsOptional()
+  @IsEmail({}, { message: 'email debe ser un correo válido' })
+  @MaxLength(150)
+  email?: string;
+
+  @ApiPropertyOptional({ example: '3001234567' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(30)
+  phone?: string;
+
+  @ApiPropertyOptional({ example: 'Riohacha, La Guajira' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  address?: string;
+}
+EOF_BACKEND_IA
+```
+
+**Mapper:**
+
+```bash
+cat > src/features/business/clients/application/mappers/client.mapper.ts <<'EOF_BACKEND_IA'
+import { Client } from '../../domain/entities/client.entity.js';
+import { CreateClientDto } from '../dto/create-client.dto.js';
+
+export class ClientMapper {
+  static toEntity(dto: CreateClientDto): Client {
+    return new Client({
+      name: dto.name,
+      email: dto.email ?? null,
+      phone: dto.phone ?? null,
+      address: dto.address ?? null,
+      status: 'active',
+    });
+  }
+
+  static toResponse(client: Client) {
+    return {
+      id: client.id,
+      name: client.name,
+      email: client.email,
+      phone: client.phone,
+      address: client.address,
+      status: client.status,
+    };
+  }
+}
+EOF_BACKEND_IA
+```
+
+**Casos de uso:**
+
+```bash
+cat > src/features/business/clients/application/use-cases/create-client.use-case.ts <<'EOF_BACKEND_IA'
+import { Inject, Injectable } from '@nestjs/common';
+import { ClientEmailAlreadyExistsException } from '../../domain/exceptions/client-email-already-exists.exception.js';
+import { CLIENT_REPOSITORY } from '../../domain/interfaces/client.repository.js';
+import type { IClientRepository } from '../../domain/interfaces/client.repository.js';
+import { CreateClientDto } from '../dto/create-client.dto.js';
+import { ClientMapper } from '../mappers/client.mapper.js';
+import type { Client } from '../../domain/entities/client.entity.js';
+
+@Injectable()
+export class CreateClientUseCase {
+  constructor(
+    @Inject(CLIENT_REPOSITORY) private readonly clientRepository: IClientRepository,
+  ) {}
+
+  async execute(dto: CreateClientDto): Promise<Client> {
+    if (dto.email) {
+      const existing = await this.clientRepository.findByEmail(dto.email);
+      if (existing) {
+        throw new ClientEmailAlreadyExistsException(dto.email);
+      }
+    }
+    return this.clientRepository.create(ClientMapper.toEntity(dto));
+  }
+}
+EOF_BACKEND_IA
+```
+
+```bash
+cat > src/features/business/clients/application/use-cases/get-client-by-id.use-case.ts <<'EOF_BACKEND_IA'
+import { Inject, Injectable } from '@nestjs/common';
+import { ClientNotFoundException } from '../../domain/exceptions/client-not-found.exception.js';
+import { CLIENT_REPOSITORY } from '../../domain/interfaces/client.repository.js';
+import type { IClientRepository } from '../../domain/interfaces/client.repository.js';
+import type { Client } from '../../domain/entities/client.entity.js';
+
+@Injectable()
+export class GetClientByIdUseCase {
+  constructor(
+    @Inject(CLIENT_REPOSITORY) private readonly clientRepository: IClientRepository,
+  ) {}
+
+  async execute(id: number): Promise<Client> {
+    const client = await this.clientRepository.findById(id);
+    if (!client) {
+      throw new ClientNotFoundException(id);
+    }
+    return client;
+  }
+}
+EOF_BACKEND_IA
+```
+
+```bash
+cat > src/features/business/clients/application/use-cases/list-clients.use-case.ts <<'EOF_BACKEND_IA'
+import { Inject, Injectable } from '@nestjs/common';
+import { CLIENT_REPOSITORY } from '../../domain/interfaces/client.repository.js';
+import type { IClientRepository } from '../../domain/interfaces/client.repository.js';
+import { ClientMapper } from '../mappers/client.mapper.js';
+
+@Injectable()
+export class ListClientsUseCase {
+  constructor(
+    @Inject(CLIENT_REPOSITORY) private readonly clientRepository: IClientRepository,
+  ) {}
+
+  async execute(page: number, limit: number) {
+    const { items, total } = await this.clientRepository.findAll(page, limit);
+    return {
+      items: items.map(ClientMapper.toResponse),
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
+  }
+}
+EOF_BACKEND_IA
+```
+
+<p align="center">
+  <img src="capturas/Captura 52.PNG">
+</p>
+
