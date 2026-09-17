@@ -1950,6 +1950,13 @@ export class ListProductsUseCase {
 }
 EOF_BACKEND_IA
 
+<p align="center">
+  <img src="capturas/Captura 72.PNG">
+</p>
+
+
+
+
 ## 7.3 Capa de infraestructura
 
 mkdir -p src/features/business/products/infrastructure/persistence/models
