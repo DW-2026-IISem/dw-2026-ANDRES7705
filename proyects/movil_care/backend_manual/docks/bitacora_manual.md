@@ -885,7 +885,7 @@ EOF_BACKEND_IA
   <img src="capturas/Captura 51.PNG">
 </p>
 
-### 5.2 Capa de aplicación
+### 5.2 Capa de aplicacion 
 
 > 🔵 `application` — DTOs, mappers y casos de uso (depende de `domain`).
 
@@ -1040,3 +1040,155 @@ EOF_BACKEND_IA
   <img src="capturas/Captura 52.PNG">
 </p>
 
+### 5.3 Capa de infraestructura
+
+> 🟠 `infrastructure` — implementa el puerto con Sequelize.
+
+**Modelo:**
+
+```bash
+cat > src/features/business/clients/infrastructure/persistence/models/client.model.ts <<'EOF_BACKEND_IA'
+import { Column, DataType, Model, Table } from 'sequelize-typescript';
+
+@Table({ tableName: 'clients', timestamps: true })
+export class ClientModel extends Model {
+  @Column({ type: DataType.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true })
+  declare id: number;
+
+  @Column({ type: DataType.STRING(150), allowNull: false })
+  declare name: string;
+
+  @Column({ type: DataType.STRING(150), allowNull: true, unique: true })
+  declare email: string | null;
+
+  @Column({ type: DataType.STRING(30), allowNull: true })
+  declare phone: string | null;
+
+  @Column({ type: DataType.STRING(255), allowNull: true })
+  declare address: string | null;
+
+  @Column({ type: DataType.STRING(20), allowNull: false, defaultValue: 'active' })
+  declare status: string;
+}
+EOF_BACKEND_IA
+```
+
+**Registrar el modelo** en `sequelize.factory.ts` (import + `ALL_MODELS`):
+
+```ts
+import { ClientModel } from '../../../features/business/clients/infrastructure/persistence/models/client.model.js';
+
+export const ALL_MODELS: any[] = [
+  ClientModel,
+];
+```
+
+**Repositorio:**
+
+```bash
+cat > src/features/business/clients/infrastructure/persistence/repositories/client.repository.ts <<'EOF_BACKEND_IA'
+import { Inject, Injectable } from '@nestjs/common';
+import { Sequelize } from 'sequelize-typescript';
+import { SEQUELIZE } from '../../../../../../infrastructure/database/sequelize/sequelize.module.js';
+import { Client } from '../../../domain/entities/client.entity.js';
+import type { ClientStatus } from '../../../domain/entities/client.entity.js';
+import { IClientRepository } from '../../../domain/interfaces/client.repository.js';
+import { ClientModel } from '../models/client.model.js';
+
+@Injectable()
+export class ClientRepository implements IClientRepository {
+  constructor(@Inject(SEQUELIZE) private readonly sequelize: Sequelize) {}
+
+  private get repo() {
+    return this.sequelize.getRepository(ClientModel);
+  }
+
+  async create(client: Client): Promise<Client> {
+    const created = await this.repo.create({
+      name: client.name,
+      email: client.email,
+      phone: client.phone,
+      address: client.address,
+      status: client.status,
+    });
+    return this.toDomain(created);
+  }
+
+  async findAll(page: number, limit: number) {
+    const { rows, count } = await this.repo.findAndCountAll({
+      offset: (page - 1) * limit,
+      limit,
+      order: [['id', 'ASC']],
+    });
+    return { items: rows.map((r) => this.toDomain(r)), total: count };
+  }
+
+  async findById(id: number): Promise<Client | null> {
+    const found = await this.repo.findByPk(id);
+    return found ? this.toDomain(found) : null;
+  }
+
+  async findByEmail(email: string): Promise<Client | null> {
+    const found = await this.repo.findOne({ where: { email } });
+    return found ? this.toDomain(found) : null;
+  }
+
+  async count(): Promise<number> {
+    return this.repo.count();
+  }
+
+  private toDomain(m: ClientModel): Client {
+    return new Client({
+      id: m.id,
+      name: m.name,
+      email: m.email ?? null,
+      phone: m.phone ?? null,
+      address: m.address ?? null,
+      status: (m.status as ClientStatus) ?? 'active',
+    });
+  }
+}
+EOF_BACKEND_IA
+```
+
+**Seeder:**
+
+```bash
+cat > src/features/business/clients/infrastructure/persistence/seeders/client.seeder.ts <<'EOF_BACKEND_IA'
+import { Inject, Injectable, Logger } from "@nestjs/common";
+import { Client } from '../../../domain/entities/client.entity.js';
+import { CLIENT_REPOSITORY } from '../../../domain/interfaces/client.repository.js';
+import type { IClientRepository } from '../../../domain/interfaces/client.repository.js';
+
+@Injectable()
+export class ClientSeeder {
+  private readonly logger = new Logger(ClientSeeder.name);
+
+  constructor(
+    @Inject(CLIENT_REPOSITORY) private readonly clientRepository: IClientRepository,
+  ) {}
+
+  async seed(): Promise<void> {
+    const email = 'demo.cliente@tecnogua.edu.co';
+    const existing = await this.clientRepository.findByEmail(email);
+    if (existing) {
+      this.logger.log('Seeder clients: ya existía el cliente demo (idempotente)');
+      return;
+    }
+    await this.clientRepository.create(
+      new Client({
+        name: 'Cliente Demo',
+        email,
+        phone: '3001234567',
+        address: 'Riohacha, La Guajira',
+        status: 'active',
+      }),
+    );
+    this.logger.log('Seeder clients: cliente demo creado');
+  }
+}
+EOF_BACKEND_IA
+```
+<p align="center">
+  <img src="capturas/Captura 53.PNG">
+</p>
