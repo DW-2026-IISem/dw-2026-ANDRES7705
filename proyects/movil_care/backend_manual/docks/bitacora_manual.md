@@ -1367,3 +1367,136 @@ EOF_BACKEND_IA
   <img src="capturas/Captura 61.PNG">
 </p>
 
+### 6.2 Capa de aplicación
+
+> 🔵 `application`
+
+```bash
+cat > src/features/business/product-types/application/dto/create-product-type.dto.ts <<'EOF_BACKEND_IA'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+
+export class CreateProductTypeDto {
+  @ApiProperty({ example: 'Bebidas' })
+  @IsString()
+  @IsNotEmpty({ message: 'name es requerido' })
+  @MaxLength(100)
+  name!: string;
+
+  @ApiPropertyOptional({ example: 'Bebidas y refrescos' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  description?: string;
+}
+EOF_BACKEND_IA
+```
+
+```bash
+cat > src/features/business/product-types/application/mappers/product-type.mapper.ts <<'EOF_BACKEND_IA'
+import { ProductType } from '../../domain/entities/product-type.entity.js';
+import { CreateProductTypeDto } from '../dto/create-product-type.dto.js';
+
+export class ProductTypeMapper {
+  static toEntity(dto: CreateProductTypeDto): ProductType {
+    return new ProductType({
+      name: dto.name,
+      description: dto.description ?? null,
+      status: 'active',
+    });
+  }
+
+  static toResponse(pt: ProductType) {
+    return {
+      id: pt.id,
+      name: pt.name,
+      description: pt.description,
+      status: pt.status,
+    };
+  }
+}
+EOF_BACKEND_IA
+```
+
+```bash
+cat > src/features/business/product-types/application/use-cases/create-product-type.use-case.ts <<'EOF_BACKEND_IA'
+import { Inject, Injectable } from '@nestjs/common';
+import { ProductTypeNameAlreadyExistsException } from '../../domain/exceptions/product-type-name-already-exists.exception.js';
+import { PRODUCT_TYPE_REPOSITORY } from '../../domain/interfaces/product-type.repository.js';
+import type { IProductTypeRepository } from '../../domain/interfaces/product-type.repository.js';
+import type { ProductType } from '../../domain/entities/product-type.entity.js';
+import { CreateProductTypeDto } from '../dto/create-product-type.dto.js';
+import { ProductTypeMapper } from '../mappers/product-type.mapper.js';
+
+@Injectable()
+export class CreateProductTypeUseCase {
+  constructor(
+    @Inject(PRODUCT_TYPE_REPOSITORY) private readonly repo: IProductTypeRepository,
+  ) {}
+
+  async execute(dto: CreateProductTypeDto): Promise<ProductType> {
+    const existing = await this.repo.findByName(dto.name);
+    if (existing) {
+      throw new ProductTypeNameAlreadyExistsException(dto.name);
+    }
+    return this.repo.create(ProductTypeMapper.toEntity(dto));
+  }
+}
+EOF_BACKEND_IA
+```
+
+```bash
+cat > src/features/business/product-types/application/use-cases/get-product-type-by-id.use-case.ts <<'EOF_BACKEND_IA'
+import { Inject, Injectable } from '@nestjs/common';
+import { ProductTypeNotFoundException } from '../../domain/exceptions/product-type-not-found.exception.js';
+import { PRODUCT_TYPE_REPOSITORY } from '../../domain/interfaces/product-type.repository.js';
+import type { IProductTypeRepository } from '../../domain/interfaces/product-type.repository.js';
+import type { ProductType } from '../../domain/entities/product-type.entity.js';
+
+@Injectable()
+export class GetProductTypeByIdUseCase {
+  constructor(
+    @Inject(PRODUCT_TYPE_REPOSITORY) private readonly repo: IProductTypeRepository,
+  ) {}
+
+  async execute(id: number): Promise<ProductType> {
+    const pt = await this.repo.findById(id);
+    if (!pt) {
+      throw new ProductTypeNotFoundException(id);
+    }
+    return pt;
+  }
+}
+EOF_BACKEND_IA
+```
+
+```bash
+cat > src/features/business/product-types/application/use-cases/list-product-types.use-case.ts <<'EOF_BACKEND_IA'
+import { Inject, Injectable } from '@nestjs/common';
+import { PRODUCT_TYPE_REPOSITORY } from '../../domain/interfaces/product-type.repository.js';
+import type { IProductTypeRepository } from '../../domain/interfaces/product-type.repository.js';
+import { ProductTypeMapper } from '../mappers/product-type.mapper.js';
+
+@Injectable()
+export class ListProductTypesUseCase {
+  constructor(
+    @Inject(PRODUCT_TYPE_REPOSITORY) private readonly repo: IProductTypeRepository,
+  ) {}
+
+  async execute(page: number, limit: number) {
+    const { items, total } = await this.repo.findAll(page, limit);
+    return {
+      items: items.map(ProductTypeMapper.toResponse),
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
+  }
+}
+EOF_BACKEND_IA
+```
+<p align="center">
+  <img src="capturas/Captura 62.PNG">
+</p>
+
+
+
+
