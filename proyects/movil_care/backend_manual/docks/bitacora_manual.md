@@ -799,4 +799,89 @@ EOF_BACKEND_IA
 
 > **Segmento:** primera feature completa. Fija el patrón Clean Architecture que se repite en las demás. Orden: `domain → application → infrastructure → presentation`.
 
+### 5.1 Capa de dominio
+
+> 🟢 `domain` — núcleo puro (sin Nest/Sequelize/HTTP).
+
+**Entidad `Client`:**
+
+```bash
+cat > src/features/business/clients/domain/entities/client.entity.ts <<'EOF_BACKEND_IA'
+export type ClientStatus = 'active' | 'inactive';
+
+export interface ClientProps {
+  id?: number | null;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  status?: ClientStatus;
+}
+
+export class Client {
+  readonly id: number | null;
+  readonly name: string;
+  readonly email: string | null;
+  readonly phone: string | null;
+  readonly address: string | null;
+  readonly status: ClientStatus;
+
+  constructor(props: ClientProps) {
+    this.id = props.id ?? null;
+    this.name = props.name;
+    this.email = props.email ?? null;
+    this.phone = props.phone ?? null;
+    this.address = props.address ?? null;
+    this.status = props.status ?? 'active';
+  }
+}
+EOF_BACKEND_IA
+```
+
+**Puerto `IClientRepository`:**
+
+```bash
+cat > src/features/business/clients/domain/interfaces/client.repository.ts <<'EOF_BACKEND_IA'
+import { Client } from '../entities/client.entity.js';
+
+export const CLIENT_REPOSITORY = 'IClientRepository';
+
+export interface IClientRepository {
+  create(client: Client): Promise<Client>;
+  findAll(page: number, limit: number): Promise<{ items: Client[]; total: number }>;
+  findById(id: number): Promise<Client | null>;
+  findByEmail(email: string): Promise<Client | null>;
+  count(): Promise<number>;
+}
+EOF_BACKEND_IA
+```
+
+**Excepciones:**
+
+```bash
+cat > src/features/business/clients/domain/exceptions/client-not-found.exception.ts <<'EOF_BACKEND_IA'
+import { EntityNotFoundException } from '../../../../../common/exceptions/entity-not-found.exception.js';
+
+export class ClientNotFoundException extends EntityNotFoundException {
+  constructor(id: number) {
+    super(`Cliente con id ${id} no encontrado`);
+  }
+}
+EOF_BACKEND_IA
+```
+
+```bash
+cat > src/features/business/clients/domain/exceptions/client-email-already-exists.exception.ts <<'EOF_BACKEND_IA'
+import { BusinessRuleException } from '../../../../../common/exceptions/business-rule.exception.js';
+
+export class ClientEmailAlreadyExistsException extends BusinessRuleException {
+  constructor(email: string) {
+    super(`Ya existe un cliente con el email ${email}`);
+  }
+}
+EOF_BACKEND_IA
+```
+<p align="center">
+  <img src="capturas/Captura 51.PNG">
+</p>
 
