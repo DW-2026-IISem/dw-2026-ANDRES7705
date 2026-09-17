@@ -708,3 +708,91 @@ EOF_BACKEND_IA
   <img src="capturas/Captura 45.PNG">
 </p>
 
+### 4.6 Health check y arranque
+
+> ⚙️ `transversal` — `health` + `main.ts` + `app.module.ts` (versión mínima).
+
+```bash
+cat > src/health/health.controller.ts <<'EOF_BACKEND_IA'
+import { Controller, Get } from '@nestjs/common';
+
+@Controller('health')
+export class HealthController {
+  @Get()
+  check() {
+    return { status: 'ok' };
+  }
+}
+EOF_BACKEND_IA
+```
+
+
+```bash
+cat > src/main.ts <<'EOF_BACKEND_IA'
+import { ValidationPipe } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { AppModule } from './app.module.js';
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter.js';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor.js';
+import { ResponseInterceptor } from './common/interceptors/response.interceptor.js';
+import { TimeoutInterceptor } from './common/interceptors/timeout.interceptor.js';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  app.setGlobalPrefix('api');
+  app.enableCors({ origin: 'http://localhost:4200', credentials: true });
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
+  app.useGlobalFilters(new GlobalExceptionFilter());
+  app.useGlobalInterceptors(
+    new ResponseInterceptor(),
+    new LoggingInterceptor(),
+    new TimeoutInterceptor(),
+  );
+
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('StoreLab — Backend solo Business')
+    .setDescription('API de negocio: clients, product-types, products, sales.')
+    .setVersion('1.0')
+    .build();
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('api/docs', app, document);
+
+  await app.listen(process.env.PORT ?? 3002);
+}
+await bootstrap();
+EOF_BACKEND_IA
+```
+
+
+```bash
+cat > src/app.module.ts <<'EOF_BACKEND_IA'
+import { Module } from '@nestjs/common';
+import { EnvironmentModule } from './config/environment/environment.module.js';
+import { HealthController } from './health/health.controller.js';
+import { SequelizeModule } from './infrastructure/database/sequelize/sequelize.module.js';
+
+@Module({
+  imports: [EnvironmentModule, SequelizeModule],
+  controllers: [HealthController],
+  providers: [],
+})
+export class AppModule {}
+EOF_BACKEND_IA
+```
+
+> **Versión mínima**: en ISS-07 añadiremos `BusinessModule` + `SeedersRunner`.
+
+> ✅ **Fin de ISS-02**: configuración, errores, interceptores y BD listos. La app arranca y conecta.
+
+<p align="center">
+  <img src="capturas/Captura 46.PNG">
+</p>
+
+
