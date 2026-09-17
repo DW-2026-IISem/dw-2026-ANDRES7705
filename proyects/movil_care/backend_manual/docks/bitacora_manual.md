@@ -1721,7 +1721,7 @@ EOF_BACKEND_IA
 
 > **Segmento:** productos comercializados por MóvilCare, con información de identificación comercial y una relación posterior con las unidades serializadas.
 
-## 7.1 Capa de dominio
+## 7.1 Capa de dominios
 
 >  `domain` — la entidad `Product` representa los equipos y accesorios que comercializa MóvilCare.
 
