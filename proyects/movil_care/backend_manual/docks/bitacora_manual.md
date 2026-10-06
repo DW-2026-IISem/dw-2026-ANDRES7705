@@ -1,4 +1,4 @@
-
+            
 ## 2. Requisitos previos
 
 - **Node.js ≥ 20** y **npm ≥ 10**: `node -v` y `npm -v`.
@@ -2017,13 +2017,17 @@ export class ProductModel extends Model {
 }
 EOF_BACKEND_IA
 
+**Actualiza `src/infrastructure/database/sequelize/sequelize.factory.ts`** agregando los imports y reemplazando `ALL_MODELS`. Este es código TypeScript; no lo ejecutes directamente en Bash:
+
+```ts
+import { ClientModel } from '../../../features/business/clients/infrastructure/persistence/models/client.model.js';
+import { ProductTypeModel } from '../../../features/business/product-types/infrastructure/persistence/models/product-type.model.js';
 import { ProductModel } from '../../../features/business/products/infrastructure/persistence/models/product.model.js';
 
 export const ALL_MODELS: any[] = [
   ClientModel,
-  ProductModel,
-];
-
+  Product
+  
 ## 7.4 Repositorio de productos
 
 cat > src/features/business/products/infrastructure/persistence/repositories/product.repository.ts <<'EOF_BACKEND_IA'
