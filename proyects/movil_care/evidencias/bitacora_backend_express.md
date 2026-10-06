@@ -529,3 +529,58 @@ Crear `serialized-units.model.ts`, `serialized-units.controller.ts`, `serialized
 
 ![alt text](image-1.png)
 
+# 6. ISS-06 — Sales y sale details
+
+**Objetivo:** modelar la factura y sus líneas y vincular seriales cuando el producto lo requiera. **Bloqueado por:** ISS-04.
+
+### Criterios de aceptación
+
+- [ ] Tablas `sales` y `sale_details`, features y rutas con nombres ingleses plurales.
+- [ ] Venta pertenece a cliente y opcionalmente a empleado vendedor.
+- [ ] Detalle pertenece a venta y producto; unidad serializada opcional y única.
+- [ ] Estados y totales respetan la matriz y reglas abajo.
+- [ ] La confirmación se realiza en transacción y no vende una unidad dos veces.
+
+### `sales`
+
+| Atributo | Tipo / restricciones |
+|---|---|
+| `number` | `STRING(20)`, requerido, único |
+| `customerId` | BIGINT, FK requerida a `customers` |
+| `sellerId` | BIGINT, FK opcional a `employees` |
+| `soldAt` | DATE, requerido |
+| `subtotal`, `taxes`, `total` | `DECIMAL(12,2)`, requeridos |
+| `discount` | `DECIMAL(12,2)`, default `0` |
+| `state` | ENUM `DRAFT`, `CONFIRMED`, `PAID`, `CANCELLED`, requerido |
+
+Regla: `total = subtotal - discount + taxes`.
+
+### `sale_details`
+
+| Atributo | Tipo / restricciones |
+|---|---|
+| `saleId` | BIGINT, FK requerida a `sales` |
+| `productId` | BIGINT, FK requerida a `products` |
+| `serializedUnitId` | BIGINT, FK opcional a `serialized_units`, único si tiene valor |
+| `quantity` | INTEGER, requerido, mayor que 0; debe ser 1 si hay serial |
+| `unitPrice` | `DECIMAL(12,2)`, requerido |
+| `discount` | `DECIMAL(12,2)`, default `0` |
+| `taxPercentage` | `DECIMAL(5,2)`, opcional |
+| `total` | `DECIMAL(12,2)`, requerido |
+| `notes` | `STRING(255)`, opcional |
+
+Asociaciones: `Customer.hasMany(Sale)`, `Employee.hasMany(Sale, { foreignKey: "sellerId" })`, `Sale.hasMany(SaleDetail)`, `Product.hasMany(SaleDetail)` y `SaleDetail.belongsTo(SerializedUnit)`. Usa nombres explícitos de `foreignKey` y alias cuando un modelo participa con más de un rol.
+
+### Flujo de confirmación
+
+Implementa un método de servicio transaccional; no confirmes mediante CRUD genérico:
+
+1. Abrir transacción y leer venta y detalles.
+2. Verificar estado `DRAFT`, cliente activo, productos activos y cantidades/totales.
+3. Para cada producto con `requiresSerial = true`, exigir exactamente una unidad serializada compatible en estado `IN_STOCK`; exigir `quantity = 1`.
+4. Reservar/actualizar la unidad dentro de la transacción y cambiarla a `SOLD` al confirmar.
+5. Recalcular subtotal, descuento, impuestos y total desde las líneas; cambiar venta a `CONFIRMED`.
+6. Confirmar transacción; ante cualquier fallo, rollback completo.
+
+![alt text](imaneges/confirmed.png)
+

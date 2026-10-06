@@ -28,6 +28,14 @@ function hasValidAttributeValues(model, body) {
             case "INTEGER":
             case "SMALLINT":
                 return typeof value === "number" && Number.isInteger(value);
+            case "BIGINT":
+                return ((typeof value === "number" && Number.isSafeInteger(value)) ||
+                    (typeof value === "string" && /^\d+$/.test(value) && Number.isSafeInteger(Number(value))));
+            case "DATE":
+            case "DATEONLY":
+                return (value instanceof Date && Number.isFinite(value.getTime())) || (typeof value === "string" &&
+                    value.trim().length > 0 &&
+                    Number.isFinite(Date.parse(value)));
             case "DECIMAL":
                 return ((typeof value === "number" && Number.isFinite(value)) ||
                     (typeof value === "string" && /^-?(?:0|[1-9]\d*)(?:\.\d+)?$/.test(value)));
@@ -48,7 +56,7 @@ function sendError(res, error, operation) {
         });
         return;
     }
-    console.error(`Unexpected error while ${operation}`);
+    console.error(`Unexpected error while ${operation}:`, error);
     res.status(500).json({ error: "Internal server error" });
 }
 function createCrudController(model, options) {
