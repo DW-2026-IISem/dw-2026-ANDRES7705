@@ -584,3 +584,61 @@ Implementa un método de servicio transaccional; no confirmes mediante CRUD gen�
 
 ![alt text](imaneges/confirmed.png)
 
+# 7. ISS-06 — Warranties
+
+> El archivo de entrada se llama `iss-07.md`, pero su encabezado y el manual del proyecto identifican esta entrega como **ISS-06 — Warranties**. Se conserva esa secuencia funcional: depende de las ventas (ISS-05); la ISS-07 del manual corresponde a órdenes de servicio.
+
+**Objetivo:** asociar garantías comerciales, extendidas o de proveedor a líneas vendidas.
+
+### Implementación en MovilCare Express
+
+- Feature `src/features/businesses/warranties/`, tabla `warranties` y rutas `/api/warranties`.
+- `Warranty` pertenece a `SaleDetail` y opcionalmente a `SerializedUnit`.
+- La unidad se deriva de la línea de venta. Si se envía `serializedUnitId`, debe coincidir con el serial asociado a esa línea.
+- Solo se crean garantías para ventas `CONFIRMED` o `PAID`.
+- Se conserva el borrado lógico mediante `isActive`.
+- `products.defaultWarrantyMonths` no establece fechas automáticamente; las fechas concretas deben enviarse.
+
+### Columnas
+
+| Atributo | Tipo / restricciones |
+|---|---|
+| `saleDetailId` | BIGINT, FK requerida a `sale_details` |
+| `serializedUnitId` | BIGINT, FK opcional a `serialized_units`; se toma de la línea de venta |
+| `type` | ENUM `COMMERCIAL`, `EXTENDED`, `SUPPLIER`, requerido |
+| `coverageDescription` | TEXT, opcional |
+| `startDate`, `endDate` | DATE, requeridas; fin igual o posterior al inicio |
+| `state` | ENUM `VALID`, `EXPIRED`, `CANCELLED`, `CONSUMED`, default `VALID` |
+| `isActive` | BOOLEAN, default `true` |
+
+### Crear garantía
+
+```http
+POST /api/warranties
+Content-Type: application/json
+```
+
+```json
+{
+  "saleDetailId": 1,
+  "type": "COMMERCIAL",
+  "coverageDescription": "Garantía comercial de prueba",
+  "startDate": "2026-10-06",
+  "endDate": "2027-10-06"
+}
+```
+
+### Consultar por serial o cliente
+
+```http
+GET /api/warranties?serial=SERIAL-DEL-EQUIPO
+GET /api/warranties?customerId=1
+GET /api/warranties?serial=SERIAL-DEL-EQUIPO&customerId=1&state=VALID
+```
+
+La respuesta incluye la línea de venta, la venta y el cliente al filtrar por cliente, y la unidad serializada al filtrar por serial. También admite `limit` (1–100), `offset` (entero no negativo) y `state` (`VALID`, `EXPIRED`, `CANCELLED`, `CONSUMED`).
+
+
+![alt text](image-2.png)
+
+

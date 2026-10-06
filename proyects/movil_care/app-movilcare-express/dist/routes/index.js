@@ -11,6 +11,7 @@ const sale_details_routes_1 = __importDefault(require("../features/businesses/sa
 const sales_routes_1 = __importDefault(require("../features/businesses/sales/sales.routes"));
 const serialized_units_routes_1 = __importDefault(require("../features/businesses/serialized-units/serialized-units.routes"));
 const spare_parts_routes_1 = __importDefault(require("../features/businesses/spare-parts/spare-parts.routes"));
+const warranties_routes_1 = __importDefault(require("../features/businesses/warranties/warranties.routes"));
 const router = (0, express_1.Router)();
 router.use(customers_routes_1.default);
 router.use(employees_routes_1.default);
@@ -19,5 +20,6 @@ router.use(sales_routes_1.default);
 router.use(sale_details_routes_1.default);
 router.use(serialized_units_routes_1.default);
 router.use(spare_parts_routes_1.default);
+router.use(warranties_routes_1.default);
 exports.default = router;
 //# sourceMappingURL=index.js.map

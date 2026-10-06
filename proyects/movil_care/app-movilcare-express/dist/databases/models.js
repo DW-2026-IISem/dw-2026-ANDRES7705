@@ -7,4 +7,5 @@ require("../features/businesses/spare-parts/spare-parts.model");
 require("../features/businesses/serialized-units/serialized-units.model");
 require("../features/businesses/sales/sales.model");
 require("../features/businesses/sale-details/sale-details.model");
+require("../features/businesses/warranties/warranties.model");
 //# sourceMappingURL=models.js.map
