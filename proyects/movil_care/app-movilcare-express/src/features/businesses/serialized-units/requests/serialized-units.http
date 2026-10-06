@@ -1,0 +1,56 @@
+@baseUrl = http://localhost:4000/api
+@id = 1
+
+### List serialized units
+GET {{baseUrl}}/serialized-units?productId=1&state=IN_STOCK
+
+### Read one serialized unit
+GET {{baseUrl}}/serialized-units/{{id}}
+
+### Create serialized unit
+POST {{baseUrl}}/serialized-units
+Content-Type: application/json
+
+{
+  "productId": 1,
+  "serial": "SN-1001-A",
+  "secondarySerial": "SN-1001-B",
+  "state": "IN_STOCK",
+  "receivedAt": "2026-10-06"
+}
+
+### Replace serialized unit
+PUT {{baseUrl}}/serialized-units/{{id}}
+Content-Type: application/json
+
+{
+  "productId": 1,
+  "serial": "SN-1001-A",
+  "secondarySerial": "SN-1001-C",
+  "state": "IN_STOCK",
+  "receivedAt": "2026-10-06",
+  "isActive": true
+}
+
+### Partially update serialized unit
+PATCH {{baseUrl}}/serialized-units/{{id}}
+Content-Type: application/json
+
+{
+  "isActive": false
+}
+
+### Sell serialized unit
+PATCH {{baseUrl}}/serialized-units/{{id}}/sell
+Content-Type: application/json
+
+{}
+
+### Put serialized unit in service
+PATCH {{baseUrl}}/serialized-units/{{id}}/in-service
+Content-Type: application/json
+
+{}
+
+### Soft delete serialized unit
+DELETE {{baseUrl}}/serialized-units/{{id}}

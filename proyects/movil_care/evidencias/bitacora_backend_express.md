@@ -501,3 +501,31 @@ En cada `<feature>.routes.ts`, registra el endpoint base inglés plural y sus m�
 ![alt text](image.png)
 
 ---
+
+# 5. ISS-04 — Serialized units
+
+**Objetivo:** rastrear cada equipo físico mediante serial e identificar su producto. **Bloqueado por:** ISS-03.
+
+### Criterios de aceptación
+
+- [ ] Modelo en `src/features/businesses/serialized-units/` y tabla `serialized_units`.
+- [ ] `product_id` referencia `products.id`; `serial` es único y requerido.
+- [ ] `secondary_serial` admite NULL y es único cuando tenga valor.
+- [ ] Estado limitado a `IN_STOCK`, `SOLD`, `IN_SERVICE`, `RETIRED`.
+- [ ] CRUD y asociación `Product.hasMany(SerializedUnit)` / `SerializedUnit.belongsTo(Product)`.
+
+### Columnas
+
+| Atributo | Tipo / restricciones |
+|---|---|
+| `productId` | BIGINT, FK requerida a `products` |
+| `serial` | `STRING(80)`, requerido, único |
+| `secondarySerial` | `STRING(80)`, opcional, único si no es NULL |
+| `state` | ENUM `IN_STOCK`, `SOLD`, `IN_SERVICE`, `RETIRED`, requerido |
+| `receivedAt` | DATE, opcional |
+| `isActive` | BOOLEAN, default `true` |
+
+Crear `serialized-units.model.ts`, `serialized-units.controller.ts`, `serialized-units.routes.ts` y requests siguiendo ISS-03. El endpoint CRUD es `/api/serialized-units`; filtrar por `productId` y `state` mediante query params. Proteger cambios de estado: no aceptar cualquier transición desde PATCH; las operaciones de venta y servicio controlarán las transiciones permitidas.
+
+![alt text](image-1.png)
+

@@ -7,8 +7,10 @@ exports.App = exports.sequelize = void 0;
 const dotenv_1 = __importDefault(require("dotenv"));
 const express_1 = __importDefault(require("express"));
 const morgan_1 = __importDefault(require("morgan"));
+require("../databases/models");
 const db_1 = require("../databases/db");
 Object.defineProperty(exports, "sequelize", { enumerable: true, get: function () { return db_1.sequelize; } });
+const routes_1 = __importDefault(require("../routes"));
 var cors = require("cors");
 dotenv_1.default.config();
 class App {
@@ -29,7 +31,7 @@ class App {
         this.app.use(express_1.default.urlencoded({ extended: false }));
     }
     routes() {
-        // ISS-03 §4.3
+        this.app.use("/api", routes_1.default);
     }
     async dbConnection() {
         try {
@@ -42,6 +44,7 @@ class App {
     }
     async listen() {
         await this.dbConnection();
+        await db_1.sequelize.sync({ alter: true });
         await new Promise((resolve, reject) => {
             const server = this.app.listen(this.app.get('port'), () => {
                 console.log(`🚀 Servidor ejecutándose en puerto ${this.app.get('port')}`);
