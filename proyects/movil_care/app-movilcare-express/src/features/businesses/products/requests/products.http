@@ -1,0 +1,42 @@
+@baseUrl = http://localhost:4000/api
+@id = 1
+
+### List products
+GET {{baseUrl}}/products
+
+### Read one product
+GET {{baseUrl}}/products/{{id}}
+
+### Create product
+POST {{baseUrl}}/products
+Content-Type: application/json
+
+{
+  "sku": "DEMO-PRODUCT-001",
+  "name": "Demo equipment",
+  "type": "EQUIPMENT",
+  "price": "125000.00",
+  "requiresSerial": true
+}
+
+### Replace product
+PUT {{baseUrl}}/products/{{id}}
+Content-Type: application/json
+
+{
+  "sku": "DEMO-PRODUCT-001",
+  "name": "Demo equipment",
+  "type": "EQUIPMENT",
+  "price": "125000.00"
+}
+
+### Partially update product
+PATCH {{baseUrl}}/products/{{id}}
+Content-Type: application/json
+
+{
+  "isActive": false
+}
+
+### Soft-delete product
+DELETE {{baseUrl}}/products/{{id}}

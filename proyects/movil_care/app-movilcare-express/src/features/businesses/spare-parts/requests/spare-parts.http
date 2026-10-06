@@ -1,0 +1,42 @@
+@baseUrl = http://localhost:4000/api
+@id = 1
+
+### List spare parts
+GET {{baseUrl}}/spare-parts
+
+### Read one spare part
+GET {{baseUrl}}/spare-parts/{{id}}
+
+### Create spare part
+POST {{baseUrl}}/spare-parts
+Content-Type: application/json
+
+{
+  "sku": "DEMO-PART-001",
+  "name": "Demo replacement part",
+  "currentStock": 5,
+  "minimumStock": 1,
+  "price": "25000.00"
+}
+
+### Replace spare part
+PUT {{baseUrl}}/spare-parts/{{id}}
+Content-Type: application/json
+
+{
+  "sku": "DEMO-PART-001",
+  "name": "Demo replacement part",
+  "currentStock": 5,
+  "minimumStock": 1
+}
+
+### Partially update spare part
+PATCH {{baseUrl}}/spare-parts/{{id}}
+Content-Type: application/json
+
+{
+  "currentStock": 4
+}
+
+### Soft-delete spare part
+DELETE {{baseUrl}}/spare-parts/{{id}}

@@ -1,7 +1,9 @@
 import dotenv from "dotenv";
 import express, { Application } from "express";
 import morgan from "morgan";
+import "../databases/models";
 import { sequelize, testConnection } from "../databases/db";
+import apiRouter from "../routes";
 var cors = require("cors");
 
 dotenv.config();
@@ -30,7 +32,7 @@ export class App {
   }
 
   private routes(): void {
-    // ISS-03 §4.3
+    this.app.use("/api", apiRouter);
   }
 
   private async dbConnection(): Promise<void> {
@@ -44,6 +46,7 @@ export class App {
 
   async listen() {
     await this.dbConnection();
+    await sequelize.sync({ alter: true });
 
     await new Promise<void>((resolve, reject) => {
       const server = this.app.listen(this.app.get('port'), () => {

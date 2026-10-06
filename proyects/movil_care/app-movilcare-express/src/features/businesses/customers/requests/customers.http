@@ -1,0 +1,42 @@
+@baseUrl = http://localhost:4000/api
+@id = 1
+
+### List customers
+GET {{baseUrl}}/customers
+
+### Read one customer
+GET {{baseUrl}}/customers/{{id}}
+
+### Create customer
+POST {{baseUrl}}/customers
+Content-Type: application/json
+
+{
+  "documentType": "CC",
+  "documentNumber": "DEMO-10001",
+  "firstName": "Demo",
+  "lastName": "Customer",
+  "email": "demo.customer@example.com"
+}
+
+### Replace customer
+PUT {{baseUrl}}/customers/{{id}}
+Content-Type: application/json
+
+{
+  "documentType": "CC",
+  "documentNumber": "DEMO-10001",
+  "firstName": "Demo",
+  "lastName": "Customer"
+}
+
+### Partially update customer
+PATCH {{baseUrl}}/customers/{{id}}
+Content-Type: application/json
+
+{
+  "phone": "+570000000000"
+}
+
+### Soft-delete customer
+DELETE {{baseUrl}}/customers/{{id}}

@@ -1,0 +1,38 @@
+@baseUrl = http://localhost:4000/api
+@id = 1
+
+### List employees
+GET {{baseUrl}}/employees
+
+### Read one employee
+GET {{baseUrl}}/employees/{{id}}
+
+### Create employee
+POST {{baseUrl}}/employees
+Content-Type: application/json
+
+{
+  "name": "Demo employee",
+  "role": "SELLER",
+  "email": "demo.employee@example.com"
+}
+
+### Replace employee
+PUT {{baseUrl}}/employees/{{id}}
+Content-Type: application/json
+
+{
+  "name": "Demo employee",
+  "role": "SELLER"
+}
+
+### Partially update employee
+PATCH {{baseUrl}}/employees/{{id}}
+Content-Type: application/json
+
+{
+  "isActive": false
+}
+
+### Soft-delete employee
+DELETE {{baseUrl}}/employees/{{id}}
