@@ -1,9 +1,12 @@
 import dotenv from "dotenv";
 import express, { Application } from "express";
 import morgan from "morgan";
+import { sequelize, testConnection } from "../databases/db";
 var cors = require("cors");
 
 dotenv.config();
+
+export { sequelize };
 
 export class App {
   public app: Application;
@@ -13,7 +16,6 @@ export class App {
     this.settings();
     this.middlewares();
     this.routes();
-    this.dbConnection();
   }
 
   private settings(): void {
@@ -32,11 +34,24 @@ export class App {
   }
 
   private async dbConnection(): Promise<void> {
-    // ISS-02 / ISS-03
+    try {
+      await testConnection();
+    } catch (error) {
+      console.error('Error connecting to MySQL database:', error);
+      throw error;
+    }
   }
 
   async listen() {
-    await this.app.listen(this.app.get('port'));
-    console.log(`🚀 Servidor ejecutándose en puerto ${this.app.get('port')}`);
+    await this.dbConnection();
+
+    await new Promise<void>((resolve, reject) => {
+      const server = this.app.listen(this.app.get('port'), () => {
+        console.log(`🚀 Servidor ejecutándose en puerto ${this.app.get('port')}`);
+        resolve();
+      });
+
+      server.on('error', (err) => reject(err));
+    });
   }
 }

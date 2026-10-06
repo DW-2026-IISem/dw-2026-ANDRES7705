@@ -291,3 +291,71 @@ npm run dev
 ![alt text](imaneges/run.png)
 
 > El servidor debe arrancar sin error. Detenerlo con Ctrl+C antes de continuar.
+
+# 3. ISS-02 — Sequelize y conexión a MySQL
+
+**Objetivo:** conexión reutilizable y configuración fuera del código. **Bloqueado por:** ISS-01.
+
+### Criterios de aceptación
+
+- [ ] Sequelize y `mysql2` instalados.
+- [ ] `.env` contiene conexión para MySQL y está excluido de Git.
+- [ ] `src/databases/db.ts` exporta `sequelize` y `testConnection`.
+- [ ] La aplicación prueba la conexión antes de sincronizar modelos.
+
+## 3.1 Dependencias y entorno
+
+```bash
+npm install sequelize@^6 mysql2
+```
+
+Añade `.env`:
+
+```dotenv
+PORT=4000
+DB_ENGINE=mysql
+MYSQL_HOST=172.23.120.29
+MYSQL_PORT=3307
+MYSQL_USER=root
+MYSQL_PASSWORD=andres123453
+MYSQL_NAME=movil_care
+NODE_ENV=development
+```
+
+Asegúrate de que `.env` esté incluido en `.gitignore`. Usa `.env.example` para compartir solo claves y valores de muestra.
+
+## 3.2 Crear `src/databases/db.ts`
+
+```bash
+: > src/databases/db.ts
+cat >> src/databases/db.ts << 'EOF'
+import { Sequelize } from "sequelize";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+export const sequelize = new Sequelize(
+  process.env.MYSQL_NAME || "movilcare_dev",
+  process.env.MYSQL_USER || "root",
+  process.env.MYSQL_PASSWORD || "",
+  {
+    host: process.env.MYSQL_HOST || "127.0.0.1",
+    port: Number(process.env.MYSQL_PORT) || 3306,
+    dialect: "mysql",
+    logging: process.env.NODE_ENV === "development" ? console.log : false,
+    define: { underscored: true, timestamps: true },
+  }
+);
+
+export async function testConnection(): Promise<void> {
+  await sequelize.authenticate();
+  console.log("MySQL connection established");
+}
+EOF
+```
+
+**PARCHE** — importa `sequelize` y `testConnection` en `src/configs/index.ts`, e implementa una inicialización asíncrona antes de abrir el puerto. Desde ISS-03 se registrarán los modelos y asociaciones antes de `sequelize.sync({ alter: true })`.
+
+**Verificación y cierre:** `npx tsc --noEmit`; con MySQL activo, `npm run dev` debe conectar sin crear aún tablas de negocio.
+
+![alt text](imaneges/run-iss02.png)
