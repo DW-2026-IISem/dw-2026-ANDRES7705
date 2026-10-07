@@ -1015,3 +1015,537 @@ Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABL
 Executing (default): SHOW INDEX FROM `service_authorizations`
 🚀 Servidor ejecutándose en puerto 4000
 [32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/server.ts`[39m
+◇ injected env (8) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+◇ injected env (0) from .env // tip: ⌘ enable debugging { debug: true }
+📘 Swagger UI: /api/docs | OpenAPI JSON: /api/docs.json
+Executing (default): SELECT 1+1 AS result
+MySQL connection established
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'product_types' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `product_types`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'products' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `products`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'customers' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `customers`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'employees' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `employees`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'spare_parts' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `spare_parts`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'serialized_units' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `serialized_units`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'sales' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `sales`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'sale_details' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `sale_details`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'warranties' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `warranties`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'service_orders' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `service_orders`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'diagnostics' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `diagnostics`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'service_authorizations' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `service_authorizations`
+🚀 Servidor ejecutándose en puerto 4000
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/server.ts`[39m
+◇ injected env (8) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/server.ts`[39m
+◇ injected env (8) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+◇ injected env (0) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+📘 Swagger UI: /api/docs | OpenAPI JSON: /api/docs.json
+Executing (default): SELECT 1+1 AS result
+MySQL connection established
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'product_types' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `product_types`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'products' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `products`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'customers' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `customers`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'employees' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `employees`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'spare_parts' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `spare_parts`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'serialized_units' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `serialized_units`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'sales' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `sales`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'sale_details' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `sale_details`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'warranties' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `warranties`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'service_orders' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `service_orders`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'diagnostics' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `diagnostics`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'service_authorizations' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `service_authorizations`
+🚀 Servidor ejecutándose en puerto 4000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/server.ts`[39m
+◇ injected env (8) from .env // tip: ⌘ suppress logs { quiet: true }
+◇ injected env (0) from .env // tip: ⌘ suppress logs { quiet: true }
+📘 Swagger UI: /api/docs | OpenAPI JSON: /api/docs.json
+Executing (default): SELECT 1+1 AS result
+MySQL connection established
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'product_types' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `product_types`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'products' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `products`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'customers' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `customers`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'employees' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `employees`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'spare_parts' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `spare_parts`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'serialized_units' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `serialized_units`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'sales' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `sales`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'sale_details' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `sale_details`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'warranties' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `warranties`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'service_orders' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `service_orders`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'diagnostics' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `diagnostics`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'service_authorizations' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `service_authorizations`
+🚀 Servidor ejecutándose en puerto 4000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/server.ts`[39m
+◇ injected env (8) from .env // tip: ⌘ suppress logs { quiet: true }
+◇ injected env (0) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+📘 Swagger UI: /api/docs | OpenAPI JSON: /api/docs.json
+Executing (default): SELECT 1+1 AS result
+MySQL connection established
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'product_types' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `product_types`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'products' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `products`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'customers' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `customers`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'employees' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `employees`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'spare_parts' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `spare_parts`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'serialized_units' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `serialized_units`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'sales' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `sales`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'sale_details' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `sale_details`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'warranties' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `warranties`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'service_orders' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `service_orders`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'diagnostics' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `diagnostics`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'service_authorizations' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `service_authorizations`
+🚀 Servidor ejecutándose en puerto 4000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/server.ts`[39m
+◇ injected env (8) from .env // tip: ⌘ enable debugging { debug: true }
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/server.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/server.ts`[39m
+◇ injected env (8) from .env // tip: ⌘ suppress logs { quiet: true }
+◇ injected env (0) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+📘 Swagger UI: /api/docs | OpenAPI JSON: /api/docs.json
+Executing (default): SELECT 1+1 AS result
+MySQL connection established
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'product_types' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `product_types`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'products' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `products`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'customers' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `customers`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'employees' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `employees`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'spare_parts' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `spare_parts`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'serialized_units' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `serialized_units`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'sales' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `sales`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'sale_details' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `sale_details`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'warranties' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `warranties`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'service_orders' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `service_orders`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'diagnostics' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `diagnostics`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'service_authorizations' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `service_authorizations`
+🚀 Servidor ejecutándose en puerto 4000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/server.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/server.ts`[39m
+◇ injected env (8) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/server.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/server.ts`[39m
+◇ injected env (8) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/ts-node/src/index.ts:859
+    return new TSError(diagnosticText, diagnosticCodes, diagnostics);
+           ^
+TSError: ⨯ Unable to compile TypeScript:
+src/routes/index.ts(5,8): error TS2300: Duplicate identifier 'productTypesRouter'.
+src/routes/index.ts(6,8): error TS2300: Duplicate identifier 'productTypesRouter'.
+
+    at createTSError (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/ts-node/src/index.ts:859:12)
+    at reportTSError (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/ts-node/src/index.ts:863:19)
+    at getOutput (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/ts-node/src/index.ts:1077:36)
+    at Object.compile (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/ts-node/src/index.ts:1433:41)
+    at Module.m._compile (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/ts-node/src/index.ts:1617:30)
+    at node:internal/modules/cjs/loader:1913:10
+    at Object.require.extensions.<computed> [as .ts] (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/ts-node/src/index.ts:1621:12)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19) {
+  diagnosticCodes: [ 2300, 2300 ]
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/server.ts`[39m
+◇ injected env (8) from .env // tip: ⌘ enable debugging { debug: true }
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/server.ts`[39m
+◇ injected env (8) from .env // tip: ⌘ suppress logs { quiet: true }
+◇ injected env (0) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+📘 Swagger UI: /api/docs | OpenAPI JSON: /api/docs.json
+Executing (default): SELECT 1+1 AS result
+MySQL connection established
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'product_types' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `product_types`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'products' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `products`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'customers' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `customers`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'employees' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `employees`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'spare_parts' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `spare_parts`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'serialized_units' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `serialized_units`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'sales' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `sales`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'sale_details' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `sale_details`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'warranties' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `warranties`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'service_orders' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `service_orders`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'diagnostics' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `diagnostics`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'service_authorizations' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `service_authorizations`
+Executing (default): SHOW FULL COLUMNS FROM `products`;
+Executing (default): ALTER TABLE `products` ADD `product_type_id` BIGINT;
+/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/sequelize/src/dialects/mysql/query.js:46
+    const errForStack = new Error();
+                        ^
+Error
+    at Query.run (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/sequelize/src/dialects/mysql/query.js:46:25)
+    at /home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/sequelize/src/sequelize.js:650:28
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async MySQLQueryInterface.addColumn (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/sequelize/src/dialects/abstract/query-interface.js:430:12)
+    at async associateProductsWithProductTypes (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/src/databases/migrations/associate-products-with-product-types.ts:22:5)
+    at async App.listen (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/src/config/index.ts:57:5)
+    at async main (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/src/server.ts:5:5) {
+  name: 'SequelizeDatabaseError',
+  parent: Error: Duplicate column name 'product_type_id'
+      at Packet.asError (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/mysql2/lib/packets/packet.js:930:17)
+      at Query.execute (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/mysql2/lib/commands/command.js:29:26)
+      at Connection.handlePacket (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/mysql2/lib/base/connection.js:616:34)
+      at PacketParser.onPacket (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/mysql2/lib/base/connection.js:148:12)
+      at PacketParser.executeStart (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/mysql2/lib/packet_parser.js:86:16)
+      at Socket.<anonymous> (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/mysql2/lib/base/connection.js:156:25)
+      at Socket.emit (node:events:519:28)
+      at Socket.emit (node:domain:489:12)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3) {
+    code: 'ER_DUP_FIELDNAME',
+    errno: 1060,
+    sqlState: '42S21',
+    sqlMessage: "Duplicate column name 'product_type_id'",
+    sql: 'ALTER TABLE `products` ADD `product_type_id` BIGINT;',
+    parameters: undefined
+  },
+  original: Error: Duplicate column name 'product_type_id'
+      at Packet.asError (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/mysql2/lib/packets/packet.js:930:17)
+      at Query.execute (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/mysql2/lib/commands/command.js:29:26)
+      at Connection.handlePacket (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/mysql2/lib/base/connection.js:616:34)
+      at PacketParser.onPacket (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/mysql2/lib/base/connection.js:148:12)
+      at PacketParser.executeStart (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/mysql2/lib/packet_parser.js:86:16)
+      at Socket.<anonymous> (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/mysql2/lib/base/connection.js:156:25)
+      at Socket.emit (node:events:519:28)
+      at Socket.emit (node:domain:489:12)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3) {
+    code: 'ER_DUP_FIELDNAME',
+    errno: 1060,
+    sqlState: '42S21',
+    sqlMessage: "Duplicate column name 'product_type_id'",
+    sql: 'ALTER TABLE `products` ADD `product_type_id` BIGINT;',
+    parameters: undefined
+  },
+  sql: 'ALTER TABLE `products` ADD `product_type_id` BIGINT;',
+  parameters: {}
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/server.ts`[39m
+◇ injected env (8) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+◇ injected env (0) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+📘 Swagger UI: /api/docs | OpenAPI JSON: /api/docs.json
+Executing (default): SELECT 1+1 AS result
+MySQL connection established
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'product_types' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `product_types`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'products' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `products`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'customers' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `customers`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'employees' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `employees`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'spare_parts' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `spare_parts`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'serialized_units' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `serialized_units`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'sales' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `sales`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'sale_details' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `sale_details`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'warranties' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `warranties`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'service_orders' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `service_orders`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'diagnostics' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `diagnostics`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'service_authorizations' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `service_authorizations`
+Executing (default): SHOW FULL COLUMNS FROM `products`;
+Executing (default): SELECT id, type FROM products WHERE product_type_id IS NULL
+Executing (default): SELECT count(*) AS `count` FROM `products` AS `Product` WHERE `Product`.`product_type_id` IS NULL;
+Executing (default): SELECT products.id
+     FROM products
+     LEFT JOIN product_types ON product_types.id = products.product_type_id
+     WHERE product_types.id IS NULL
+Executing (default): ALTER TABLE `products` CHANGE `product_type_id` `product_type_id` BIGINT NOT NULL;
+Executing (default): SELECT CONSTRAINT_NAME AS constraint_name
+     FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND TABLE_NAME = 'products'
+       AND COLUMN_NAME = 'product_type_id'
+       AND REFERENCED_TABLE_NAME = 'product_types'
+Executing (default): ALTER TABLE `products` ADD CONSTRAINT `fk_products_product_type_id` FOREIGN KEY (`product_type_id`) REFERENCES `product_types` (`id`) ON UPDATE CASCADE ON DELETE RESTRICT;
+/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/sequelize/src/dialects/mysql/query.js:46
+    const errForStack = new Error();
+                        ^
+Error
+    at Query.run (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/sequelize/src/dialects/mysql/query.js:46:25)
+    at /home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/sequelize/src/sequelize.js:650:28
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async MySQLQueryInterface.addConstraint (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/sequelize/src/dialects/abstract/query-interface.js:768:12)
+    at async associateProductsWithProductTypes (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/src/databases/migrations/associate-products-with-product-types.ts:92:5)
+    at async App.listen (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/src/config/index.ts:57:5)
+    at async main (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/src/server.ts:5:5) {
+  name: 'SequelizeDatabaseError',
+  parent: Error: Duplicate foreign key constraint name 'fk_products_product_type_id'
+      at Packet.asError (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/mysql2/lib/packets/packet.js:930:17)
+      at Query.execute (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/mysql2/lib/commands/command.js:29:26)
+      at Connection.handlePacket (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/mysql2/lib/base/connection.js:616:34)
+      at PacketParser.onPacket (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/mysql2/lib/base/connection.js:148:12)
+      at PacketParser.executeStart (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/mysql2/lib/packet_parser.js:86:16)
+      at Socket.<anonymous> (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/mysql2/lib/base/connection.js:156:25)
+      at Socket.emit (node:events:519:28)
+      at Socket.emit (node:domain:489:12)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3) {
+    code: 'ER_FK_DUP_NAME',
+    errno: 1826,
+    sqlState: 'HY000',
+    sqlMessage: "Duplicate foreign key constraint name 'fk_products_product_type_id'",
+    sql: 'ALTER TABLE `products` ADD CONSTRAINT `fk_products_product_type_id` FOREIGN KEY (`product_type_id`) REFERENCES `product_types` (`id`) ON UPDATE CASCADE ON DELETE RESTRICT;',
+    parameters: undefined
+  },
+  original: Error: Duplicate foreign key constraint name 'fk_products_product_type_id'
+      at Packet.asError (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/mysql2/lib/packets/packet.js:930:17)
+      at Query.execute (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/mysql2/lib/commands/command.js:29:26)
+      at Connection.handlePacket (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/mysql2/lib/base/connection.js:616:34)
+      at PacketParser.onPacket (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/mysql2/lib/base/connection.js:148:12)
+      at PacketParser.executeStart (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/mysql2/lib/packet_parser.js:86:16)
+      at Socket.<anonymous> (/home/andrs_moscote/ia-lab/dw/dw-2026-ANDRES7705/proyects/movil_care/app-movilcare-express/node_modules/mysql2/lib/base/connection.js:156:25)
+      at Socket.emit (node:events:519:28)
+      at Socket.emit (node:domain:489:12)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3) {
+    code: 'ER_FK_DUP_NAME',
+    errno: 1826,
+    sqlState: 'HY000',
+    sqlMessage: "Duplicate foreign key constraint name 'fk_products_product_type_id'",
+    sql: 'ALTER TABLE `products` ADD CONSTRAINT `fk_products_product_type_id` FOREIGN KEY (`product_type_id`) REFERENCES `product_types` (`id`) ON UPDATE CASCADE ON DELETE RESTRICT;',
+    parameters: undefined
+  },
+  sql: 'ALTER TABLE `products` ADD CONSTRAINT `fk_products_product_type_id` FOREIGN KEY (`product_type_id`) REFERENCES `product_types` (`id`) ON UPDATE CASCADE ON DELETE RESTRICT;',
+  parameters: {}
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/server.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/server.ts`[39m
+◇ injected env (8) from .env // tip: ⌘ enable debugging { debug: true }
+◇ injected env (0) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+📘 Swagger UI: /api/docs | OpenAPI JSON: /api/docs.json
+Executing (default): SELECT 1+1 AS result
+MySQL connection established
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'product_types' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `product_types`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'products' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `products`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'customers' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `customers`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'employees' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `employees`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'spare_parts' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `spare_parts`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'serialized_units' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `serialized_units`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'sales' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `sales`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'sale_details' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `sale_details`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'warranties' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `warranties`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'service_orders' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `service_orders`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'diagnostics' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `diagnostics`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'service_authorizations' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `service_authorizations`
+Executing (default): SHOW FULL COLUMNS FROM `products`;
+Executing (default): SELECT id, type FROM products WHERE product_type_id IS NULL
+Executing (default): SELECT count(*) AS `count` FROM `products` AS `Product` WHERE `Product`.`product_type_id` IS NULL;
+Executing (default): SELECT products.id
+     FROM products
+     LEFT JOIN product_types ON product_types.id = products.product_type_id
+     WHERE product_types.id IS NULL
+Executing (default): ALTER TABLE `products` CHANGE `product_type_id` `product_type_id` BIGINT NOT NULL;
+Executing (default): SELECT CONSTRAINT_NAME AS constraint_name
+     FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND TABLE_NAME = 'products'
+       AND COLUMN_NAME = 'product_type_id'
+       AND REFERENCED_TABLE_NAME = 'product_types'
+🚀 Servidor ejecutándose en puerto 4000
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/server.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/server.ts`[39m
+◇ injected env (8) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/server.ts`[39m
+◇ injected env (8) from .env // tip: ⌘ suppress logs { quiet: true }
+◇ injected env (0) from .env // tip: ⌘ enable debugging { debug: true }
+📘 Swagger UI: /api/docs | OpenAPI JSON: /api/docs.json
+Executing (default): SELECT 1+1 AS result
+MySQL connection established
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'product_types' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `product_types`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'products' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `products`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'customers' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `customers`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'employees' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `employees`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'spare_parts' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `spare_parts`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'serialized_units' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `serialized_units`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'sales' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `sales`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'sale_details' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `sale_details`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'warranties' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `warranties`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'service_orders' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `service_orders`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'diagnostics' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `diagnostics`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'service_authorizations' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `service_authorizations`
+Executing (default): SHOW FULL COLUMNS FROM `products`;
+Executing (default): SELECT id, type FROM products WHERE product_type_id IS NULL
+Executing (default): SELECT count(*) AS `count` FROM `products` AS `Product` WHERE `Product`.`product_type_id` IS NULL;
+Executing (default): SELECT products.id
+     FROM products
+     LEFT JOIN product_types ON product_types.id = products.product_type_id
+     WHERE product_types.id IS NULL
+Executing (default): ALTER TABLE `products` CHANGE `product_type_id` `product_type_id` BIGINT NOT NULL;
+Executing (default): SELECT CONSTRAINT_NAME AS constraint_name
+     FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND TABLE_NAME = 'products'
+       AND COLUMN_NAME = 'product_type_id'
+       AND REFERENCED_TABLE_NAME = 'product_types'
+🚀 Servidor ejecutándose en puerto 4000
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/server.ts`[39m
+◇ injected env (8) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+◇ injected env (0) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+📘 Swagger UI: /api/docs | OpenAPI JSON: /api/docs.json
+Executing (default): SELECT 1+1 AS result
+MySQL connection established
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'product_types' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `product_types`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'products' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `products`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'customers' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `customers`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'employees' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `employees`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'spare_parts' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `spare_parts`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'serialized_units' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `serialized_units`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'sales' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `sales`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'sale_details' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `sale_details`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'warranties' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `warranties`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'service_orders' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `service_orders`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'diagnostics' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `diagnostics`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'service_authorizations' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW INDEX FROM `service_authorizations`
+Executing (default): SHOW FULL COLUMNS FROM `products`;
+Executing (default): SELECT id, type FROM products WHERE product_type_id IS NULL
+Executing (default): SELECT count(*) AS `count` FROM `products` AS `Product` WHERE `Product`.`product_type_id` IS NULL;
+Executing (default): SELECT products.id
+     FROM products
+     LEFT JOIN product_types ON product_types.id = products.product_type_id
+     WHERE product_types.id IS NULL
+Executing (default): SHOW FULL COLUMNS FROM `products`;
+Executing (default): SELECT CONSTRAINT_NAME AS constraint_name
+     FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND TABLE_NAME = 'products'
+       AND COLUMN_NAME = 'product_type_id'
+       AND REFERENCED_TABLE_NAME = 'product_types'
+🚀 Servidor ejecutándose en puerto 4000
+[32m[nodemon] clean exit - waiting for changes before restart[39m

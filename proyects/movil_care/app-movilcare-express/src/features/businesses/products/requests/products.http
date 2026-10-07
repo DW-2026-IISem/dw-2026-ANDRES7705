@@ -15,6 +15,7 @@ Content-Type: application/json
   "sku": "DEMO-PRODUCT-001",
   "name": "Demo equipment",
   "type": "EQUIPMENT",
+  "productTypeId": 1,
   "price": "125000.00",
   "requiresSerial": true
 }
@@ -27,6 +28,7 @@ Content-Type: application/json
   "sku": "DEMO-PRODUCT-001",
   "name": "Demo equipment",
   "type": "EQUIPMENT",
+  "productTypeId": 1,
   "price": "125000.00"
 }
 
@@ -40,3 +42,13 @@ Content-Type: application/json
 
 ### Soft-delete product
 DELETE {{baseUrl}}/products/{{id}}
+
+###
+
+### Explicitly deactivate product
+PATCH {{baseUrl}}/products/{{id}}/deactivate
+
+###
+
+### Permanently delete product
+DELETE {{baseUrl}}/products/{{id}}/permanent

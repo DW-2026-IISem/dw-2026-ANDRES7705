@@ -1,6 +1,7 @@
 import { Application } from "express";
 import swaggerUi from "swagger-ui-express";
 import { customerSwagger } from "../features/businesses/customers/customers.swagger";
+import { productSwagger } from "../features/businesses/products/products.swagger";
 import { productTypeSwagger } from "../features/businesses/product-types/product-types.swagger";
 
 export type FeatureSwaggerModule = {
@@ -12,6 +13,7 @@ export type FeatureSwaggerModule = {
 const featureSwaggerModules: FeatureSwaggerModule[] = [
   customerSwagger,
   productTypeSwagger,
+  productSwagger,
 ];
 
 export function buildOpenApiDocument() {

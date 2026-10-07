@@ -1,12 +1,15 @@
 import { DataTypes, Model } from "sequelize";
 import { sequelize } from "../../../databases/db";
+import { ProductType } from "../product-types/product-types.model";
 
 export class Product extends Model {
   declare id: number;
   declare sku: string;
   declare name: string;
   declare description: string | null;
+  /** Legacy product classification retained while clients migrate from `type`. */
   declare type: "EQUIPMENT" | "ACCESSORY";
+  declare productTypeId: number;
   declare brand: string | null;
   declare model: string | null;
   declare requiresSerial: boolean;
@@ -24,6 +27,14 @@ Product.init(
     name: { type: DataTypes.STRING(150), allowNull: false },
     description: { type: DataTypes.TEXT, allowNull: true },
     type: { type: DataTypes.ENUM("EQUIPMENT", "ACCESSORY"), allowNull: false },
+    productTypeId: {
+      type: DataTypes.BIGINT,
+      allowNull: false,
+      field: "product_type_id",
+      references: { model: "product_types", key: "id" },
+      onUpdate: "CASCADE",
+      onDelete: "RESTRICT",
+    },
     brand: { type: DataTypes.STRING(80), allowNull: true },
     model: { type: DataTypes.STRING(80), allowNull: true },
     requiresSerial: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },

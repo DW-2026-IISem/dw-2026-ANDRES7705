@@ -3,6 +3,8 @@ import { sequelize, testConnection } from "../../databases/db";
 import "../../databases/models";
 import { seedCustomers } from "../../features/businesses/customers/customers.seeder";
 import { seedProductTypes } from "../../features/businesses/product-types/product-types.seeder";
+import { seedProducts } from "../../features/businesses/products/products.seeder";
+import { associateProductsWithProductTypes } from "../../databases/migrations/associate-products-with-product-types";
 import { resolveSeedCounts } from "./counts";
 
 dotenv.config();
@@ -14,9 +16,11 @@ export async function runAllSeeders(): Promise<void> {
 
   await testConnection();
   await sequelize.sync();
+  await associateProductsWithProductTypes();
 
   await seedCustomers(counts.customers);
   await seedProductTypes(counts.product_types);
+  await seedProducts(counts.products);
 
   console.log("🌱 SeedersRunner finalizado");
 }

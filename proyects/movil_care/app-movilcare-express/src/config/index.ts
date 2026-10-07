@@ -5,6 +5,7 @@ import "../databases/models";
 import { sequelize, testConnection } from "../databases/db";
 import apiRouter from "../routes";
 import { setupSwagger } from "../swagger";
+import { associateProductsWithProductTypes } from "../databases/migrations/associate-products-with-product-types";
 var cors = require("cors");
 
 dotenv.config();
@@ -53,6 +54,7 @@ export class App {
   async listen() {
     await this.dbConnection();
     await sequelize.sync();
+    await associateProductsWithProductTypes();
 
     await new Promise<void>((resolve, reject) => {
       const server = this.app.listen(this.app.get('port'), () => {

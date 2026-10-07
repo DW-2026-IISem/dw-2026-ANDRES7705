@@ -1699,3 +1699,811 @@ import "../features/business/product-type/product-type.model";
 ```
 
 ![alt text](image-8.png) 
+
+
+
+# 12. ISS-07 — Feature Product (productos)
+
+**Objetivo:** CRUD de Product con FK `product_type_id`.  
+**Bloqueado por:** ISS-06.  
+**API:** `/api/productos` — **SIN AUTH**.
+
+### Criterios de aceptación (ISS-07)
+
+- [ ] **12.1** Modelo Product con `product_type_id`
+- [ ] **12.2** Controller valida tipo **activo** en create/updatePut
+- [ ] **12.3** Routes + http/ en orden getAll, getOne, create, update PUT/PATCH, delete físico y lógico
+- [ ] **12.4** Cableado routes/config
+- [ ] **12.5** **Relaciones** Product ↔ ProductType (archivo associations + import)
+- [ ] **12.6** Seeder + swagger
+
+```bash
+mkdir -p src/features/business/product/http
+```
+
+---
+
+## 12.1 Modelo Product
+
+```bash
+: > src/features/business/product/product.model.ts
+cat >> src/features/business/product/product.model.ts << 'EOF'
+import { DataTypes, Model } from "sequelize";
+import { sequelize } from "../../../database/db";
+
+export interface ProductI {
+  id?: number;
+  name: string;
+  brand: string;
+  price: number;
+  min_stock: number;
+  quantity: number;
+  product_type_id: number;
+  status: "active" | "inactive";
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export class Product extends Model {
+  public id!: number;
+  public name!: string;
+  public brand!: string;
+  public price!: number;
+  public min_stock!: number;
+  public quantity!: number;
+  public product_type_id!: number;
+  public status!: "active" | "inactive";
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
+}
+
+Product.init(
+  {
+    name: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    brand: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    price: {
+      type: DataTypes.DECIMAL(12, 2),
+      allowNull: false,
+    },
+    min_stock: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
+    quantity: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
+    product_type_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    status: {
+      type: DataTypes.ENUM("active", "inactive"),
+      defaultValue: "inactive",
+      allowNull: false,
+    },
+  },
+  {
+    sequelize,
+    modelName: "Product",
+    tableName: "products",
+    timestamps: true,
+  }
+);
+EOF
+```
+---
+
+## 12.2 Controller + routes
+
+```bash
+: > src/features/business/product/product.controller.ts
+cat >> src/features/business/product/product.controller.ts << 'EOF'
+import { Request, Response } from "express";
+import { Product, ProductI } from "./product.model";
+import { ProductType } from "../product-type/product-type.model";
+
+function paramId(req: Request): number {
+  const raw = req.params.id;
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  return Number(value);
+}
+
+async function assertActiveProductType(product_type_id: number): Promise<{ ok: true } | { ok: false; status: number; error: string }> {
+  const productType = await ProductType.findByPk(product_type_id);
+  if (!productType) {
+    return { ok: false, status: 404, error: "Product type not found" };
+  }
+  if (productType.status !== "active") {
+    return { ok: false, status: 400, error: "Product type must be active" };
+  }
+  return { ok: true };
+}
+
+export class ProductController {
+  // ================== READ ==================
+  public async getAll(req: Request, res: Response) {
+    try {
+      const products = await Product.findAll({
+        where: { status: "active" },
+      });
+      res.status(200).json({ products });
+    } catch (error) {
+      res.status(500).json({ error: "Error fetching products", detail: String(error) });
+    }
+  }
+
+  public async getOne(req: Request, res: Response) {
+    try {
+      const id = paramId(req);
+      const product = await Product.findByPk(id);
+      if (!product) {
+        res.status(404).json({ error: "Product not found" });
+        return;
+      }
+      res.status(200).json({ product });
+    } catch (error) {
+      res.status(500).json({ error: "Error fetching product", detail: String(error) });
+    }
+  }
+
+  // ================== CREATE ==================
+  public async create(req: Request, res: Response) {
+    try {
+      const body = req.body as ProductI;
+      const check = await assertActiveProductType(Number(body.product_type_id));
+      if (!check.ok) {
+        res.status(check.status).json({ error: check.error });
+        return;
+      }
+
+      const product = await Product.create({
+        name: body.name,
+        brand: body.brand,
+        price: body.price,
+        min_stock: body.min_stock,
+        quantity: body.quantity,
+        product_type_id: body.product_type_id,
+        status: body.status ?? "active",
+      });
+      res.status(201).json({ product });
+    } catch (error) {
+      res.status(500).json({ error: "Error creating product", detail: String(error) });
+    }
+  }
+
+  // ================== UPDATE ==================
+  public async updatePut(req: Request, res: Response) {
+    try {
+      const id = paramId(req);
+      const body = req.body as ProductI;
+      const product = await Product.findByPk(id);
+      if (!product) {
+        res.status(404).json({ error: "Product not found" });
+        return;
+      }
+
+      const check = await assertActiveProductType(Number(body.product_type_id));
+      if (!check.ok) {
+        res.status(check.status).json({ error: check.error });
+        return;
+      }
+
+      await product.update({
+        name: body.name,
+        brand: body.brand,
+        price: body.price,
+        min_stock: body.min_stock,
+        quantity: body.quantity,
+        product_type_id: body.product_type_id,
+        status: body.status ?? product.status,
+      });
+
+      res.status(200).json({ product });
+    } catch (error) {
+      res.status(500).json({ error: "Error updating product (PUT)", detail: String(error) });
+    }
+  }
+
+  public async updatePatch(req: Request, res: Response) {
+    try {
+      const id = paramId(req);
+      const body = req.body as Partial<ProductI>;
+      const product = await Product.findByPk(id);
+      if (!product) {
+        res.status(404).json({ error: "Product not found" });
+        return;
+      }
+
+      if (body.product_type_id !== undefined) {
+        const check = await assertActiveProductType(Number(body.product_type_id));
+        if (!check.ok) {
+          res.status(check.status).json({ error: check.error });
+          return;
+        }
+      }
+
+      await product.update(body);
+      res.status(200).json({ product });
+    } catch (error) {
+      res.status(500).json({ error: "Error updating product (PATCH)", detail: String(error) });
+    }
+  }
+
+  // ================== DELETE ==================
+  /** Eliminación física */
+  public async deletePhysical(req: Request, res: Response) {
+    try {
+      const id = paramId(req);
+      const product = await Product.findByPk(id);
+      if (!product) {
+        res.status(404).json({ error: "Product not found" });
+        return;
+      }
+      await product.destroy();
+      res.status(200).json({ message: "Product permanently deleted", id });
+    } catch (error) {
+      res.status(500).json({ error: "Error deleting product", detail: String(error) });
+    }
+  }
+
+  /** Eliminación lógica → status = inactive */
+  public async deleteLogical(req: Request, res: Response) {
+    try {
+      const id = paramId(req);
+      const product = await Product.findByPk(id);
+      if (!product) {
+        res.status(404).json({ error: "Product not found" });
+        return;
+      }
+      await product.update({ status: "inactive" });
+      res.status(200).json({
+        message: "Product deactivated (logical delete)",
+        product,
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Error deactivating product", detail: String(error) });
+    }
+  }
+}
+EOF
+```
+```bash
+: > src/features/business/product/product.routes.ts
+cat >> src/features/business/product/product.routes.ts << 'EOF'
+import { Application } from "express";
+import { ProductController } from "./product.controller";
+
+export class ProductRoutes {
+  public productController: ProductController = new ProductController();
+
+  public routes(app: Application): void {
+    // ================== RUTAS SIN AUTENTICACIÓN / SIN MIDDLEWARE JWT ==================
+
+    // getAll
+    app
+      .route("/api/productos")
+      .get(this.productController.getAll.bind(this.productController));
+
+    // getOne
+    app
+      .route("/api/productos/:id")
+      .get(this.productController.getOne.bind(this.productController));
+
+    // create
+    app
+      .route("/api/productos")
+      .post(this.productController.create.bind(this.productController));
+
+    // update (PUT / PATCH)
+    app
+      .route("/api/productos/:id")
+      .put(this.productController.updatePut.bind(this.productController))
+      .patch(this.productController.updatePatch.bind(this.productController));
+
+    // delete físico
+    app
+      .route("/api/productos/:id")
+      .delete(this.productController.deletePhysical.bind(this.productController));
+
+    // delete lógico
+    app
+      .route("/api/productos/:id/deactivate")
+      .patch(this.productController.deleteLogical.bind(this.productController));
+  }
+}
+EOF
+```
+---
+
+## 12.3 HTTP
+
+```bash
+: > src/features/business/product/http/products.get.http
+cat >> src/features/business/product/http/products.get.http << 'EOF'
+### Feature Product — GET ALL / GET ONE
+### Leyenda: SIN AUTH (sin middleware JWT / sin autenticación)
+@baseUrl = http://localhost:4000
+@id = 1
+
+# @name getAllProducts
+GET {{baseUrl}}/api/productos
+
+###
+
+# @name getOneProduct
+GET {{baseUrl}}/api/productos/{{id}}
+EOF
+```
+
+```bash
+: > src/features/business/product/http/products.create.http
+cat >> src/features/business/product/http/products.create.http << 'EOF'
+### Feature Product — CREATE
+### Leyenda: SIN AUTH (sin middleware JWT / sin autenticación)
+@baseUrl = http://localhost:4000
+
+# @name createProduct
+POST {{baseUrl}}/api/productos
+Content-Type: application/json
+
+{
+  "name": "Laptop Pro",
+  "brand": "TechBrand",
+  "price": 1299.99,
+  "min_stock": 5,
+  "quantity": 50,
+  "product_type_id": 1,
+  "status": "active"
+}
+EOF
+```
+```bash
+: > src/features/business/product/http/products.update.http
+cat >> src/features/business/product/http/products.update.http << 'EOF'
+### Feature Product — UPDATE (PUT) / UPDATE (PATCH)
+### Leyenda: SIN AUTH (sin middleware JWT / sin autenticación)
+@baseUrl = http://localhost:4000
+@id = 1
+
+# @name updateProductPut
+PUT {{baseUrl}}/api/productos/{{id}}
+Content-Type: application/json
+
+{
+  "name": "Laptop Pro Max",
+  "brand": "TechBrand",
+  "price": 1499.99,
+  "min_stock": 5,
+  "quantity": 40,
+  "product_type_id": 1,
+  "status": "active"
+}
+
+###
+
+# @name updateProductPatch
+PATCH {{baseUrl}}/api/productos/{{id}}
+Content-Type: application/json
+
+{
+  "price": 1399.99,
+  "quantity": 45
+}
+EOF
+```
+```bash
+: > src/features/business/product/http/products.delete.http
+cat >> src/features/business/product/http/products.delete.http << 'EOF'
+### Feature Product — DELETE físico / DELETE lógico (status = inactive)
+### Leyenda: SIN AUTH (sin middleware JWT / sin autenticación)
+@baseUrl = http://localhost:4000
+@id = 1
+
+# @name deleteProductPhysical
+DELETE {{baseUrl}}/api/productos/{{id}}
+
+###
+
+# @name deleteProductLogical
+PATCH {{baseUrl}}/api/productos/{{id}}/deactivate
+EOF
+```
+---
+
+## 12.4 Cableado
+
+**PARCHE** — `src/routes/index.ts`:
+
+- **Debajo de** import ProductTypeRoutes, **añadir** ProductRoutes.
+- **Dentro de** `Routes`, **añadir** `productRoutes`.
+
+**PARCHE** — `src/config/index.ts`:
+
+- **Debajo de** import product-type.model, **añadir** `import "../features/business/product/product.model";`
+- **Dentro de** `routes()`, **añadir** `this.routePrv.productRoutes.routes(this.app);`
+
+---
+
+## 12.5 Relación ProductType ↔ Product (**obligatorio al cerrar la tabla Product**)
+
+> Norma FK: `product_type_id` (tabla `product_types` → singular `product_type` + `_id`).
+
+> Cuando una tabla nueva **se relaciona** con una ya existente, al final se agrega este paso:
+> archivo de asociaciones + **PARCHE** en `config` para cargarlo (side-effect).
+
+```bash
+: > src/features/business/product/product.associations.ts
+cat >> src/features/business/product/product.associations.ts << 'EOF'
+import { Product } from "./product.model";
+import { ProductType } from "../product-type/product-type.model";
+
+Product.belongsTo(ProductType, { foreignKey: "product_type_id", as: "product_type" });
+ProductType.hasMany(Product, { foreignKey: "product_type_id", as: "products" });
+EOF
+```
+**PARCHE** — `src/config/index.ts` **ya existe**.
+
+**Debajo de** los imports de modelos Product / ProductType (y **encima de** `import { Routes }`), **añadir**:
+
+```ts
+import "../features/business/product/product.associations";
+```
+
+Archivo **nuevo** (lab — alinea FK camelCase → snake_case antes del `sync`):
+
+
+**PARCHE** — `src/config/index.ts`: **debajo de** `import { sequelize, getDatabaseInfo, testConnection } from "../database/db";`, **añadir**:
+
+```ts
+```
+
+**Dentro de** `dbConnection()`, **reemplazar** el bloque de `sequelize.sync(...)` por el de `src/config/index.ts` del repo (`SET FOREIGN_KEY_CHECKS` en MySQL, y opcional `DB_SYNC_FORCE=true`). Con BD limpia no hace falta rename legacy.
+
+
+Esto registra en Sequelize:
+
+- `Product.belongsTo(ProductType, { foreignKey: "product_type_id", as: "product_type" })`
+- `ProductType.hasMany(Product, { foreignKey: "product_type_id", as: "products" })`
+
+### Verificación relación
+
+```bash
+curl -s -X POST http://localhost:4000/api/productos -H 'Content-Type: application/json' \
+  -d '{"name":"Cola","brand":"ACME","price":2.5,"min_stock":5,"quantity":100,"product_type_id":1,"status":"active"}'
+curl -s http://localhost:4000/api/productos
+```
+
+---
+
+## 12.6 Seeder + Swagger Product
+
+```bash
+: > src/features/business/product/product.seeder.ts
+cat >> src/features/business/product/product.seeder.ts << 'EOF'
+import { faker } from "@faker-js/faker";
+import { Product } from "./product.model";
+import { ProductType } from "../product-type/product-type.model";
+
+/**
+ * Seeder del feature Product (datos falsos con @faker-js/faker).
+ * Se invoca desde `src/database/seeders` (SeedersRunner), no desde la App.
+ *
+ * Requiere tipos de producto activos. Idempotente: si ya hay filas, no inserta.
+ */
+export async function seedProducts(count: number): Promise<number> {
+  if (count <= 0) {
+    console.log("⏭️  products: count=0, se omite");
+    return 0;
+  }
+
+  const existing = await Product.count();
+  if (existing > 0) {
+    console.log(`⏭️  products: ya hay ${existing} registro(s), se omite seeder`);
+    return 0;
+  }
+
+  const types = await ProductType.findAll({ where: { status: "active" } });
+  if (types.length === 0) {
+    console.log("⏭️  products: no hay tipos de producto activos, se omite seeder");
+    return 0;
+  }
+
+  const rows = Array.from({ length: count }, () => {
+    const type = types[Math.floor(Math.random() * types.length)];
+    return {
+      name: faker.commerce.productName(),
+      brand: faker.company.name(),
+      price: Number(faker.commerce.price({ min: 5, max: 500, dec: 2 })),
+      min_stock: faker.number.int({ min: 1, max: 10 }),
+      quantity: faker.number.int({ min: 20, max: 100 }),
+      product_type_id: type.id,
+      status: "active" as const,
+    };
+  });
+
+  await Product.bulkCreate(rows);
+  console.log(`✅ products: insertados ${count} registro(s) falsos`);
+  return count;
+}
+EOF
+```
+```bash
+: > src/features/business/product/product.swagger.ts
+cat >> src/features/business/product/product.swagger.ts << 'EOF'
+/**
+ * Documentación OpenAPI del feature Product.
+ * Se agrega desde `src/swagger` (registry externo), no se monta aquí.
+ *
+ * Leyenda: endpoints documentados como SIN AUTH (sin middleware JWT).
+ */
+
+export const productSwagger = {
+  tags: [
+    {
+      name: "Productos",
+      description: "CRUD de productos — **SIN AUTH** (sin middleware JWT)",
+    },
+  ],
+  paths: {
+    "/api/productos": {
+      get: {
+        tags: ["Productos"],
+        summary: "Listar productos activos",
+        description: "SIN AUTH — retorna productos con status=active",
+        security: [],
+        responses: {
+          "200": {
+            description: "Lista de productos",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    products: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/Product" },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      post: {
+        tags: ["Productos"],
+        summary: "Crear producto",
+        description: "SIN AUTH — product_type_id debe existir y estar active",
+        security: [],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/ProductCreate" },
+            },
+          },
+        },
+        responses: {
+          "201": {
+            description: "Producto creado",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    product: { $ref: "#/components/schemas/Product" },
+                  },
+                },
+              },
+            },
+          },
+          "400": { description: "Tipo de producto inactivo" },
+          "404": { description: "Tipo de producto no encontrado" },
+        },
+      },
+    },
+    "/api/productos/{id}": {
+      get: {
+        tags: ["Productos"],
+        summary: "Obtener producto por id",
+        description: "SIN AUTH",
+        security: [],
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Producto encontrado",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    product: { $ref: "#/components/schemas/Product" },
+                  },
+                },
+              },
+            },
+          },
+          "404": { description: "No encontrado" },
+        },
+      },
+      put: {
+        tags: ["Productos"],
+        summary: "Actualizar producto (PUT — reemplazo)",
+        description: "SIN AUTH — product_type_id debe existir y estar active",
+        security: [],
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/ProductUpdate" },
+            },
+          },
+        },
+        responses: {
+          "200": { description: "Actualizado" },
+          "400": { description: "Tipo de producto inactivo" },
+          "404": { description: "No encontrado" },
+        },
+      },
+      patch: {
+        tags: ["Productos"],
+        summary: "Actualizar producto (PATCH — parcial)",
+        description: "SIN AUTH",
+        security: [],
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/ProductPatch" },
+            },
+          },
+        },
+        responses: {
+          "200": { description: "Actualizado" },
+          "404": { description: "No encontrado" },
+        },
+      },
+      delete: {
+        tags: ["Productos"],
+        summary: "Eliminar producto (físico)",
+        description: "SIN AUTH — borra la fila",
+        security: [],
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: {
+          "200": { description: "Eliminado" },
+          "404": { description: "No encontrado" },
+        },
+      },
+    },
+    "/api/productos/{id}/deactivate": {
+      patch: {
+        tags: ["Productos"],
+        summary: "Eliminar producto (lógico)",
+        description: "SIN AUTH — status = inactive",
+        security: [],
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: {
+          "200": { description: "Desactivado" },
+          "404": { description: "No encontrado" },
+        },
+      },
+    },
+  },
+  components: {
+    schemas: {
+      Product: {
+        type: "object",
+        properties: {
+          id: { type: "integer", example: 1 },
+          name: { type: "string", example: "Laptop Pro" },
+          brand: { type: "string", example: "TechBrand" },
+          price: { type: "number", example: 1299.99 },
+          min_stock: { type: "integer", example: 5 },
+          quantity: { type: "integer", example: 50 },
+          product_type_id: { type: "integer", example: 1 },
+          status: { type: "string", enum: ["active", "inactive"], example: "active" },
+          createdAt: { type: "string", format: "date-time" },
+          updatedAt: { type: "string", format: "date-time" },
+        },
+      },
+      ProductCreate: {
+        type: "object",
+        required: ["name", "brand", "price", "min_stock", "quantity", "product_type_id"],
+        properties: {
+          name: { type: "string" },
+          brand: { type: "string" },
+          price: { type: "number" },
+          min_stock: { type: "integer" },
+          quantity: { type: "integer" },
+          product_type_id: { type: "integer" },
+          status: { type: "string", enum: ["active", "inactive"], default: "active" },
+        },
+      },
+      ProductUpdate: {
+        type: "object",
+        required: ["name", "brand", "price", "min_stock", "quantity", "product_type_id"],
+        properties: {
+          name: { type: "string" },
+          brand: { type: "string" },
+          price: { type: "number" },
+          min_stock: { type: "integer" },
+          quantity: { type: "integer" },
+          product_type_id: { type: "integer" },
+          status: { type: "string", enum: ["active", "inactive"] },
+        },
+      },
+      ProductPatch: {
+        type: "object",
+        properties: {
+          name: { type: "string" },
+          brand: { type: "string" },
+          price: { type: "number" },
+          min_stock: { type: "integer" },
+          quantity: { type: "integer" },
+          product_type_id: { type: "integer" },
+          status: { type: "string", enum: ["active", "inactive"] },
+        },
+      },
+    },
+  },
+};
+EOF
+```
+**PARCHE** counts / SeedersRunner / swagger registry: añadir `products` (default 15), `seedProducts`, `productSwagger` (mismo patrón que ISS-06).
+
+### Cierre del ISS
+
+```bash
+npm run dev
+```
+
+> El servidor debe arrancar sin error. Detenerlo con Ctrl+C antes de continuar.
+
+
+![alt text](image-9.png)

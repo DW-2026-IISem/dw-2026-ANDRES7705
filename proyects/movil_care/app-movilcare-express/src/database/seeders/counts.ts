@@ -1,11 +1,13 @@
 export type SeedCounts = {
   customers: number;
   product_types: number;
+  products: number;
 };
 
 export const DEFAULT_SEED_COUNTS: SeedCounts = {
   customers: 10,
   product_types: 25,
+  products: 15,
 };
 
 function parseCount(value: string, source: string): number {
@@ -25,12 +27,16 @@ export function resolveSeedCounts(argv: string[] = process.argv.slice(2)): SeedC
   const counts: SeedCounts = { ...DEFAULT_SEED_COUNTS };
   const envCustomers = process.env.SEED_CUSTOMERS;
   const envProductTypes = process.env.SEED_PRODUCT_TYPES;
+  const envProducts = process.env.SEED_PRODUCTS;
 
   if (envCustomers !== undefined && envCustomers !== "") {
     counts.customers = parseCount(envCustomers, "SEED_CUSTOMERS");
   }
   if (envProductTypes !== undefined && envProductTypes !== "") {
     counts.product_types = parseCount(envProductTypes, "SEED_PRODUCT_TYPES");
+  }
+  if (envProducts !== undefined && envProducts !== "") {
+    counts.products = parseCount(envProducts, "SEED_PRODUCTS");
   }
 
   for (const arg of argv) {
@@ -46,6 +52,8 @@ export function resolveSeedCounts(argv: string[] = process.argv.slice(2)): SeedC
         arg.slice("--product-types=".length),
         "--product-types"
       );
+    } else if (arg.startsWith("--products=")) {
+      counts.products = parseCount(arg.slice("--products=".length), "--products");
     }
   }
 
