@@ -734,3 +734,590 @@ EOF
 
 ![alt text](image-4.png)
 
+
+# 9. ISS-04 — Seeders con Faker (feature + runner externo)
+
+**Objetivo:** datos falsos por feature (Faker) y un orquestador externo que ejecuta todos los seeders enviando la **cantidad por entidad**.  
+**Bloqueado por:** ISS-03-A (modelo); recomendado tras ISS-03-E.
+
+### Criterios de aceptación (ISS-04) — consolidados
+
+- [ ] **9.1** Existe `features/business/client/client.seeder.ts` con `@faker-js/faker`, recibe `count`, es idempotente
+- [ ] **9.2** Existe `database/seeders/index.ts` (SeedersRunner) que llama seeders de features
+- [ ] **9.2** Existe `database/seeders/counts.ts` con cantidad por entidad (default / env / CLI)
+- [ ] Script `npm run db:seed` funciona
+- [ ] Se puede variar cantidad: `npm run db:seed -- --clients=20` o `SEED_CLIENTS=5`
+
+**Diseño**
+
+| Pieza | Ubicación | Rol |
+|-------|-----------|-----|
+| Seeder del feature | `src/features/business/client/client.seeder.ts` | Genera filas falsas de Client |
+| Conteos | `src/database/seeders/counts.ts` | `clients: N` (y futuras entidades) |
+| Runner | `src/database/seeders/index.ts` | Importa seeders de features y los ejecuta en orden |
+
+---
+
+## 9.1 Seeder dentro del feature Client
+
+**Criterios**
+
+- [ ] `seedClients(count: number)` exportado desde el feature
+- [ ] Usa `@faker-js/faker`
+- [ ] Si ya hay filas, no duplica
+
+```bash
+npm install -D @faker-js/faker@^10.6.0
+```
+
+```bash
+: > src/features/business/client/client.seeder.ts
+cat >> src/features/business/client/client.seeder.ts << 'EOF'
+import { faker } from "@faker-js/faker";
+import { Client } from "./client.model";
+
+/**
+ * Seeder del feature Client (datos falsos con @faker-js/faker).
+ * Se invoca desde `src/database/seeders` (SeedersRunner), no desde la App.
+ *
+ * Idempotente: si ya hay filas, no vuelve a insertar.
+ */
+export async function seedClients(count: number): Promise<number> {
+  if (count <= 0) {
+    console.log("⏭️  clients: count=0, se omite");
+    return 0;
+  }
+
+  const existing = await Client.count();
+  if (existing > 0) {
+    console.log(`⏭️  clients: ya hay ${existing} registro(s), se omite seeder`);
+    return 0;
+  }
+
+  const rows = Array.from({ length: count }, (_, i) => ({
+    name: faker.person.fullName(),
+    address: faker.location.streetAddress(),
+    phone: faker.phone.number({ style: "national" }),
+    email: `client.${i}.${faker.string.alphanumeric(6)}@example.com`.toLowerCase(),
+    password: "Password123!",
+    status: "active" as const,
+  }));
+
+  await Client.bulkCreate(rows);
+  console.log(`✅ clients: insertados ${count} registro(s) falsos`);
+  return count;
+}
+EOF
+```
+
+---
+
+## 9.2 SeedersRunner + conteos por entidad (`database/seeders`)
+
+**Criterios**
+
+- [ ] Runner fuera del feature en `src/database/seeders/`
+- [ ] Cantidad configurable por feature (`clients`, …)
+
+### 9.2.1 Conteos
+
+```bash
+: > src/database/seeders/counts.ts
+cat >> src/database/seeders/counts.ts << 'EOF'
+/**
+ * Cantidad de registros por feature/entidad.
+ * Prioridad: CLI (--clients=N) > env (SEED_CLIENTS) > default de este archivo.
+ *
+ * Cuando agregues features, suma aquí la clave y léela en el runner.
+ */
+export type SeedCounts = {
+  clients: number;
+  // users?: number;
+  // roles?: number;
+  // products?: number;
+};
+
+export const DEFAULT_SEED_COUNTS: SeedCounts = {
+  clients: 10,
+};
+
+export function resolveSeedCounts(argv: string[] = process.argv.slice(2)): SeedCounts {
+  const counts: SeedCounts = { ...DEFAULT_SEED_COUNTS };
+
+  const envClients = process.env.SEED_CLIENTS;
+  if (envClients !== undefined && envClients !== "") {
+    counts.clients = Number(envClients);
+  }
+
+  for (const arg of argv) {
+    const m = arg.match(/^--([a-zA-Z_]+)=(\d+)$/);
+    if (!m) continue;
+    const key = m[1] as keyof SeedCounts;
+    const value = Number(m[2]);
+    if (key in counts) {
+      counts[key] = value;
+    }
+  }
+
+  return counts;
+}
+EOF
+```
+
+### 9.2.2 Runner
+
+```bash
+: > src/database/seeders/index.ts
+cat >> src/database/seeders/index.ts << 'EOF'
+import dotenv from "dotenv";
+import { sequelize, testConnection } from "../db";
+import "../../features/business/client/client.model";
+import { seedClients } from "../../features/business/client/client.seeder";
+import { resolveSeedCounts } from "./counts";
+
+dotenv.config();
+
+/**
+ * SeedersRunner — ejecuta TODOS los seeders de features.
+ *
+ * Ubicación: `src/database/seeders/` (orquestación fuera de cada feature).
+ * Cada feature exporta su seeder (ej. `features/business/client/client.seeder.ts`).
+ *
+ * Uso:
+ *   npm run db:seed
+ *   npm run db:seed -- --clients=20
+ *   SEED_CLIENTS=5 npm run db:seed
+ */
+export async function runAllSeeders(): Promise<void> {
+  const counts = resolveSeedCounts();
+  console.log("🌱 Iniciando SeedersRunner...");
+  console.log("📊 Conteos:", counts);
+
+  const ok = await testConnection();
+  if (!ok) {
+    throw new Error("No hay conexión a la base de datos");
+  }
+
+  await sequelize.sync({ force: false, alter: true });
+
+  // Orden: business (padres → hijos)
+  await seedClients(counts.clients);
+
+  console.log("🌱 SeedersRunner finalizado");
+}
+
+if (require.main === module) {
+  runAllSeeders()
+    .then(async () => {
+      await sequelize.close();
+      process.exit(0);
+    })
+    .catch(async (err) => {
+      console.error("❌ Error en seeders:", err);
+      await sequelize.close();
+      process.exit(1);
+    });
+}
+EOF
+```
+
+**PARCHE** — `package.json` **ya existe**.
+
+**Dentro de** `"scripts"`, **debajo de** `"dev": "..."`, **añadir** la coma al final de `dev` (si falta) y la clave:
+
+```json
+    "db:seed": "ts-node -- src/database/seeders/index.ts"
+```
+
+Fragmento esperado:
+
+```json
+  "scripts": {
+    "build": "tsc",
+    "dev": "nodemon --watch src --ext ts --exec ts-node -- src/server.ts",
+    "db:seed": "ts-node -- src/database/seeders/index.ts"
+  }
+```
+![alt text](image-5.png)
+
+
+
+
+
+
+## 10.1 OpenAPI dentro del feature Client
+
+**Criterios**
+
+- [ ] Exporta `clientSwagger` con `tags`, `paths`, `components.schemas`
+- [ ] Endpoints documentados como **SIN AUTH**
+
+```bash
+# Paquetes (una vez)
+npm install swagger-ui-express@^5.0.1
+npm install -D @types/swagger-ui-express@^4.1.8
+```
+
+Archivo **nuevo**:
+
+```bash
+: > src/features/business/client/client.swagger.ts
+cat >> src/features/business/client/client.swagger.ts << 'EOF'
+/**
+ * Documentación OpenAPI del feature Client.
+ * Se agrega desde `src/swagger` (registry externo), no se monta aquí.
+ *
+ * Leyenda: endpoints documentados como SIN AUTH (sin middleware JWT).
+ */
+
+export const clientSwagger = {
+  tags: [
+    {
+      name: "Clientes",
+      description: "CRUD de clientes — **SIN AUTH** (sin middleware JWT)",
+    },
+  ],
+  paths: {
+    "/api/clientes": {
+      get: {
+        tags: ["Clientes"],
+        summary: "Listar clientes activos",
+        description: "SIN AUTH — retorna clientes con status=active (sin password)",
+        security: [],
+        responses: {
+          "200": {
+            description: "Lista de clientes",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    clients: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/Client" },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      post: {
+        tags: ["Clientes"],
+        summary: "Crear cliente",
+        description: "SIN AUTH",
+        security: [],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/ClientCreate" },
+            },
+          },
+        },
+        responses: {
+          "201": {
+            description: "Cliente creado",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    client: { $ref: "#/components/schemas/Client" },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/api/clientes/{id}": {
+      get: {
+        tags: ["Clientes"],
+        summary: "Obtener cliente por id",
+        description: "SIN AUTH",
+        security: [],
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Cliente encontrado",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    client: { $ref: "#/components/schemas/Client" },
+                  },
+                },
+              },
+            },
+          },
+          "404": { description: "No encontrado" },
+        },
+      },
+      put: {
+        tags: ["Clientes"],
+        summary: "Actualizar cliente (PUT — reemplazo)",
+        description: "SIN AUTH",
+        security: [],
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/ClientUpdate" },
+            },
+          },
+        },
+        responses: {
+          "200": { description: "Actualizado" },
+          "404": { description: "No encontrado" },
+        },
+      },
+      patch: {
+        tags: ["Clientes"],
+        summary: "Actualizar cliente (PATCH — parcial)",
+        description: "SIN AUTH",
+        security: [],
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/ClientPatch" },
+            },
+          },
+        },
+        responses: {
+          "200": { description: "Actualizado" },
+          "404": { description: "No encontrado" },
+        },
+      },
+      delete: {
+        tags: ["Clientes"],
+        summary: "Eliminar cliente (físico)",
+        description: "SIN AUTH — borra la fila",
+        security: [],
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: {
+          "200": { description: "Eliminado" },
+          "404": { description: "No encontrado" },
+        },
+      },
+    },
+    "/api/clientes/{id}/deactivate": {
+      patch: {
+        tags: ["Clientes"],
+        summary: "Eliminar cliente (lógico)",
+        description: "SIN AUTH — status = inactive",
+        security: [],
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: {
+          "200": { description: "Desactivado" },
+          "404": { description: "No encontrado" },
+        },
+      },
+    },
+  },
+  components: {
+    schemas: {
+      Client: {
+        type: "object",
+        properties: {
+          id: { type: "integer", example: 1 },
+          name: { type: "string", example: "Ana Pérez" },
+          address: { type: "string", example: "Calle 10 #20-30" },
+          phone: { type: "string", example: "3001234567" },
+          email: { type: "string", format: "email", example: "ana@example.com" },
+          status: { type: "string", enum: ["active", "inactive"], example: "active" },
+          createdAt: { type: "string", format: "date-time" },
+          updatedAt: { type: "string", format: "date-time" },
+        },
+      },
+      ClientCreate: {
+        type: "object",
+        required: ["name", "phone", "email", "password"],
+        properties: {
+          name: { type: "string" },
+          address: { type: "string" },
+          phone: { type: "string" },
+          email: { type: "string", format: "email" },
+          password: { type: "string", format: "password" },
+          status: { type: "string", enum: ["active", "inactive"], default: "active" },
+        },
+      },
+      ClientUpdate: {
+        type: "object",
+        required: ["name", "phone", "email"],
+        properties: {
+          name: { type: "string" },
+          address: { type: "string" },
+          phone: { type: "string" },
+          email: { type: "string", format: "email" },
+          password: { type: "string", format: "password" },
+          status: { type: "string", enum: ["active", "inactive"] },
+        },
+      },
+      ClientPatch: {
+        type: "object",
+        properties: {
+          name: { type: "string" },
+          address: { type: "string" },
+          phone: { type: "string" },
+          email: { type: "string", format: "email" },
+          password: { type: "string", format: "password" },
+          status: { type: "string", enum: ["active", "inactive"] },
+        },
+      },
+    },
+  },
+};
+EOF
+```
+
+---
+
+## 10.2 Registry externo + montaje en Config
+
+**Criterios**
+
+- [ ] `buildOpenApiDocument()` fusiona módulos de features
+- [ ] `setupSwagger(app)` monta `/api/docs` y `/api/docs.json`
+- [ ] `config` invoca `setupSwagger` (método `docs()`)
+
+```bash
+mkdir -p src/swagger
+```
+
+Archivo **nuevo**:
+
+```bash
+: > src/swagger/index.ts
+cat >> src/swagger/index.ts << 'EOF'
+import { Application } from "express";
+import swaggerUi from "swagger-ui-express";
+import { clientSwagger } from "../features/business/client/client.swagger";
+
+export type FeatureSwaggerModule = {
+  tags: unknown[];
+  paths: Record<string, unknown>;
+  components?: { schemas?: Record<string, unknown> };
+};
+
+/**
+ * Registry externo: importa la documentación OpenAPI de cada feature
+ * (mismo patrón que SeedersRunner).
+ */
+const featureSwaggerModules: FeatureSwaggerModule[] = [
+  clientSwagger,
+  // productSwagger,
+  // userSwagger,
+];
+
+export function buildOpenApiDocument() {
+  const tags: unknown[] = [];
+  const paths: Record<string, unknown> = {};
+  const schemas: Record<string, unknown> = {};
+
+  for (const mod of featureSwaggerModules) {
+    tags.push(...mod.tags);
+    Object.assign(paths, mod.paths);
+    if (mod.components?.schemas) {
+      Object.assign(schemas, mod.components.schemas);
+    }
+  }
+
+  return {
+    openapi: "3.0.3",
+    info: {
+      title: "StoreLab API",
+      version: "1.0.0",
+      description:
+        "API StoreLab (Express + Sequelize). Los endpoints de Client están documentados como **SIN AUTH** Todas las rutas business son **SIN AUTH** en este lab.",
+    },
+    servers: [
+      {
+        url: `http://localhost:${process.env.PORT || 4000}`,
+        description: "Local",
+      },
+    ],
+    tags,
+    paths,
+    components: { schemas },
+  };
+}
+
+/** Monta Swagger UI y el JSON OpenAPI */
+export function setupSwagger(app: Application): void {
+  const document = buildOpenApiDocument();
+  app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(document));
+  app.get("/api/docs.json", (_req, res) => {
+    res.json(document);
+  });
+  console.log("📘 Swagger UI: /api/docs  |  OpenAPI JSON: /api/docs.json");
+}
+EOF
+```
+
+**PARCHE** — `src/config/index.ts` **ya existe**.
+
+1. **Debajo de** `import { Routes } from "../routes/index";` (o **debajo de** los imports de BD/modelo), **añadir**:
+
+```ts
+import { setupSwagger } from "../swagger/index";
+```
+
+2. **Dentro del** `constructor`, **debajo de** `this.routes();` y **encima de** `this.dbConnection();`, **añadir**:
+
+```ts
+    this.docs();
+```
+
+3. **Dentro de** la clase `App`, **debajo de** el método `routes()` y **encima de** `dbConnection()`, **añadir**:
+
+```ts
+  private docs(): void {
+    setupSwagger(this.app);
+  }
+```
+
+![alt text](image-6.png)
+
+![alt text](image-7.png)

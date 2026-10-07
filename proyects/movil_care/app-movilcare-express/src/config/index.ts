@@ -4,6 +4,7 @@ import morgan from "morgan";
 import "../databases/models";
 import { sequelize, testConnection } from "../databases/db";
 import apiRouter from "../routes";
+import { setupSwagger } from "../swagger";
 var cors = require("cors");
 
 dotenv.config();
@@ -18,6 +19,7 @@ export class App {
     this.settings();
     this.middlewares();
     this.routes();
+    this.docs();
   }
 
   private settings(): void {
@@ -33,6 +35,10 @@ export class App {
 
   private routes(): void {
     this.app.use("/api", apiRouter);
+  }
+
+  private docs(): void {
+    setupSwagger(this.app);
   }
 
   private async dbConnection(): Promise<void> {
