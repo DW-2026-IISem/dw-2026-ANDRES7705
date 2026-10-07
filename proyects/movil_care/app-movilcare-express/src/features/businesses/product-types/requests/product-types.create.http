@@ -1,0 +1,11 @@
+@baseUrl = http://localhost:4000/api
+
+### Create product type (SIN AUTH)
+POST {{baseUrl}}/product-types
+Content-Type: application/json
+
+{
+  "name": "Electrónica",
+  "description": "Dispositivos y accesorios",
+  "status": "active"
+}

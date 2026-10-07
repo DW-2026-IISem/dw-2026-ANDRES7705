@@ -1321,3 +1321,381 @@ import { setupSwagger } from "../swagger/index";
 ![alt text](image-6.png)
 
 ![alt text](image-7.png)
+
+
+
+
+# 11. ISS-06 — Feature ProductType (tipos de producto)
+
+**Objetivo:** CRUD + seeder + swagger de ProductType (sin FK).  
+**Bloqueado por:** ISS-05.  
+**API:** `/api/tipos-producto` — **SIN AUTH**.  
+**Patrón:** mismo que Client (ISS-03-A…E + 04 + 05).
+
+### Criterios de aceptación (ISS-06)
+
+- [ ] **11.1** Modelo `product-type.model.ts` (`status` + `timestamps: true`)
+- [ ] **11.2** Controller + routes en este orden: getAll, getOne, create, update PUT/PATCH, delete físico y lógico
+- [ ] **11.3** Carpeta `http/` en el mismo orden: get, create, update, delete
+- [ ] **11.4** Cableado en `routes/index.ts` + `config` (import model + route)
+- [ ] **11.5** Seeder + registro en SeedersRunner / counts
+- [ ] **11.6** Swagger + registro en `src/swagger`
+
+```bash
+mkdir -p src/features/business/product-type/http
+```
+
+---
+
+## 11.1 Modelo ProductType
+
+```bash
+: > src/features/business/product-type/product-type.model.ts
+cat >> src/features/business/product-type/product-type.model.ts << 'EOF'
+import { DataTypes, Model } from "sequelize";
+import { sequelize } from "../../../database/db";
+
+export interface ProductTypeI {
+  id?: number;
+  name: string;
+  description?: string | null;
+  status: "active" | "inactive";
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export class ProductType extends Model {
+  public id!: number;
+  public name!: string;
+  public description!: string | null;
+  public status!: "active" | "inactive";
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
+}
+
+ProductType.init(
+  {
+    name: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    description: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    status: {
+      type: DataTypes.ENUM("active", "inactive"),
+      defaultValue: "inactive",
+      allowNull: false,
+    },
+  },
+  {
+    sequelize,
+    modelName: "ProductType",
+    tableName: "product_types",
+    timestamps: true,
+  }
+);
+EOF
+```
+---
+
+## 11.2 Controller + routes (CRUD completo)
+
+```bash
+: > src/features/business/product-type/product-type.controller.ts
+cat >> src/features/business/product-type/product-type.controller.ts << 'EOF'
+import { Request, Response } from "express";
+import { ProductType, ProductTypeI } from "./product-type.model";
+
+function paramId(req: Request): number {
+  const raw = req.params.id;
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  return Number(value);
+}
+
+export class ProductTypeController {
+  // ================== READ ==================
+  public async getAll(req: Request, res: Response) {
+    try {
+      const product_types = await ProductType.findAll({
+        where: { status: "active" },
+      });
+      res.status(200).json({ product_types });
+    } catch (error) {
+      res.status(500).json({ error: "Error fetching product types", detail: String(error) });
+    }
+  }
+
+  public async getOne(req: Request, res: Response) {
+    try {
+      const id = paramId(req);
+      const product_type = await ProductType.findByPk(id);
+      if (!product_type) {
+        res.status(404).json({ error: "Product type not found" });
+        return;
+      }
+      res.status(200).json({ product_type });
+    } catch (error) {
+      res.status(500).json({ error: "Error fetching product type", detail: String(error) });
+    }
+  }
+
+  // ================== CREATE ==================
+  public async create(req: Request, res: Response) {
+    try {
+      const body = req.body as ProductTypeI;
+      const product_type = await ProductType.create({
+        name: body.name,
+        description: body.description ?? null,
+        status: body.status ?? "active",
+      });
+      res.status(201).json({ product_type });
+    } catch (error) {
+      res.status(500).json({ error: "Error creating product type", detail: String(error) });
+    }
+  }
+
+  // ================== UPDATE ==================
+  public async updatePut(req: Request, res: Response) {
+    try {
+      const id = paramId(req);
+      const body = req.body as ProductTypeI;
+      const product_type = await ProductType.findByPk(id);
+      if (!product_type) {
+        res.status(404).json({ error: "Product type not found" });
+        return;
+      }
+
+      await product_type.update({
+        name: body.name,
+        description: body.description ?? null,
+        status: body.status ?? product_type.status,
+      });
+
+      res.status(200).json({ product_type });
+    } catch (error) {
+      res.status(500).json({ error: "Error updating product type (PUT)", detail: String(error) });
+    }
+  }
+
+  public async updatePatch(req: Request, res: Response) {
+    try {
+      const id = paramId(req);
+      const body = req.body as Partial<ProductTypeI>;
+      const product_type = await ProductType.findByPk(id);
+      if (!product_type) {
+        res.status(404).json({ error: "Product type not found" });
+        return;
+      }
+
+      await product_type.update(body);
+      res.status(200).json({ product_type });
+    } catch (error) {
+      res.status(500).json({ error: "Error updating product type (PATCH)", detail: String(error) });
+    }
+  }
+
+  // ================== DELETE ==================
+  /** Eliminación física */
+  public async deletePhysical(req: Request, res: Response) {
+    try {
+      const id = paramId(req);
+      const product_type = await ProductType.findByPk(id);
+      if (!product_type) {
+        res.status(404).json({ error: "Product type not found" });
+        return;
+      }
+      await product_type.destroy();
+      res.status(200).json({ message: "Product type permanently deleted", id });
+    } catch (error) {
+      res.status(500).json({ error: "Error deleting product type", detail: String(error) });
+    }
+  }
+
+  /** Eliminación lógica → status = inactive */
+  public async deleteLogical(req: Request, res: Response) {
+    try {
+      const id = paramId(req);
+      const product_type = await ProductType.findByPk(id);
+      if (!product_type) {
+        res.status(404).json({ error: "Product type not found" });
+        return;
+      }
+      await product_type.update({ status: "inactive" });
+      res.status(200).json({
+        message: "Product type deactivated (logical delete)",
+        product_type,
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Error deactivating product type", detail: String(error) });
+    }
+  }
+}
+EOF
+```
+```bash
+: > src/features/business/product-type/product-type.routes.ts
+cat >> src/features/business/product-type/product-type.routes.ts << 'EOF'
+import { Application } from "express";
+import { ProductTypeController } from "./product-type.controller";
+
+export class ProductTypeRoutes {
+  public productTypeController: ProductTypeController = new ProductTypeController();
+
+  public routes(app: Application): void {
+    // ================== RUTAS SIN AUTENTICACIÓN / SIN MIDDLEWARE JWT ==================
+
+    // getAll
+    app
+      .route("/api/tipos-producto")
+      .get(this.productTypeController.getAll.bind(this.productTypeController));
+
+    // getOne
+    app
+      .route("/api/tipos-producto/:id")
+      .get(this.productTypeController.getOne.bind(this.productTypeController));
+
+    // create
+    app
+      .route("/api/tipos-producto")
+      .post(this.productTypeController.create.bind(this.productTypeController));
+
+    // update (PUT / PATCH)
+    app
+      .route("/api/tipos-producto/:id")
+      .put(this.productTypeController.updatePut.bind(this.productTypeController))
+      .patch(this.productTypeController.updatePatch.bind(this.productTypeController));
+
+    // delete físico
+    app
+      .route("/api/tipos-producto/:id")
+      .delete(this.productTypeController.deletePhysical.bind(this.productTypeController));
+
+    // delete lógico
+    app
+      .route("/api/tipos-producto/:id/deactivate")
+      .patch(this.productTypeController.deleteLogical.bind(this.productTypeController));
+  }
+}
+EOF
+```
+---
+
+## 11.3 HTTP (REST Client)
+
+```bash
+: > src/features/business/product-type/http/product-types.get.http
+cat >> src/features/business/product-type/http/product-types.get.http << 'EOF'
+### Feature ProductType — GET ALL / GET ONE
+### Leyenda: SIN AUTH (sin middleware JWT / sin autenticación)
+@baseUrl = http://localhost:4000
+@id = 1
+
+# @name getAllProductTypes
+GET {{baseUrl}}/api/tipos-producto
+
+###
+
+# @name getOneProductType
+GET {{baseUrl}}/api/tipos-producto/{{id}}
+EOF
+```
+
+```bash
+: > src/features/business/product-type/http/product-types.create.http
+cat >> src/features/business/product-type/http/product-types.create.http << 'EOF'
+### Feature ProductType — CREATE
+### Leyenda: SIN AUTH (sin middleware JWT / sin autenticación)
+@baseUrl = http://localhost:4000
+
+# @name createProductType
+POST {{baseUrl}}/api/tipos-producto
+Content-Type: application/json
+
+{
+  "name": "Electrónica",
+  "description": "Dispositivos y accesorios",
+  "status": "active"
+}
+EOF
+```
+```bash
+: > src/features/business/product-type/http/product-types.update.http
+cat >> src/features/business/product-type/http/product-types.update.http << 'EOF'
+### Feature ProductType — UPDATE (PUT) / UPDATE (PATCH)
+### Leyenda: SIN AUTH (sin middleware JWT / sin autenticación)
+@baseUrl = http://localhost:4000
+@id = 1
+
+# @name updateProductTypePut
+PUT {{baseUrl}}/api/tipos-producto/{{id}}
+Content-Type: application/json
+
+{
+  "name": "Electrónica Actualizada",
+  "description": "Categoría renovada",
+  "status": "active"
+}
+
+###
+
+# @name updateProductTypePatch
+PATCH {{baseUrl}}/api/tipos-producto/{{id}}
+Content-Type: application/json
+
+{
+  "description": "Descripción parcial"
+}
+EOF
+```
+```bash
+: > src/features/business/product-type/http/product-types.delete.http
+cat >> src/features/business/product-type/http/product-types.delete.http << 'EOF'
+### Feature ProductType — DELETE físico / DELETE lógico (status = inactive)
+### Leyenda: SIN AUTH (sin middleware JWT / sin autenticación)
+@baseUrl = http://localhost:4000
+@id = 1
+
+# @name deleteProductTypePhysical
+DELETE {{baseUrl}}/api/tipos-producto/{{id}}
+
+###
+
+# @name deleteProductTypeLogical
+PATCH {{baseUrl}}/api/tipos-producto/{{id}}/deactivate
+EOF
+```
+---
+
+## 11.4 Cableado Routes + Config
+
+**PARCHE** — `src/routes/index.ts` **ya existe**.
+
+1. **Debajo de** `import { ClientRoutes } ...`, **añadir**:
+
+```ts
+import { ProductTypeRoutes } from "../features/business/product-type/product-type.routes";
+```
+
+2. **Dentro de** `export class Routes`, **debajo de** `clientRoutes`, **añadir**:
+
+```ts
+  public productTypeRoutes: ProductTypeRoutes = new ProductTypeRoutes();
+```
+
+**PARCHE** — `src/config/index.ts` **ya existe**.
+
+1. **Debajo de** `import "../features/business/client/client.model";`, **añadir**:
+
+```ts
+import "../features/business/product-type/product-type.model";
+```
+
+2. **Dentro de** `routes()`, **debajo de** `this.routePrv.clientRoutes.routes(this.app);`, **añadir**:
+
+```ts
+    this.routePrv.productTypeRoutes.routes(this.app);
+```
+
+![alt text](image-8.png)

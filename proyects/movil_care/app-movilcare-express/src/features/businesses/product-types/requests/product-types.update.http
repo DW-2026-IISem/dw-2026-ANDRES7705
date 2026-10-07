@@ -1,0 +1,20 @@
+@baseUrl = http://localhost:4000/api
+@id = 1
+
+### Replace product type (SIN AUTH)
+PUT {{baseUrl}}/product-types/{{id}}
+Content-Type: application/json
+
+{
+  "name": "Electrónica actualizada",
+  "description": "Categoría renovada",
+  "status": "active"
+}
+
+### Partially update product type (SIN AUTH)
+PATCH {{baseUrl}}/product-types/{{id}}
+Content-Type: application/json
+
+{
+  "description": "Descripción parcial"
+}

@@ -1,6 +1,7 @@
 import { Application } from "express";
 import swaggerUi from "swagger-ui-express";
 import { customerSwagger } from "../features/businesses/customers/customers.swagger";
+import { productTypeSwagger } from "../features/businesses/product-types/product-types.swagger";
 
 export type FeatureSwaggerModule = {
   tags: unknown[];
@@ -8,7 +9,10 @@ export type FeatureSwaggerModule = {
   components?: { schemas?: Record<string, unknown> };
 };
 
-const featureSwaggerModules: FeatureSwaggerModule[] = [customerSwagger];
+const featureSwaggerModules: FeatureSwaggerModule[] = [
+  customerSwagger,
+  productTypeSwagger,
+];
 
 export function buildOpenApiDocument() {
   const tags: unknown[] = [];

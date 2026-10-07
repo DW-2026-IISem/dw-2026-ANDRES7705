@@ -1,0 +1,8 @@
+@baseUrl = http://localhost:4000/api
+@id = 1
+
+### List active product types (SIN AUTH)
+GET {{baseUrl}}/product-types
+
+### Read one product type (SIN AUTH)
+GET {{baseUrl}}/product-types/{{id}}

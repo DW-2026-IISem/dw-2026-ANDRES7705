@@ -52,7 +52,7 @@ export class App {
 
   async listen() {
     await this.dbConnection();
-    await sequelize.sync({ alter: true });
+    await sequelize.sync();
 
     await new Promise<void>((resolve, reject) => {
       const server = this.app.listen(this.app.get('port'), () => {
