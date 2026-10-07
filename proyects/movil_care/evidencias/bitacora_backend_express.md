@@ -1698,4 +1698,4 @@ import "../features/business/product-type/product-type.model";
     this.routePrv.productTypeRoutes.routes(this.app);
 ```
 
-![alt text](image-8.png)
+![alt text](image-8.png) 
