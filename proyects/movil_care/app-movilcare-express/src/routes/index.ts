@@ -7,6 +7,7 @@ import salesRouter from "../features/businesses/sales/sales.routes";
 import serializedUnitsRouter from "../features/businesses/serialized-units/serialized-units.routes";
 import sparePartsRouter from "../features/businesses/spare-parts/spare-parts.routes";
 import warrantiesRouter from "../features/businesses/warranties/warranties.routes";
+import serviceOrdersRouter from "../features/businesses/service-orders/service-orders.routes";
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.use(saleDetailsRouter);
 router.use(serializedUnitsRouter);
 router.use(sparePartsRouter);
 router.use(warrantiesRouter);
+router.use(serviceOrdersRouter);
 
 export default router;

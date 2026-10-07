@@ -641,4 +641,96 @@ La respuesta incluye la línea de venta, la venta y el cliente al filtrar por cl
 
 ![alt text](image-2.png)
 
+# 8. ISS-03-E — Feature Client — Eliminar (físico y lógico)
+
+**Objetivo:** borrado físico (`DELETE`) y lógico (`status = 'inactive'`).  
+**Bloqueado por:** ISS-03-D.
+
+### Criterios de aceptación (ISS-03-E)
+
+- [ ] Controller: `deletePhysical` y `deleteLogical`
+- [ ] `DELETE /api/clientes/:id` — físico — **sin auth**
+- [ ] `PATCH /api/clientes/:id/deactivate` — lógico → `inactive` — **sin auth**
+- [ ] `http/clients.delete.http` con leyenda **SIN AUTH**
+
+### Controller — **PARCHE** `client.controller.ts` (ya existe)
+
+**Debajo de** el comentario `// ================== DELETE ==================`, **añadir** primero el borrado físico y después el lógico:
+
+```ts
+  /** Eliminación física */
+  public async deletePhysical(req: Request, res: Response) {
+    try {
+      const id = paramId(req);
+      const client = await Client.findByPk(id);
+      if (!client) {
+        res.status(404).json({ error: "Client not found" });
+        return;
+      }
+      await client.destroy();
+      res.status(200).json({ message: "Client permanently deleted", id });
+    } catch (error) {
+      res.status(500).json({ error: "Error deleting client", detail: String(error) });
+    }
+  }
+
+  /** Eliminación lógica → status = inactive */
+  public async deleteLogical(req: Request, res: Response) {
+    try {
+      const id = paramId(req);
+      const client = await Client.findByPk(id);
+      if (!client) {
+        res.status(404).json({ error: "Client not found" });
+        return;
+      }
+      await client.update({ status: "inactive" });
+      const { password, ...safe } = client.toJSON() as ClientI & { password?: string };
+      res.status(200).json({ message: "Client deactivated (logical delete)", client: safe });
+    } catch (error) {
+      res.status(500).json({ error: "Error deactivating client", detail: String(error) });
+    }
+  }
+```
+
+### Rutas — **PARCHE** `client.routes.ts` (ya existe)
+
+1. **Debajo de** el bloque `// update (PUT / PATCH)`, **añadir** el borrado físico:
+
+```ts
+    // delete físico
+    app
+      .route("/api/clientes/:id")
+      .delete(this.clientController.deletePhysical.bind(this.clientController));
+```
+
+2. **Debajo de** ese bloque, **añadir** la baja lógica:
+
+```ts
+    // delete lógico
+    app
+      .route("/api/clientes/:id/deactivate")
+      .patch(this.clientController.deleteLogical.bind(this.clientController));
+```
+
+### HTTP — archivo nuevo
+
+```bash
+: > src/features/business/client/http/clients.delete.http
+cat >> src/features/business/client/http/clients.delete.http << 'EOF'
+### Feature Client — DELETE físico / DELETE lógico (status = inactive)
+### Leyenda: SIN AUTH (sin middleware JWT / sin autenticación)
+@baseUrl = http://localhost:4000
+@id = 1
+
+# @name deleteClientPhysical
+DELETE {{baseUrl}}/api/clientes/{{id}}
+
+###
+
+# @name deleteClientLogical
+PATCH {{baseUrl}}/api/clientes/{{id}}/deactivate
+EOF
+```
+
+![alt text](image-4.png)
 

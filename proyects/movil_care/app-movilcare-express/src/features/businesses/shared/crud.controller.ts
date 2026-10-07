@@ -1,5 +1,6 @@
 import {
   CreationAttributes,
+  ForeignKeyConstraintError,
   Model,
   ModelStatic,
   UniqueConstraintError,
@@ -80,6 +81,10 @@ function sendError(res: Response, error: unknown, operation: string): void {
       error: "Validation failed",
       details: error.errors.map(({ path, message }) => ({ field: path, message })),
     });
+    return;
+  }
+  if (error instanceof ForeignKeyConstraintError) {
+    res.status(400).json({ error: "One or more referenced records do not exist" });
     return;
   }
   console.error(`Unexpected error while ${operation}:`, error);

@@ -1,0 +1,212 @@
+
+> app-movilcare-express@1.0.0 dev
+> nodemon --watch src --ext ts --exec ts-node -- src/server.ts
+
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): src/**/*[39m
+[33m[nodemon] watching extensions: ts[39m
+[32m[nodemon] starting `ts-node src/server.ts`[39m
+◇ injected env (8) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+◇ injected env (0) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+Executing (default): SELECT 1+1 AS result
+MySQL connection established
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'products' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW FULL COLUMNS FROM `products`;
+Executing (default): SELECT CONSTRAINT_NAME as constraint_name,CONSTRAINT_NAME as constraintName,CONSTRAINT_SCHEMA as constraintSchema,CONSTRAINT_SCHEMA as constraintCatalog,TABLE_NAME as tableName,TABLE_SCHEMA as tableSchema,TABLE_SCHEMA as tableCatalog,COLUMN_NAME as columnName,REFERENCED_TABLE_SCHEMA as referencedTableSchema,REFERENCED_TABLE_SCHEMA as referencedTableCatalog,REFERENCED_TABLE_NAME as referencedTableName,REFERENCED_COLUMN_NAME as referencedColumnName FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE where TABLE_NAME = 'products' AND CONSTRAINT_NAME!='PRIMARY' AND CONSTRAINT_SCHEMA='movil_care' AND REFERENCED_TABLE_NAME IS NOT NULL;
+Executing (default): ALTER TABLE `products` CHANGE `sku` `sku` VARCHAR(40) NOT NULL UNIQUE;
+Executing (default): ALTER TABLE `products` CHANGE `name` `name` VARCHAR(150) NOT NULL;
+Executing (default): ALTER TABLE `products` CHANGE `description` `description` TEXT;
+Executing (default): ALTER TABLE `products` CHANGE `type` `type` ENUM('EQUIPMENT', 'ACCESSORY') NOT NULL;
+Executing (default): ALTER TABLE `products` CHANGE `brand` `brand` VARCHAR(80);
+Executing (default): ALTER TABLE `products` CHANGE `model` `model` VARCHAR(80);
+Executing (default): ALTER TABLE `products` CHANGE `requires_serial` `requires_serial` TINYINT(1) NOT NULL DEFAULT false;
+Executing (default): ALTER TABLE `products` CHANGE `cost` `cost` DECIMAL(12,2);
+Executing (default): ALTER TABLE `products` CHANGE `price` `price` DECIMAL(12,2) NOT NULL;
+Executing (default): ALTER TABLE `products` CHANGE `tax_percentage` `tax_percentage` DECIMAL(5,2) NOT NULL DEFAULT 0;
+Executing (default): ALTER TABLE `products` CHANGE `default_warranty_months` `default_warranty_months` SMALLINT NOT NULL DEFAULT 0;
+Executing (default): ALTER TABLE `products` CHANGE `is_active` `is_active` TINYINT(1) NOT NULL DEFAULT true;
+Executing (default): ALTER TABLE `products` CHANGE `created_at` `created_at` DATETIME NOT NULL;
+Executing (default): ALTER TABLE `products` CHANGE `updated_at` `updated_at` DATETIME NOT NULL;
+Executing (default): SHOW INDEX FROM `products`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'customers' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW FULL COLUMNS FROM `customers`;
+Executing (default): SELECT CONSTRAINT_NAME as constraint_name,CONSTRAINT_NAME as constraintName,CONSTRAINT_SCHEMA as constraintSchema,CONSTRAINT_SCHEMA as constraintCatalog,TABLE_NAME as tableName,TABLE_SCHEMA as tableSchema,TABLE_SCHEMA as tableCatalog,COLUMN_NAME as columnName,REFERENCED_TABLE_SCHEMA as referencedTableSchema,REFERENCED_TABLE_SCHEMA as referencedTableCatalog,REFERENCED_TABLE_NAME as referencedTableName,REFERENCED_COLUMN_NAME as referencedColumnName FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE where TABLE_NAME = 'customers' AND CONSTRAINT_NAME!='PRIMARY' AND CONSTRAINT_SCHEMA='movil_care' AND REFERENCED_TABLE_NAME IS NOT NULL;
+Executing (default): ALTER TABLE `customers` CHANGE `document_type` `document_type` ENUM('CC', 'CE', 'NIT', 'PASSPORT', 'TI') NOT NULL;
+Executing (default): ALTER TABLE `customers` CHANGE `document_number` `document_number` VARCHAR(30) NOT NULL;
+Executing (default): ALTER TABLE `customers` CHANGE `first_name` `first_name` VARCHAR(100) NOT NULL;
+Executing (default): ALTER TABLE `customers` CHANGE `last_name` `last_name` VARCHAR(100);
+Executing (default): ALTER TABLE `customers` CHANGE `company_name` `company_name` VARCHAR(150);
+Executing (default): ALTER TABLE `customers` CHANGE `phone` `phone` VARCHAR(20);
+Executing (default): ALTER TABLE `customers` CHANGE `email` `email` VARCHAR(120) UNIQUE;
+Executing (default): ALTER TABLE `customers` CHANGE `address` `address` VARCHAR(200);
+Executing (default): ALTER TABLE `customers` CHANGE `is_active` `is_active` TINYINT(1) NOT NULL DEFAULT true;
+Executing (default): ALTER TABLE `customers` CHANGE `created_at` `created_at` DATETIME NOT NULL;
+Executing (default): ALTER TABLE `customers` CHANGE `updated_at` `updated_at` DATETIME NOT NULL;
+Executing (default): SHOW INDEX FROM `customers`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'employees' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW FULL COLUMNS FROM `employees`;
+Executing (default): SELECT CONSTRAINT_NAME as constraint_name,CONSTRAINT_NAME as constraintName,CONSTRAINT_SCHEMA as constraintSchema,CONSTRAINT_SCHEMA as constraintCatalog,TABLE_NAME as tableName,TABLE_SCHEMA as tableSchema,TABLE_SCHEMA as tableCatalog,COLUMN_NAME as columnName,REFERENCED_TABLE_SCHEMA as referencedTableSchema,REFERENCED_TABLE_SCHEMA as referencedTableCatalog,REFERENCED_TABLE_NAME as referencedTableName,REFERENCED_COLUMN_NAME as referencedColumnName FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE where TABLE_NAME = 'employees' AND CONSTRAINT_NAME!='PRIMARY' AND CONSTRAINT_SCHEMA='movil_care' AND REFERENCED_TABLE_NAME IS NOT NULL;
+Executing (default): ALTER TABLE `employees` CHANGE `name` `name` VARCHAR(150) NOT NULL;
+Executing (default): ALTER TABLE `employees` CHANGE `document` `document` VARCHAR(30) UNIQUE;
+Executing (default): ALTER TABLE `employees` CHANGE `role` `role` ENUM('SELLER', 'TECHNICIAN', 'ADMIN') NOT NULL;
+Executing (default): ALTER TABLE `employees` CHANGE `email` `email` VARCHAR(120) UNIQUE;
+Executing (default): ALTER TABLE `employees` CHANGE `is_active` `is_active` TINYINT(1) NOT NULL DEFAULT true;
+Executing (default): ALTER TABLE `employees` CHANGE `created_at` `created_at` DATETIME NOT NULL;
+Executing (default): ALTER TABLE `employees` CHANGE `updated_at` `updated_at` DATETIME NOT NULL;
+Executing (default): SHOW INDEX FROM `employees`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'spare_parts' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW FULL COLUMNS FROM `spare_parts`;
+Executing (default): SELECT CONSTRAINT_NAME as constraint_name,CONSTRAINT_NAME as constraintName,CONSTRAINT_SCHEMA as constraintSchema,CONSTRAINT_SCHEMA as constraintCatalog,TABLE_NAME as tableName,TABLE_SCHEMA as tableSchema,TABLE_SCHEMA as tableCatalog,COLUMN_NAME as columnName,REFERENCED_TABLE_SCHEMA as referencedTableSchema,REFERENCED_TABLE_SCHEMA as referencedTableCatalog,REFERENCED_TABLE_NAME as referencedTableName,REFERENCED_COLUMN_NAME as referencedColumnName FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE where TABLE_NAME = 'spare_parts' AND CONSTRAINT_NAME!='PRIMARY' AND CONSTRAINT_SCHEMA='movil_care' AND REFERENCED_TABLE_NAME IS NOT NULL;
+Executing (default): ALTER TABLE `spare_parts` CHANGE `sku` `sku` VARCHAR(40) NOT NULL UNIQUE;
+Executing (default): ALTER TABLE `spare_parts` CHANGE `name` `name` VARCHAR(150) NOT NULL;
+Executing (default): ALTER TABLE `spare_parts` CHANGE `description` `description` TEXT;
+Executing (default): ALTER TABLE `spare_parts` CHANGE `compatibility` `compatibility` VARCHAR(255);
+Executing (default): ALTER TABLE `spare_parts` CHANGE `cost` `cost` DECIMAL(12,2);
+Executing (default): ALTER TABLE `spare_parts` CHANGE `price` `price` DECIMAL(12,2);
+Executing (default): ALTER TABLE `spare_parts` CHANGE `current_stock` `current_stock` INTEGER NOT NULL DEFAULT 0;
+Executing (default): ALTER TABLE `spare_parts` CHANGE `minimum_stock` `minimum_stock` INTEGER NOT NULL DEFAULT 0;
+Executing (default): ALTER TABLE `spare_parts` CHANGE `is_active` `is_active` TINYINT(1) NOT NULL DEFAULT true;
+Executing (default): ALTER TABLE `spare_parts` CHANGE `created_at` `created_at` DATETIME NOT NULL;
+Executing (default): ALTER TABLE `spare_parts` CHANGE `updated_at` `updated_at` DATETIME NOT NULL;
+Executing (default): SHOW INDEX FROM `spare_parts`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'serialized_units' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW FULL COLUMNS FROM `serialized_units`;
+Executing (default): SELECT CONSTRAINT_NAME as constraint_name,CONSTRAINT_NAME as constraintName,CONSTRAINT_SCHEMA as constraintSchema,CONSTRAINT_SCHEMA as constraintCatalog,TABLE_NAME as tableName,TABLE_SCHEMA as tableSchema,TABLE_SCHEMA as tableCatalog,COLUMN_NAME as columnName,REFERENCED_TABLE_SCHEMA as referencedTableSchema,REFERENCED_TABLE_SCHEMA as referencedTableCatalog,REFERENCED_TABLE_NAME as referencedTableName,REFERENCED_COLUMN_NAME as referencedColumnName FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE where TABLE_NAME = 'serialized_units' AND CONSTRAINT_NAME!='PRIMARY' AND CONSTRAINT_SCHEMA='movil_care' AND REFERENCED_TABLE_NAME IS NOT NULL;
+Executing (default): SELECT CONSTRAINT_CATALOG AS constraintCatalog, CONSTRAINT_NAME AS constraintName, CONSTRAINT_SCHEMA AS constraintSchema, CONSTRAINT_TYPE AS constraintType, TABLE_NAME AS tableName, TABLE_SCHEMA AS tableSchema from INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE table_name='serialized_units' AND constraint_name = 'serialized_units_ibfk_1' AND TABLE_SCHEMA = 'movil_care';
+Executing (default): ALTER TABLE `serialized_units` DROP FOREIGN KEY `serialized_units_ibfk_1`;
+Executing (default): ALTER TABLE `serialized_units` ADD FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+Executing (default): ALTER TABLE `serialized_units` CHANGE `serial` `serial` VARCHAR(80) NOT NULL UNIQUE;
+Executing (default): ALTER TABLE `serialized_units` CHANGE `secondary_serial` `secondary_serial` VARCHAR(80) UNIQUE;
+Executing (default): ALTER TABLE `serialized_units` CHANGE `state` `state` ENUM('IN_STOCK', 'SOLD', 'IN_SERVICE', 'RETIRED') NOT NULL DEFAULT 'IN_STOCK';
+Executing (default): ALTER TABLE `serialized_units` CHANGE `received_at` `received_at` DATETIME;
+Executing (default): ALTER TABLE `serialized_units` CHANGE `is_active` `is_active` TINYINT(1) NOT NULL DEFAULT true;
+Executing (default): ALTER TABLE `serialized_units` CHANGE `created_at` `created_at` DATETIME NOT NULL;
+Executing (default): ALTER TABLE `serialized_units` CHANGE `updated_at` `updated_at` DATETIME NOT NULL;
+Executing (default): SHOW INDEX FROM `serialized_units`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'sales' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW FULL COLUMNS FROM `sales`;
+Executing (default): SELECT CONSTRAINT_NAME as constraint_name,CONSTRAINT_NAME as constraintName,CONSTRAINT_SCHEMA as constraintSchema,CONSTRAINT_SCHEMA as constraintCatalog,TABLE_NAME as tableName,TABLE_SCHEMA as tableSchema,TABLE_SCHEMA as tableCatalog,COLUMN_NAME as columnName,REFERENCED_TABLE_SCHEMA as referencedTableSchema,REFERENCED_TABLE_SCHEMA as referencedTableCatalog,REFERENCED_TABLE_NAME as referencedTableName,REFERENCED_COLUMN_NAME as referencedColumnName FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE where TABLE_NAME = 'sales' AND CONSTRAINT_NAME!='PRIMARY' AND CONSTRAINT_SCHEMA='movil_care' AND REFERENCED_TABLE_NAME IS NOT NULL;
+Executing (default): ALTER TABLE `sales` CHANGE `number` `number` VARCHAR(20) NOT NULL UNIQUE;
+Executing (default): SELECT CONSTRAINT_CATALOG AS constraintCatalog, CONSTRAINT_NAME AS constraintName, CONSTRAINT_SCHEMA AS constraintSchema, CONSTRAINT_TYPE AS constraintType, TABLE_NAME AS tableName, TABLE_SCHEMA AS tableSchema from INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE table_name='sales' AND constraint_name = 'sales_ibfk_27' AND TABLE_SCHEMA = 'movil_care';
+Executing (default): ALTER TABLE `sales` DROP FOREIGN KEY `sales_ibfk_27`;
+Executing (default): ALTER TABLE `sales` ADD FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+Executing (default): SELECT CONSTRAINT_CATALOG AS constraintCatalog, CONSTRAINT_NAME AS constraintName, CONSTRAINT_SCHEMA AS constraintSchema, CONSTRAINT_TYPE AS constraintType, TABLE_NAME AS tableName, TABLE_SCHEMA AS tableSchema from INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE table_name='sales' AND constraint_name = 'sales_ibfk_28' AND TABLE_SCHEMA = 'movil_care';
+Executing (default): ALTER TABLE `sales` DROP FOREIGN KEY `sales_ibfk_28`;
+Executing (default): ALTER TABLE `sales` ADD FOREIGN KEY (`seller_id`) REFERENCES `employees` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+Executing (default): ALTER TABLE `sales` CHANGE `sold_at` `sold_at` DATETIME NOT NULL;
+Executing (default): ALTER TABLE `sales` CHANGE `subtotal` `subtotal` DECIMAL(12,2) NOT NULL DEFAULT 0;
+Executing (default): ALTER TABLE `sales` CHANGE `taxes` `taxes` DECIMAL(12,2) NOT NULL DEFAULT 0;
+Executing (default): ALTER TABLE `sales` CHANGE `total` `total` DECIMAL(12,2) NOT NULL DEFAULT 0;
+Executing (default): ALTER TABLE `sales` CHANGE `discount` `discount` DECIMAL(12,2) NOT NULL DEFAULT 0;
+Executing (default): ALTER TABLE `sales` CHANGE `state` `state` ENUM('DRAFT', 'CONFIRMED', 'PAID', 'CANCELLED') NOT NULL DEFAULT 'DRAFT';
+Executing (default): ALTER TABLE `sales` CHANGE `created_at` `created_at` DATETIME NOT NULL;
+Executing (default): ALTER TABLE `sales` CHANGE `updated_at` `updated_at` DATETIME NOT NULL;
+Executing (default): SHOW INDEX FROM `sales`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'sale_details' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW FULL COLUMNS FROM `sale_details`;
+Executing (default): SELECT CONSTRAINT_NAME as constraint_name,CONSTRAINT_NAME as constraintName,CONSTRAINT_SCHEMA as constraintSchema,CONSTRAINT_SCHEMA as constraintCatalog,TABLE_NAME as tableName,TABLE_SCHEMA as tableSchema,TABLE_SCHEMA as tableCatalog,COLUMN_NAME as columnName,REFERENCED_TABLE_SCHEMA as referencedTableSchema,REFERENCED_TABLE_SCHEMA as referencedTableCatalog,REFERENCED_TABLE_NAME as referencedTableName,REFERENCED_COLUMN_NAME as referencedColumnName FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE where TABLE_NAME = 'sale_details' AND CONSTRAINT_NAME!='PRIMARY' AND CONSTRAINT_SCHEMA='movil_care' AND REFERENCED_TABLE_NAME IS NOT NULL;
+Executing (default): SELECT CONSTRAINT_CATALOG AS constraintCatalog, CONSTRAINT_NAME AS constraintName, CONSTRAINT_SCHEMA AS constraintSchema, CONSTRAINT_TYPE AS constraintType, TABLE_NAME AS tableName, TABLE_SCHEMA AS tableSchema from INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE table_name='sale_details' AND constraint_name = 'sale_details_ibfk_40' AND TABLE_SCHEMA = 'movil_care';
+Executing (default): ALTER TABLE `sale_details` DROP FOREIGN KEY `sale_details_ibfk_40`;
+Executing (default): ALTER TABLE `sale_details` ADD FOREIGN KEY (`sale_id`) REFERENCES `sales` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+Executing (default): SELECT CONSTRAINT_CATALOG AS constraintCatalog, CONSTRAINT_NAME AS constraintName, CONSTRAINT_SCHEMA AS constraintSchema, CONSTRAINT_TYPE AS constraintType, TABLE_NAME AS tableName, TABLE_SCHEMA AS tableSchema from INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE table_name='sale_details' AND constraint_name = 'sale_details_ibfk_41' AND TABLE_SCHEMA = 'movil_care';
+Executing (default): ALTER TABLE `sale_details` DROP FOREIGN KEY `sale_details_ibfk_41`;
+Executing (default): ALTER TABLE `sale_details` ADD FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+Executing (default): SELECT CONSTRAINT_CATALOG AS constraintCatalog, CONSTRAINT_NAME AS constraintName, CONSTRAINT_SCHEMA AS constraintSchema, CONSTRAINT_TYPE AS constraintType, TABLE_NAME AS tableName, TABLE_SCHEMA AS tableSchema from INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE table_name='sale_details' AND constraint_name = 'sale_details_ibfk_42' AND TABLE_SCHEMA = 'movil_care';
+Executing (default): ALTER TABLE `sale_details` DROP FOREIGN KEY `sale_details_ibfk_42`;
+Executing (default): ALTER TABLE `sale_details` ADD FOREIGN KEY (`serialized_unit_id`) REFERENCES `serialized_units` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+Executing (default): ALTER TABLE `sale_details` CHANGE `quantity` `quantity` INTEGER NOT NULL;
+Executing (default): ALTER TABLE `sale_details` CHANGE `unit_price` `unit_price` DECIMAL(12,2) NOT NULL;
+Executing (default): ALTER TABLE `sale_details` CHANGE `discount` `discount` DECIMAL(12,2) NOT NULL DEFAULT 0;
+Executing (default): ALTER TABLE `sale_details` CHANGE `tax_percentage` `tax_percentage` DECIMAL(5,2) DEFAULT 0;
+Executing (default): ALTER TABLE `sale_details` CHANGE `total` `total` DECIMAL(12,2) NOT NULL;
+Executing (default): ALTER TABLE `sale_details` CHANGE `notes` `notes` VARCHAR(255);
+Executing (default): ALTER TABLE `sale_details` CHANGE `created_at` `created_at` DATETIME NOT NULL;
+Executing (default): ALTER TABLE `sale_details` CHANGE `updated_at` `updated_at` DATETIME NOT NULL;
+Executing (default): SHOW INDEX FROM `sale_details`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'warranties' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW FULL COLUMNS FROM `warranties`;
+Executing (default): SELECT CONSTRAINT_NAME as constraint_name,CONSTRAINT_NAME as constraintName,CONSTRAINT_SCHEMA as constraintSchema,CONSTRAINT_SCHEMA as constraintCatalog,TABLE_NAME as tableName,TABLE_SCHEMA as tableSchema,TABLE_SCHEMA as tableCatalog,COLUMN_NAME as columnName,REFERENCED_TABLE_SCHEMA as referencedTableSchema,REFERENCED_TABLE_SCHEMA as referencedTableCatalog,REFERENCED_TABLE_NAME as referencedTableName,REFERENCED_COLUMN_NAME as referencedColumnName FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE where TABLE_NAME = 'warranties' AND CONSTRAINT_NAME!='PRIMARY' AND CONSTRAINT_SCHEMA='movil_care' AND REFERENCED_TABLE_NAME IS NOT NULL;
+Executing (default): SELECT CONSTRAINT_CATALOG AS constraintCatalog, CONSTRAINT_NAME AS constraintName, CONSTRAINT_SCHEMA AS constraintSchema, CONSTRAINT_TYPE AS constraintType, TABLE_NAME AS tableName, TABLE_SCHEMA AS tableSchema from INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE table_name='warranties' AND constraint_name = 'warranties_ibfk_15' AND TABLE_SCHEMA = 'movil_care';
+Executing (default): ALTER TABLE `warranties` DROP FOREIGN KEY `warranties_ibfk_15`;
+Executing (default): ALTER TABLE `warranties` ADD FOREIGN KEY (`sale_detail_id`) REFERENCES `sale_details` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+Executing (default): SELECT CONSTRAINT_CATALOG AS constraintCatalog, CONSTRAINT_NAME AS constraintName, CONSTRAINT_SCHEMA AS constraintSchema, CONSTRAINT_TYPE AS constraintType, TABLE_NAME AS tableName, TABLE_SCHEMA AS tableSchema from INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE table_name='warranties' AND constraint_name = 'warranties_ibfk_16' AND TABLE_SCHEMA = 'movil_care';
+Executing (default): ALTER TABLE `warranties` DROP FOREIGN KEY `warranties_ibfk_16`;
+Executing (default): ALTER TABLE `warranties` ADD FOREIGN KEY (`serialized_unit_id`) REFERENCES `serialized_units` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+Executing (default): ALTER TABLE `warranties` CHANGE `type` `type` ENUM('COMMERCIAL', 'EXTENDED', 'SUPPLIER') NOT NULL;
+Executing (default): ALTER TABLE `warranties` CHANGE `coverage_description` `coverage_description` TEXT;
+Executing (default): ALTER TABLE `warranties` CHANGE `start_date` `start_date` DATETIME NOT NULL;
+Executing (default): ALTER TABLE `warranties` CHANGE `end_date` `end_date` DATETIME NOT NULL;
+Executing (default): ALTER TABLE `warranties` CHANGE `state` `state` ENUM('VALID', 'EXPIRED', 'CANCELLED', 'CONSUMED') NOT NULL DEFAULT 'VALID';
+Executing (default): ALTER TABLE `warranties` CHANGE `is_active` `is_active` TINYINT(1) NOT NULL DEFAULT true;
+Executing (default): ALTER TABLE `warranties` CHANGE `created_at` `created_at` DATETIME NOT NULL;
+Executing (default): ALTER TABLE `warranties` CHANGE `updated_at` `updated_at` DATETIME NOT NULL;
+Executing (default): SHOW INDEX FROM `warranties`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'service_orders' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW FULL COLUMNS FROM `service_orders`;
+Executing (default): SELECT CONSTRAINT_NAME as constraint_name,CONSTRAINT_NAME as constraintName,CONSTRAINT_SCHEMA as constraintSchema,CONSTRAINT_SCHEMA as constraintCatalog,TABLE_NAME as tableName,TABLE_SCHEMA as tableSchema,TABLE_SCHEMA as tableCatalog,COLUMN_NAME as columnName,REFERENCED_TABLE_SCHEMA as referencedTableSchema,REFERENCED_TABLE_SCHEMA as referencedTableCatalog,REFERENCED_TABLE_NAME as referencedTableName,REFERENCED_COLUMN_NAME as referencedColumnName FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE where TABLE_NAME = 'service_orders' AND CONSTRAINT_NAME!='PRIMARY' AND CONSTRAINT_SCHEMA='movil_care' AND REFERENCED_TABLE_NAME IS NOT NULL;
+Executing (default): ALTER TABLE `service_orders` CHANGE `number` `number` VARCHAR(20) NOT NULL UNIQUE;
+Executing (default): SELECT CONSTRAINT_CATALOG AS constraintCatalog, CONSTRAINT_NAME AS constraintName, CONSTRAINT_SCHEMA AS constraintSchema, CONSTRAINT_TYPE AS constraintType, TABLE_NAME AS tableName, TABLE_SCHEMA AS tableSchema from INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE table_name='service_orders' AND constraint_name = 'service_orders_ibfk_16' AND TABLE_SCHEMA = 'movil_care';
+Executing (default): ALTER TABLE `service_orders` DROP FOREIGN KEY `service_orders_ibfk_16`;
+Executing (default): ALTER TABLE `service_orders` ADD FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+Executing (default): SELECT CONSTRAINT_CATALOG AS constraintCatalog, CONSTRAINT_NAME AS constraintName, CONSTRAINT_SCHEMA AS constraintSchema, CONSTRAINT_TYPE AS constraintType, TABLE_NAME AS tableName, TABLE_SCHEMA AS tableSchema from INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE table_name='service_orders' AND constraint_name = 'service_orders_ibfk_17' AND TABLE_SCHEMA = 'movil_care';
+Executing (default): ALTER TABLE `service_orders` DROP FOREIGN KEY `service_orders_ibfk_17`;
+Executing (default): ALTER TABLE `service_orders` ADD FOREIGN KEY (`serialized_unit_id`) REFERENCES `serialized_units` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+Executing (default): SELECT CONSTRAINT_CATALOG AS constraintCatalog, CONSTRAINT_NAME AS constraintName, CONSTRAINT_SCHEMA AS constraintSchema, CONSTRAINT_TYPE AS constraintType, TABLE_NAME AS tableName, TABLE_SCHEMA AS tableSchema from INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE table_name='service_orders' AND constraint_name = 'service_orders_ibfk_18' AND TABLE_SCHEMA = 'movil_care';
+Executing (default): ALTER TABLE `service_orders` DROP FOREIGN KEY `service_orders_ibfk_18`;
+Executing (default): ALTER TABLE `service_orders` ADD FOREIGN KEY (`technician_id`) REFERENCES `employees` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+Executing (default): ALTER TABLE `service_orders` CHANGE `service_type` `service_type` ENUM('COMMERCIAL_WARRANTY', 'PAID_REPAIR', 'RECURRENCE') NOT NULL;
+Executing (default): SELECT CONSTRAINT_CATALOG AS constraintCatalog, CONSTRAINT_NAME AS constraintName, CONSTRAINT_SCHEMA AS constraintSchema, CONSTRAINT_TYPE AS constraintType, TABLE_NAME AS tableName, TABLE_SCHEMA AS tableSchema from INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE table_name='service_orders' AND constraint_name = 'service_orders_ibfk_19' AND TABLE_SCHEMA = 'movil_care';
+Executing (default): ALTER TABLE `service_orders` DROP FOREIGN KEY `service_orders_ibfk_19`;
+Executing (default): ALTER TABLE `service_orders` ADD FOREIGN KEY (`warranty_id`) REFERENCES `warranties` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+Executing (default): SELECT CONSTRAINT_CATALOG AS constraintCatalog, CONSTRAINT_NAME AS constraintName, CONSTRAINT_SCHEMA AS constraintSchema, CONSTRAINT_TYPE AS constraintType, TABLE_NAME AS tableName, TABLE_SCHEMA AS tableSchema from INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE table_name='service_orders' AND constraint_name = 'service_orders_ibfk_20' AND TABLE_SCHEMA = 'movil_care';
+Executing (default): ALTER TABLE `service_orders` DROP FOREIGN KEY `service_orders_ibfk_20`;
+Executing (default): ALTER TABLE `service_orders` ADD FOREIGN KEY (`origin_order_id`) REFERENCES `service_orders` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+Executing (default): ALTER TABLE `service_orders` CHANGE `reported_issue` `reported_issue` TEXT NOT NULL;
+Executing (default): ALTER TABLE `service_orders` CHANGE `intake_condition` `intake_condition` TEXT;
+Executing (default): ALTER TABLE `service_orders` CHANGE `received_accessories` `received_accessories` VARCHAR(255);
+Executing (default): ALTER TABLE `service_orders` CHANGE `opened_at` `opened_at` DATETIME NOT NULL;
+Executing (default): ALTER TABLE `service_orders` CHANGE `estimated_delivery_date` `estimated_delivery_date` DATETIME;
+Executing (default): ALTER TABLE `service_orders` CHANGE `closed_at` `closed_at` DATETIME;
+Executing (default): ALTER TABLE `service_orders` CHANGE `total` `total` DECIMAL(12,2) NOT NULL DEFAULT 0;
+Executing (default): ALTER TABLE `service_orders` CHANGE `state` `state` ENUM('RECEIVED', 'DIAGNOSING', 'AWAITING_AUTHORIZATION', 'IN_REPAIR', 'READY', 'DELIVERED', 'REJECTED', 'CANCELLED') NOT NULL DEFAULT 'RECEIVED';
+Executing (default): ALTER TABLE `service_orders` CHANGE `created_at` `created_at` DATETIME NOT NULL;
+Executing (default): ALTER TABLE `service_orders` CHANGE `updated_at` `updated_at` DATETIME NOT NULL;
+Executing (default): SHOW INDEX FROM `service_orders`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'diagnostics' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW FULL COLUMNS FROM `diagnostics`;
+Executing (default): SELECT CONSTRAINT_NAME as constraint_name,CONSTRAINT_NAME as constraintName,CONSTRAINT_SCHEMA as constraintSchema,CONSTRAINT_SCHEMA as constraintCatalog,TABLE_NAME as tableName,TABLE_SCHEMA as tableSchema,TABLE_SCHEMA as tableCatalog,COLUMN_NAME as columnName,REFERENCED_TABLE_SCHEMA as referencedTableSchema,REFERENCED_TABLE_SCHEMA as referencedTableCatalog,REFERENCED_TABLE_NAME as referencedTableName,REFERENCED_COLUMN_NAME as referencedColumnName FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE where TABLE_NAME = 'diagnostics' AND CONSTRAINT_NAME!='PRIMARY' AND CONSTRAINT_SCHEMA='movil_care' AND REFERENCED_TABLE_NAME IS NOT NULL;
+Executing (default): SELECT CONSTRAINT_CATALOG AS constraintCatalog, CONSTRAINT_NAME AS constraintName, CONSTRAINT_SCHEMA AS constraintSchema, CONSTRAINT_TYPE AS constraintType, TABLE_NAME AS tableName, TABLE_SCHEMA AS tableSchema from INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE table_name='diagnostics' AND constraint_name = 'diagnostics_ibfk_7' AND TABLE_SCHEMA = 'movil_care';
+Executing (default): ALTER TABLE `diagnostics` DROP FOREIGN KEY `diagnostics_ibfk_7`;
+Executing (default): ALTER TABLE `diagnostics` ADD FOREIGN KEY (`service_order_id`) REFERENCES `service_orders` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+Executing (default): SELECT CONSTRAINT_CATALOG AS constraintCatalog, CONSTRAINT_NAME AS constraintName, CONSTRAINT_SCHEMA AS constraintSchema, CONSTRAINT_TYPE AS constraintType, TABLE_NAME AS tableName, TABLE_SCHEMA AS tableSchema from INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE table_name='diagnostics' AND constraint_name = 'diagnostics_ibfk_8' AND TABLE_SCHEMA = 'movil_care';
+Executing (default): ALTER TABLE `diagnostics` DROP FOREIGN KEY `diagnostics_ibfk_8`;
+Executing (default): ALTER TABLE `diagnostics` ADD FOREIGN KEY (`technician_id`) REFERENCES `employees` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+Executing (default): ALTER TABLE `diagnostics` CHANGE `description` `description` TEXT NOT NULL;
+Executing (default): ALTER TABLE `diagnostics` CHANGE `cause` `cause` ENUM('FACTORY_DEFECT', 'WEAR', 'MISUSE', 'MOISTURE', 'IMPACT', 'OTHER') NOT NULL;
+Executing (default): ALTER TABLE `diagnostics` CHANGE `warranty_covered` `warranty_covered` TINYINT(1);
+Executing (default): ALTER TABLE `diagnostics` CHANGE `labor_cost` `labor_cost` DECIMAL(12,2) NOT NULL DEFAULT 0;
+Executing (default): ALTER TABLE `diagnostics` CHANGE `estimated_total` `estimated_total` DECIMAL(12,2) NOT NULL DEFAULT 0;
+Executing (default): ALTER TABLE `diagnostics` CHANGE `diagnosed_at` `diagnosed_at` DATETIME NOT NULL;
+Executing (default): ALTER TABLE `diagnostics` CHANGE `created_at` `created_at` DATETIME NOT NULL;
+Executing (default): ALTER TABLE `diagnostics` CHANGE `updated_at` `updated_at` DATETIME NOT NULL;
+Executing (default): SHOW INDEX FROM `diagnostics`
+Executing (default): SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = 'service_authorizations' AND TABLE_SCHEMA = 'movil_care'
+Executing (default): SHOW FULL COLUMNS FROM `service_authorizations`;
+Executing (default): SELECT CONSTRAINT_NAME as constraint_name,CONSTRAINT_NAME as constraintName,CONSTRAINT_SCHEMA as constraintSchema,CONSTRAINT_SCHEMA as constraintCatalog,TABLE_NAME as tableName,TABLE_SCHEMA as tableSchema,TABLE_SCHEMA as tableCatalog,COLUMN_NAME as columnName,REFERENCED_TABLE_SCHEMA as referencedTableSchema,REFERENCED_TABLE_SCHEMA as referencedTableCatalog,REFERENCED_TABLE_NAME as referencedTableName,REFERENCED_COLUMN_NAME as referencedColumnName FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE where TABLE_NAME = 'service_authorizations' AND CONSTRAINT_NAME!='PRIMARY' AND CONSTRAINT_SCHEMA='movil_care' AND REFERENCED_TABLE_NAME IS NOT NULL;
+Executing (default): SELECT CONSTRAINT_CATALOG AS constraintCatalog, CONSTRAINT_NAME AS constraintName, CONSTRAINT_SCHEMA AS constraintSchema, CONSTRAINT_TYPE AS constraintType, TABLE_NAME AS tableName, TABLE_SCHEMA AS tableSchema from INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE table_name='service_authorizations' AND constraint_name = 'service_authorizations_ibfk_7' AND TABLE_SCHEMA = 'movil_care';
+Executing (default): ALTER TABLE `service_authorizations` DROP FOREIGN KEY `service_authorizations_ibfk_7`;
+Executing (default): ALTER TABLE `service_authorizations` ADD FOREIGN KEY (`diagnostic_id`) REFERENCES `diagnostics` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+Executing (default): ALTER TABLE `service_authorizations` CHANGE `state` `state` ENUM('PENDING', 'APPROVED', 'REJECTED') NOT NULL;
+Executing (default): ALTER TABLE `service_authorizations` CHANGE `authorized_amount` `authorized_amount` DECIMAL(12,2) NOT NULL;
+Executing (default): ALTER TABLE `service_authorizations` CHANGE `channel` `channel` ENUM('IN_PERSON', 'PHONE', 'WHATSAPP', 'EMAIL', 'DIGITAL_SIGNATURE') NOT NULL;
+Executing (default): ALTER TABLE `service_authorizations` CHANGE `responded_at` `responded_at` DATETIME;
+Executing (default): ALTER TABLE `service_authorizations` CHANGE `notes` `notes` VARCHAR(255);
+Executing (default): SELECT CONSTRAINT_CATALOG AS constraintCatalog, CONSTRAINT_NAME AS constraintName, CONSTRAINT_SCHEMA AS constraintSchema, CONSTRAINT_TYPE AS constraintType, TABLE_NAME AS tableName, TABLE_SCHEMA AS tableSchema from INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE table_name='service_authorizations' AND constraint_name = 'service_authorizations_ibfk_8' AND TABLE_SCHEMA = 'movil_care';
+Executing (default): ALTER TABLE `service_authorizations` DROP FOREIGN KEY `service_authorizations_ibfk_8`;
+Executing (default): ALTER TABLE `service_authorizations` ADD FOREIGN KEY (`recorded_by`) REFERENCES `employees` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+Executing (default): ALTER TABLE `service_authorizations` CHANGE `created_at` `created_at` DATETIME NOT NULL;
+Executing (default): ALTER TABLE `service_authorizations` CHANGE `updated_at` `updated_at` DATETIME NOT NULL;
+Executing (default): SHOW INDEX FROM `service_authorizations`
+🚀 Servidor ejecutándose en puerto 4000
+[0mGET /api/clientes [33m404[0m 18.148 ms - 151[0m

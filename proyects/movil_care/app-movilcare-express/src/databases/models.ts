@@ -6,3 +6,6 @@ import "../features/businesses/serialized-units/serialized-units.model";
 import "../features/businesses/sales/sales.model";
 import "../features/businesses/sale-details/sale-details.model";
 import "../features/businesses/warranties/warranties.model";
+import "../features/businesses/service-orders/service-orders.model";
+import "../features/businesses/service-orders/diagnostics.model";
+import "../features/businesses/service-orders/service-authorizations.model";
