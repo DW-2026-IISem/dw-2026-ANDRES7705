@@ -10,6 +10,7 @@ export class Product extends Model {
   /** Legacy product classification retained while clients migrate from `type`. */
   declare type: "EQUIPMENT" | "ACCESSORY";
   declare productTypeId: number;
+  declare stockQuantity: number;
   declare brand: string | null;
   declare model: string | null;
   declare requiresSerial: boolean;
@@ -34,6 +35,12 @@ Product.init(
       references: { model: "product_types", key: "id" },
       onUpdate: "CASCADE",
       onDelete: "RESTRICT",
+    },
+    stockQuantity: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+      validate: { min: 0 },
     },
     brand: { type: DataTypes.STRING(80), allowNull: true },
     model: { type: DataTypes.STRING(80), allowNull: true },
@@ -68,5 +75,12 @@ Product.init(
     tableName: "products",
     timestamps: true,
     underscored: true,
+    hooks: {
+      beforeValidate: (product) => {
+        if (product.requiresSerial && Number(product.stockQuantity) !== 0) {
+          throw new Error("Serialized products must use SerializedUnit inventory, not stockQuantity");
+        }
+      },
+    },
   }
 );

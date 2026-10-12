@@ -3,6 +3,8 @@ import swaggerUi from "swagger-ui-express";
 import { customerSwagger } from "../features/businesses/customers/customers.swagger";
 import { productSwagger } from "../features/businesses/products/products.swagger";
 import { productTypeSwagger } from "../features/businesses/product-types/product-types.swagger";
+import { salesSwagger } from "../features/businesses/sales/sales.swagger";
+import { saleDetailsSwagger } from "../features/businesses/sale-details/sale-details.swagger";
 
 export type FeatureSwaggerModule = {
   tags: unknown[];
@@ -14,6 +16,8 @@ const featureSwaggerModules: FeatureSwaggerModule[] = [
   customerSwagger,
   productTypeSwagger,
   productSwagger,
+  salesSwagger,
+  saleDetailsSwagger,
 ];
 
 export function buildOpenApiDocument() {

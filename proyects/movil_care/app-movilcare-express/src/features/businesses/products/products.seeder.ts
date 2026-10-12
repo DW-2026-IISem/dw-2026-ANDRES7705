@@ -25,6 +25,7 @@ export async function seedProducts(count: number): Promise<number> {
 
   const rows = Array.from({ length: count }, (_, index) => {
     const productType = faker.helpers.arrayElement(types);
+    const requiresSerial = faker.datatype.boolean();
     return {
       sku: `SEED-${Date.now()}-${index}-${faker.string.alphanumeric(6).toUpperCase()}`,
       name: faker.commerce.productName(),
@@ -33,7 +34,8 @@ export async function seedProducts(count: number): Promise<number> {
       productTypeId: productType.id,
       brand: faker.company.name(),
       model: faker.commerce.productAdjective(),
-      requiresSerial: faker.datatype.boolean(),
+      requiresSerial,
+      stockQuantity: requiresSerial ? 0 : faker.number.int({ min: 5, max: 50 }),
       cost: faker.commerce.price({ min: 5, max: 500, dec: 2 }),
       price: faker.commerce.price({ min: 10, max: 1000, dec: 2 }),
       taxPercentage: 0,

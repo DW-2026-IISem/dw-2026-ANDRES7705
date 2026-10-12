@@ -56,6 +56,10 @@ function sendError(res, error, operation) {
         });
         return;
     }
+    if (error instanceof sequelize_1.ForeignKeyConstraintError) {
+        res.status(400).json({ error: "One or more referenced records do not exist" });
+        return;
+    }
     console.error(`Unexpected error while ${operation}:`, error);
     res.status(500).json({ error: "Internal server error" });
 }

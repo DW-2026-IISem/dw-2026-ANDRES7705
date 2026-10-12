@@ -15,6 +15,7 @@ export class SaleDetail extends Model {
   declare taxPercentage: string | null;
   declare total: string;
   declare notes: string | null;
+  declare isActive: boolean;
 }
 
 SaleDetail.init(
@@ -49,7 +50,6 @@ SaleDetail.init(
     serializedUnitId: {
       type: DataTypes.BIGINT,
       allowNull: true,
-      unique: true,
       references: {
         model: SerializedUnit,
         key: "id",
@@ -90,6 +90,7 @@ SaleDetail.init(
       type: DataTypes.STRING(255),
       allowNull: true,
     },
+    isActive: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
   },
   {
     sequelize,
@@ -148,9 +149,9 @@ SaleDetail.belongsTo(Product, {
   as: "product",
 });
 
-SerializedUnit.hasOne(SaleDetail, {
+SerializedUnit.hasMany(SaleDetail, {
   foreignKey: "serializedUnitId",
-  as: "saleDetail",
+  as: "saleDetails",
 });
 
 SaleDetail.belongsTo(SerializedUnit, {

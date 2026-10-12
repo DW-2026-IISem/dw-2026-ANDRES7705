@@ -1,0 +1,41 @@
+@baseUrl = http://localhost:4000/api
+@saleId = 1
+@detailId = 1
+
+### Agregar línea a una venta DRAFT
+### El precio y los impuestos se toman del producto; la venta debe estar en DRAFT.
+POST {{baseUrl}}/sale-details
+Content-Type: application/json
+
+{
+  "saleId": {{saleId}},
+  "productId": 1,
+  "quantity": 1,
+  "discount": 0
+}
+
+###
+
+### Listar detalles activos
+GET {{baseUrl}}/sale-details
+
+###
+
+### Consultar detalle
+GET {{baseUrl}}/sale-details/{{detailId}}
+
+###
+
+### Editar cantidad de detalle DRAFT (PUT requiere productId y quantity)
+PUT {{baseUrl}}/sale-details/{{detailId}}
+Content-Type: application/json
+
+{
+  "productId": 1,
+  "quantity": 2
+}
+
+###
+
+### Baja lógica de detalle DRAFT
+PATCH {{baseUrl}}/sale-details/{{detailId}}/deactivate

@@ -10,6 +10,7 @@ router.put("/sales/:id", salesController.replace);
 router.patch("/sales/:id", salesController.update);
 router.post("/sales/:id/confirm", salesController.confirm);
 router.patch("/sales/:id/confirm", salesController.confirm);
+router.patch("/sales/:id/cancel", salesController.cancel);
 router.delete("/sales/:id", salesController.remove);
 
 export default router;

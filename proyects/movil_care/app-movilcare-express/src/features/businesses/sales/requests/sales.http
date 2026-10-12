@@ -1,0 +1,40 @@
+@baseUrl = http://localhost:4000/api
+@saleId = 1
+
+### Crear venta en borrador con sus líneas
+### Reemplaza customerId/productId por IDs activos de tu base de datos.
+### Para un producto no serializado, stockQuantity debe cubrir quantity.
+### Para un producto serializado, usa quantity: 1 y un serializedUnitId IN_STOCK.
+POST {{baseUrl}}/sales
+Content-Type: application/json
+
+{
+  "customerId": 1,
+  "items": [
+    {
+      "productId": 1,
+      "quantity": 1,
+      "discount": 0
+    }
+  ]
+}
+
+###
+
+### Listar ventas y sus detalles activos
+GET {{baseUrl}}/sales
+
+###
+
+### Consultar una venta
+GET {{baseUrl}}/sales/{{saleId}}
+
+###
+
+### Confirmar venta (descuenta stock / marca la unidad serializada como SOLD)
+POST {{baseUrl}}/sales/{{saleId}}/confirm
+
+###
+
+### Cancelar una venta DRAFT o CONFIRMED (restaura inventario si estaba confirmada)
+PATCH {{baseUrl}}/sales/{{saleId}}/cancel

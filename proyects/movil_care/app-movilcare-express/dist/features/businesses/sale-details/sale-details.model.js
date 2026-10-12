@@ -40,7 +40,6 @@ SaleDetail.init({
     serializedUnitId: {
         type: sequelize_1.DataTypes.BIGINT,
         allowNull: true,
-        unique: true,
         references: {
             model: serialized_units_model_1.SerializedUnit,
             key: "id",
@@ -81,6 +80,7 @@ SaleDetail.init({
         type: sequelize_1.DataTypes.STRING(255),
         allowNull: true,
     },
+    isActive: { type: sequelize_1.DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
 }, {
     sequelize: db_1.sequelize,
     modelName: "SaleDetail",
@@ -126,9 +126,9 @@ SaleDetail.belongsTo(products_model_1.Product, {
     foreignKey: "productId",
     as: "product",
 });
-serialized_units_model_1.SerializedUnit.hasOne(SaleDetail, {
+serialized_units_model_1.SerializedUnit.hasMany(SaleDetail, {
     foreignKey: "serializedUnitId",
-    as: "saleDetail",
+    as: "saleDetails",
 });
 SaleDetail.belongsTo(serialized_units_model_1.SerializedUnit, {
     foreignKey: "serializedUnitId",

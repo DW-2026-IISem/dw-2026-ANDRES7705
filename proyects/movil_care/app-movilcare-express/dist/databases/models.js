@@ -1,6 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 require("../features/businesses/products/products.model");
+require("../features/businesses/product-types/product-types.model");
+require("../features/businesses/products/products.associations");
 require("../features/businesses/customers/customers.model");
 require("../features/businesses/employees/employees.model");
 require("../features/businesses/spare-parts/spare-parts.model");
@@ -8,4 +10,7 @@ require("../features/businesses/serialized-units/serialized-units.model");
 require("../features/businesses/sales/sales.model");
 require("../features/businesses/sale-details/sale-details.model");
 require("../features/businesses/warranties/warranties.model");
+require("../features/businesses/service-orders/service-orders.model");
+require("../features/businesses/service-orders/diagnostics.model");
+require("../features/businesses/service-orders/service-authorizations.model");
 //# sourceMappingURL=models.js.map

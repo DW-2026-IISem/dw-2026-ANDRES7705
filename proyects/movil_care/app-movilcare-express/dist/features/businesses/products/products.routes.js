@@ -5,9 +5,11 @@ const products_controller_1 = require("./products.controller");
 const router = (0, express_1.Router)();
 router.get("/products", products_controller_1.productsController.list);
 router.get("/products/:id", products_controller_1.productsController.getById);
-router.post("/products", products_controller_1.productsController.create);
-router.put("/products/:id", products_controller_1.productsController.replace);
-router.patch("/products/:id", products_controller_1.productsController.update);
+router.post("/products", products_controller_1.productsController.validateProductTypeForCreate, products_controller_1.productsController.create);
+router.put("/products/:id", products_controller_1.productsController.validateProductTypeForCreate, products_controller_1.productsController.replace);
+router.patch("/products/:id", products_controller_1.productsController.validateProductTypeForUpdate, products_controller_1.productsController.update);
 router.delete("/products/:id", products_controller_1.productsController.remove);
+router.delete("/products/:id/permanent", products_controller_1.productsController.deletePhysical);
+router.patch("/products/:id/deactivate", products_controller_1.productsController.deactivate);
 exports.default = router;
 //# sourceMappingURL=products.routes.js.map

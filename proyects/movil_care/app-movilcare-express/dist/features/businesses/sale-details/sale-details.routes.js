@@ -8,6 +8,7 @@ router.get("/sale-details/:id", sale_details_controller_1.saleDetailsController.
 router.post("/sale-details", sale_details_controller_1.saleDetailsController.create);
 router.put("/sale-details/:id", sale_details_controller_1.saleDetailsController.replace);
 router.patch("/sale-details/:id", sale_details_controller_1.saleDetailsController.update);
+router.patch("/sale-details/:id/deactivate", sale_details_controller_1.saleDetailsController.deactivate);
 router.delete("/sale-details/:id", sale_details_controller_1.saleDetailsController.remove);
 exports.default = router;
 //# sourceMappingURL=sale-details.routes.js.map

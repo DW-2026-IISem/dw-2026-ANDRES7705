@@ -12,6 +12,13 @@ type ConstraintRow = {
   constraint_name: string;
 };
 
+type SerializedUnitIndex = {
+  index_name: string;
+  column_count: number;
+  contains_serialized_unit_id: number;
+  non_unique: number;
+};
+
 const PRODUCT_TYPE_FK = "fk_products_product_type_id";
 
 export async function associateProductsWithProductTypes(): Promise<void> {
@@ -22,6 +29,13 @@ export async function associateProductsWithProductTypes(): Promise<void> {
     await queryInterface.addColumn("products", "product_type_id", {
       type: "BIGINT",
       allowNull: true,
+    });
+  }
+  if (!productColumns.stock_quantity) {
+    await queryInterface.addColumn("products", "stock_quantity", {
+      type: "INTEGER",
+      allowNull: false,
+      defaultValue: 0,
     });
   }
 
@@ -100,5 +114,51 @@ export async function associateProductsWithProductTypes(): Promise<void> {
       onUpdate: "CASCADE",
       onDelete: "RESTRICT",
     });
+  }
+
+  const saleDetailColumns = await queryInterface.describeTable("sale_details");
+  if (!saleDetailColumns.is_active) {
+    await queryInterface.addColumn("sale_details", "is_active", {
+      type: "BOOLEAN",
+      allowNull: false,
+      defaultValue: true,
+    });
+  }
+
+  const serializedUnitIndexes = await sequelize.query<SerializedUnitIndex>(
+    `SELECT INDEX_NAME AS index_name,
+            COUNT(*) AS column_count,
+            MAX(CASE WHEN COLUMN_NAME = 'serialized_unit_id' THEN 1 ELSE 0 END) AS contains_serialized_unit_id,
+            MAX(NON_UNIQUE) AS non_unique
+     FROM INFORMATION_SCHEMA.STATISTICS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'sale_details'
+     GROUP BY INDEX_NAME`,
+    { type: QueryTypes.SELECT }
+  );
+  const uniqueSerializedUnitIndexes = serializedUnitIndexes.filter(
+    (index) =>
+      index.index_name !== "PRIMARY" &&
+      Number(index.non_unique) === 0 &&
+      Number(index.column_count) === 1 &&
+      Number(index.contains_serialized_unit_id) === 1
+  );
+
+  if (uniqueSerializedUnitIndexes.length > 0) {
+    const hasNonUniqueSerializedUnitIndex = serializedUnitIndexes.some(
+      (index) =>
+        Number(index.non_unique) === 1 &&
+        Number(index.column_count) === 1 &&
+        Number(index.contains_serialized_unit_id) === 1
+    );
+
+    if (!hasNonUniqueSerializedUnitIndex) {
+      await queryInterface.addIndex("sale_details", ["serialized_unit_id"], {
+        name: "idx_sale_details_serialized_unit_id",
+      });
+    }
+
+    for (const index of uniqueSerializedUnitIndexes) {
+      await queryInterface.removeIndex("sale_details", index.index_name);
+    }
   }
 }

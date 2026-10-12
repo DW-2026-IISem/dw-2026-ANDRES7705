@@ -10,6 +10,7 @@ router.put("/sales/:id", sales_controller_1.salesController.replace);
 router.patch("/sales/:id", sales_controller_1.salesController.update);
 router.post("/sales/:id/confirm", sales_controller_1.salesController.confirm);
 router.patch("/sales/:id/confirm", sales_controller_1.salesController.confirm);
+router.patch("/sales/:id/cancel", sales_controller_1.salesController.cancel);
 router.delete("/sales/:id", sales_controller_1.salesController.remove);
 exports.default = router;
 //# sourceMappingURL=sales.routes.js.map

@@ -10,6 +10,7 @@ const crudController = createCrudController(Product, {
     "description",
     "type",
     "productTypeId",
+    "stockQuantity",
     "brand",
     "model",
     "requiresSerial",

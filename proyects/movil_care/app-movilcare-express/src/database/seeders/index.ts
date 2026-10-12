@@ -4,6 +4,8 @@ import "../../databases/models";
 import { seedCustomers } from "../../features/businesses/customers/customers.seeder";
 import { seedProductTypes } from "../../features/businesses/product-types/product-types.seeder";
 import { seedProducts } from "../../features/businesses/products/products.seeder";
+import { seedSales } from "../../features/businesses/sales/sales.seeder";
+import { seedSaleDetails } from "../../features/businesses/sale-details/sale-details.seeder";
 import { associateProductsWithProductTypes } from "../../databases/migrations/associate-products-with-product-types";
 import { resolveSeedCounts } from "./counts";
 
@@ -21,6 +23,8 @@ export async function runAllSeeders(): Promise<void> {
   await seedCustomers(counts.customers);
   await seedProductTypes(counts.product_types);
   await seedProducts(counts.products);
+  await seedSales(counts.sales);
+  await seedSaleDetails(counts.sale_details);
 
   console.log("🌱 SeedersRunner finalizado");
 }

@@ -1,0 +1,20 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const diagnostics_controller_1 = require("./diagnostics.controller");
+const service_authorizations_controller_1 = require("./service-authorizations.controller");
+const service_orders_controller_1 = require("./service-orders.controller");
+const router = (0, express_1.Router)();
+router.get("/service-orders", service_orders_controller_1.serviceOrdersController.list);
+router.get("/service-orders/:id", service_orders_controller_1.serviceOrdersController.getById);
+router.post("/service-orders", service_orders_controller_1.serviceOrdersController.create);
+router.patch("/service-orders/:id", service_orders_controller_1.serviceOrdersController.update);
+router.patch("/service-orders/:id/state", service_orders_controller_1.serviceOrdersController.changeState);
+router.get("/diagnostics", diagnostics_controller_1.diagnosticsController.list);
+router.get("/diagnostics/:id", diagnostics_controller_1.diagnosticsController.getById);
+router.post("/diagnostics", diagnostics_controller_1.diagnosticsController.create);
+router.get("/service-authorizations", service_authorizations_controller_1.serviceAuthorizationsController.list);
+router.get("/service-authorizations/:id", service_authorizations_controller_1.serviceAuthorizationsController.getById);
+router.post("/service-authorizations", service_authorizations_controller_1.serviceAuthorizationsController.create);
+exports.default = router;
+//# sourceMappingURL=service-orders.routes.js.map

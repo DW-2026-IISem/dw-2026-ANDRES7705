@@ -11,6 +11,8 @@ require("../databases/models");
 const db_1 = require("../databases/db");
 Object.defineProperty(exports, "sequelize", { enumerable: true, get: function () { return db_1.sequelize; } });
 const routes_1 = __importDefault(require("../routes"));
+const swagger_1 = require("../swagger");
+const associate_products_with_product_types_1 = require("../databases/migrations/associate-products-with-product-types");
 var cors = require("cors");
 dotenv_1.default.config();
 class App {
@@ -20,6 +22,7 @@ class App {
         this.settings();
         this.middlewares();
         this.routes();
+        this.docs();
     }
     settings() {
         this.app.set('port', this.port || process.env.PORT || 4000);
@@ -33,6 +36,9 @@ class App {
     routes() {
         this.app.use("/api", routes_1.default);
     }
+    docs() {
+        (0, swagger_1.setupSwagger)(this.app);
+    }
     async dbConnection() {
         try {
             await (0, db_1.testConnection)();
@@ -44,7 +50,8 @@ class App {
     }
     async listen() {
         await this.dbConnection();
-        await db_1.sequelize.sync({ alter: true });
+        await db_1.sequelize.sync();
+        await (0, associate_products_with_product_types_1.associateProductsWithProductTypes)();
         await new Promise((resolve, reject) => {
             const server = this.app.listen(this.app.get('port'), () => {
                 console.log(`🚀 Servidor ejecutándose en puerto ${this.app.get('port')}`);
