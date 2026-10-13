@@ -1,0 +1,23 @@
+import { createCrudController } from "../shared/crud.controller";
+import { SparePartConsumption } from "./spare-part-consumptions.model";
+
+export const sparePartConsumptionsController = createCrudController(
+  SparePartConsumption,
+  {
+    fields: [
+      "serviceOrderId",
+      "sparePartId",
+      "quantity",
+      "unitCost",
+      "totalCost",
+      "observations",
+    ],
+    requiredFields: [
+      "serviceOrderId",
+      "sparePartId",
+      "quantity",
+      "unitCost",
+      "totalCost",
+    ],
+  }
+);

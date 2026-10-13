@@ -11,3 +11,5 @@ import "../features/businesses/warranties/warranties.model";
 import "../features/businesses/service-orders/service-orders.model";
 import "../features/businesses/service-orders/diagnostics.model";
 import "../features/businesses/service-orders/service-authorizations.model";
+import "../features/businesses/spare-part-consumptions/spare-part-consumptions.model";
+import "../features/businesses/payments/payments.model";

@@ -5,6 +5,7 @@ import { productSwagger } from "../features/businesses/products/products.swagger
 import { productTypeSwagger } from "../features/businesses/product-types/product-types.swagger";
 import { salesSwagger } from "../features/businesses/sales/sales.swagger";
 import { saleDetailsSwagger } from "../features/businesses/sale-details/sale-details.swagger";
+import { sparePartConsumptionsSwagger } from "../features/businesses/spare-part-consumptions/spare-part-consumptions.swagger";
 
 export type FeatureSwaggerModule = {
   tags: unknown[];
@@ -18,6 +19,7 @@ const featureSwaggerModules: FeatureSwaggerModule[] = [
   productSwagger,
   salesSwagger,
   saleDetailsSwagger,
+  sparePartConsumptionsSwagger,
 ];
 
 export function buildOpenApiDocument() {

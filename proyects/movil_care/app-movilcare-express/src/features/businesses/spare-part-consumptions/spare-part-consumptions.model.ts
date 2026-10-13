@@ -63,13 +63,23 @@ SparePartConsumption.init(
     timestamps: true,
     underscored: true,
     validate: {
-      totalMatchesQuantity() {
-        const expected =
-          Number(this.getDataValue("quantity")) *
-          Number(this.getDataValue("unitCost"));
+      totalMatchesQuantity(this: SparePartConsumption) {
+        const quantity = Number(this.getDataValue("quantity"));
+        const unitCost = Number(this.getDataValue("unitCost"));
+        const totalCost = Number(this.getDataValue("totalCost"));
 
-        if (Math.abs(Number(this.getDataValue("totalCost")) - expected) > 0.01) {
-          throw new Error("totalCost must equal quantity multiplied by unitCost");
+        if (
+          !Number.isFinite(quantity) ||
+          !Number.isFinite(unitCost) ||
+          !Number.isFinite(totalCost)
+        ) {
+          throw new Error("Quantity and costs must be valid numbers");
+        }
+
+        if (Math.abs(totalCost - quantity * unitCost) > 0.01) {
+          throw new Error(
+            "totalCost must equal quantity multiplied by unitCost"
+          );
         }
       },
     },
