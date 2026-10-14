@@ -11,12 +11,18 @@ const products_swagger_1 = require("../features/businesses/products/products.swa
 const product_types_swagger_1 = require("../features/businesses/product-types/product-types.swagger");
 const sales_swagger_1 = require("../features/businesses/sales/sales.swagger");
 const sale_details_swagger_1 = require("../features/businesses/sale-details/sale-details.swagger");
+const spare_part_consumptions_swagger_1 = require("../features/businesses/spare-part-consumptions/spare-part-consumptions.swagger");
+const extra_swagger_1 = require("./extra.swagger");
+const auth_swagger_1 = __importDefault(require("../features/auth/auth.swagger"));
 const featureSwaggerModules = [
     customers_swagger_1.customerSwagger,
     product_types_swagger_1.productTypeSwagger,
     products_swagger_1.productSwagger,
     sales_swagger_1.salesSwagger,
     sale_details_swagger_1.saleDetailsSwagger,
+    spare_part_consumptions_swagger_1.sparePartConsumptionsSwagger,
+    extra_swagger_1.extraSwagger,
+    auth_swagger_1.default,
 ];
 function buildOpenApiDocument() {
     const tags = [];

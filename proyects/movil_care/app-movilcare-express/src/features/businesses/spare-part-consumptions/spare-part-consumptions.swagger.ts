@@ -9,7 +9,7 @@ export const sparePartConsumptionsSwagger: FeatureSwaggerModule = {
     },
   ],
   paths: {
-    "/spare-part-consumptions": {
+   "/api/spare-part-consumptions": {
       get: {
         tags: ["Consumo de repuestos"],
         summary: "Listar consumos de repuestos",
@@ -42,7 +42,7 @@ export const sparePartConsumptionsSwagger: FeatureSwaggerModule = {
         },
       },
     },
-    "/spare-part-consumptions/{id}": {
+    "/api/spare-part-consumptions/{id}": {
       parameters: [
         {
           name: "id",

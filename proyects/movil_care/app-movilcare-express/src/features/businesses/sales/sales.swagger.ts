@@ -65,19 +65,49 @@ export const salesSwagger = {
         responses: { "200": { description: "Sale deleted" }, "409": { description: "Cancel the sale first" } },
       },
     },
-    "/api/sales/{id}/confirm": {
-      post: {
-        tags: ["Sales"],
-        summary: "Confirm sale and deduct inventory atomically",
-        security: [],
-        parameters: [{ name: "id", in: "path", required: true, schema: { type: "integer", minimum: 1 } }],
-        responses: {
-          "200": { description: "Sale confirmed" },
-          "400": { description: "Invalid sale or insufficient inventory" },
-          "404": { description: "Sale not found" },
-        },
+   
+"/api/sales/{id}/confirm": {
+  post: {
+    tags: ["Sales"],
+    summary: "Confirm sale and deduct inventory atomically",
+    security: [],
+    parameters: [
+      {
+        name: "id",
+        in: "path",
+        required: true,
+        schema: { type: "integer", minimum: 1 },
       },
+    ],
+    responses: {
+      "200": { description: "Sale confirmed" },
+      "400": { description: "Invalid sale or insufficient inventory" },
+      "404": { description: "Sale not found" },
+      "409": { description: "Sale cannot be confirmed in its current state" },
     },
+  },
+  patch: {
+    tags: ["Sales"],
+    summary: "Confirm sale using PATCH",
+    description: "Confirms the sale and deducts inventory atomically.",
+    security: [],
+    parameters: [
+      {
+        name: "id",
+        in: "path",
+        required: true,
+        schema: { type: "integer", minimum: 1 },
+      },
+    ],
+    responses: {
+      "200": { description: "Sale confirmed" },
+      "400": { description: "Invalid sale or insufficient inventory" },
+      "404": { description: "Sale not found" },
+      "409": { description: "Sale cannot be confirmed in its current state" },
+    },
+  },
+},
+
     "/api/sales/{id}/cancel": {
       patch: {
         tags: ["Sales"],

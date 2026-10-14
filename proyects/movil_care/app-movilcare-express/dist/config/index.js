@@ -21,8 +21,8 @@ class App {
         this.app = (0, express_1.default)();
         this.settings();
         this.middlewares();
-        this.routes();
         this.docs();
+        this.routes();
     }
     settings() {
         this.app.set('port', this.port || process.env.PORT || 4000);

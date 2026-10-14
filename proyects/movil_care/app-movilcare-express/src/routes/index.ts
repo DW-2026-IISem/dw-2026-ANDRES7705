@@ -12,7 +12,16 @@ import serviceOrdersRouter from "../features/businesses/service-orders/service-o
 import sparePartConsumptionsRouter from "../features/businesses/spare-part-consumptions/spare-part-consumptions.routes";
 import paymentsRouter from "../features/businesses/payments/payments.routes";
 
+import authRouter from "../features/auth/routes/auth.routes";
+import { authenticate } from "../features/auth/middlewares/authenticate.middleware";
+import { authorizeResource } from "../features/auth/middlewares/authorize-resource.middleware";
+
 const router = Router();
+
+router.use(authRouter);
+
+// Las rutas de negocio requieren autenticación y autorización RBAC.
+router.use(authenticate, authorizeResource);
 
 router.use(customersRouter);
 router.use(employeesRouter);

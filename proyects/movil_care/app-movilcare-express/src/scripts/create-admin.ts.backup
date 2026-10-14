@@ -1,0 +1,153 @@
+import readline from "node:readline/promises";
+import { stdin as input, stdout as output } from "node:process";
+import dotenv from "dotenv";
+import { sequelize } from "../databases/db";
+import "../databases/models";
+import { User } from "../features/auth/users/user.model";
+import { Role } from "../features/auth/roles/role.model";
+import { RoleUser } from "../features/auth/role-users/role-user.model";
+
+dotenv.config();
+
+async function main(): Promise<void> {
+  const rl = readline.createInterface({ input, output });
+
+  try {
+    console.log("=== Inicialización del administrador de MóvilCare ===");
+
+    const username = (await rl.question("Nombre de usuario: "))
+      .trim()
+      .toLowerCase();
+    const email = (await rl.question("Correo electrónico: "))
+      .trim()
+      .toLowerCase();
+    const password = await new Promise<string>((resolve, reject) => {
+      const stdin = process.stdin;
+      let value = "";
+
+      if (!stdin.isTTY || typeof stdin.setRawMode !== "function") {
+        reject(new Error("Ejecuta este script directamente en una terminal interactiva."));
+        return;
+      }
+
+      const wasRaw = stdin.isRaw ?? false;
+      const cleanup = () => {
+        stdin.removeListener("data", onData);
+        stdin.setRawMode(wasRaw);
+        stdin.pause();
+        process.stdout.write("\\n");
+      };
+
+      const onData = (data: Buffer) => {
+        for (const char of data.toString("utf8")) {
+          if (char === "\\u0003") {
+            cleanup();
+            reject(new Error("Operación cancelada."));
+            return;
+          }
+
+          if (char === "\\r" || char === "\\n") {
+            cleanup();
+            resolve(value);
+            return;
+          }
+
+          if (char === "\\u007f" || char === "\\b") {
+            value = value.slice(0, -1);
+          } else if (char >= " ") {
+            value += char;
+          }
+        }
+      };
+
+      process.stdout.write("Contraseña: ");
+      stdin.setRawMode(true);
+      stdin.resume();
+      stdin.on("data", onData);
+    });
+
+    if (!/^[a-z0-9._-]{3,80}$/.test(username)) {
+      throw new Error("El usuario debe tener entre 3 y 80 caracteres válidos.");
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new Error("El correo electrónico no tiene un formato válido.");
+    }
+
+    if (password.length < 8) {
+      throw new Error("La contraseña debe tener al menos 8 caracteres.");
+    }
+
+    await sequelize.authenticate();
+
+    const existingUser = await User.findOne({
+      where: {
+        username,
+      },
+    });
+
+    if (existingUser) {
+      throw new Error("Ese nombre de usuario ya existe. No se modificó la cuenta.");
+    }
+
+    const existingEmail = await User.findOne({
+      where: {
+        email,
+      },
+    });
+
+    if (existingEmail) {
+      throw new Error("Ese correo ya existe. No se modificó la cuenta.");
+    }
+
+    const adminRole = await Role.findOne({
+      where: {
+        name: "ADMIN",
+      },
+    });
+
+    if (!adminRole || adminRole.status !== "active") {
+      throw new Error(
+        "El rol ADMIN no existe o está inactivo. Configura el rol y sus permisos RBAC antes de crear la cuenta."
+      );
+    }
+
+    await sequelize.transaction(async (transaction) => {
+      const user = await User.create(
+        {
+          username,
+          email,
+          password,
+          status: "active",
+        },
+        { transaction }
+      );
+
+      await RoleUser.create(
+        {
+          user_id: user.id,
+          role_id: adminRole.id,
+          status: "active",
+        },
+        { transaction }
+      );
+
+      console.log(`Administrador creado: ${user.username}`);
+      console.log("La cuenta quedó activa y vinculada al rol ADMIN.");
+      console.log(
+        "Nota: los permisos sobre las rutas deben configurarse por separado."
+      );
+    });
+  } finally {
+    rl.close();
+    await sequelize.close();
+  }
+}
+
+main().catch((error: unknown) => {
+  console.error(
+    "No se pudo crear el administrador:",
+    error instanceof Error ? error.message : "Error desconocido."
+  );
+  process.exitCode = 1;
+});

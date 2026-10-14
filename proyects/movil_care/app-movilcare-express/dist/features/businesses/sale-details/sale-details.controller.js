@@ -153,6 +153,20 @@ async function prepareDetail(productId, quantity, serializedUnitId, discount, tr
         total: lineSubtotal - discount + ((lineSubtotal - discount) * taxPercentage) / 100,
     };
 }
+async function assertDraftStockAvailable(saleId, product, quantity, transaction, excludedDetailId) {
+    if (product.requiresSerial)
+        return;
+    const existingDetails = await sale_details_model_1.SaleDetail.findAll({
+        attributes: ["id", "quantity"],
+        where: { saleId, productId: product.id, isActive: true },
+        transaction,
+    });
+    const quantityAlreadyInSale = existingDetails.reduce((sum, detail) => sum + (detail.id === excludedDetailId ? 0 : detail.quantity), 0);
+    const requestedQuantity = quantityAlreadyInSale + quantity;
+    if (requestedQuantity > product.stockQuantity) {
+        throw new DetailRequestError(`Insufficient stock for product ${product.id}: available ${product.stockQuantity}, requested ${requestedQuantity}`);
+    }
+}
 exports.saleDetailsController = {
     list: async (_req, res) => {
         try {
@@ -200,6 +214,7 @@ exports.saleDetailsController = {
                 await assertDraftSale(Number(input.saleId), transaction);
                 const discount = Number(input.discount ?? 0);
                 const prepared = await prepareDetail(Number(input.productId), Number(input.quantity), input.serializedUnitId, discount, transaction);
+                await assertDraftStockAvailable(Number(input.saleId), prepared.product, Number(input.quantity), transaction);
                 if (prepared.serializedUnitId !== null) {
                     const duplicate = await sale_details_model_1.SaleDetail.findOne({
                         where: {
@@ -338,6 +353,7 @@ async function updateDetail(req, res, replace) {
             const serializedUnitId = input.serializedUnitId === undefined ? detail.serializedUnitId : input.serializedUnitId;
             const discount = Number(input.discount ?? detail.discount);
             const prepared = await prepareDetail(productId, quantity, serializedUnitId, discount, transaction);
+            await assertDraftStockAvailable(detail.saleId, prepared.product, quantity, transaction, detail.id);
             if (prepared.serializedUnitId !== null) {
                 const duplicate = await sale_details_model_1.SaleDetail.findOne({
                     where: {

@@ -13,15 +13,16 @@ dotenv.config();
 export { sequelize };
 
 export class App {
-  public app: Application;
+  public app!: Application;
 
-  constructor(private port?: number | string) {
+
+constructor(private port?: number | string) {
     this.app = express();
     this.settings();
     this.middlewares();
-    this.routes();
     this.docs();
-  }
+    this.routes();
+}
 
   private settings(): void {
     this.app.set('port', this.port || process.env.PORT || 4000);

@@ -14,7 +14,15 @@ const serialized_units_routes_1 = __importDefault(require("../features/businesse
 const spare_parts_routes_1 = __importDefault(require("../features/businesses/spare-parts/spare-parts.routes"));
 const warranties_routes_1 = __importDefault(require("../features/businesses/warranties/warranties.routes"));
 const service_orders_routes_1 = __importDefault(require("../features/businesses/service-orders/service-orders.routes"));
+const spare_part_consumptions_routes_1 = __importDefault(require("../features/businesses/spare-part-consumptions/spare-part-consumptions.routes"));
+const payments_routes_1 = __importDefault(require("../features/businesses/payments/payments.routes"));
+const auth_routes_1 = __importDefault(require("../features/auth/routes/auth.routes"));
+const authenticate_middleware_1 = require("../features/auth/middlewares/authenticate.middleware");
+const authorize_resource_middleware_1 = require("../features/auth/middlewares/authorize-resource.middleware");
 const router = (0, express_1.Router)();
+router.use(auth_routes_1.default);
+// Las rutas de negocio requieren autenticación y autorización RBAC.
+router.use(authenticate_middleware_1.authenticate, authorize_resource_middleware_1.authorizeResource);
 router.use(customers_routes_1.default);
 router.use(employees_routes_1.default);
 router.use(products_routes_1.default);
@@ -25,5 +33,7 @@ router.use(serialized_units_routes_1.default);
 router.use(spare_parts_routes_1.default);
 router.use(warranties_routes_1.default);
 router.use(service_orders_routes_1.default);
+router.use(spare_part_consumptions_routes_1.default);
+router.use(payments_routes_1.default);
 exports.default = router;
 //# sourceMappingURL=index.js.map
