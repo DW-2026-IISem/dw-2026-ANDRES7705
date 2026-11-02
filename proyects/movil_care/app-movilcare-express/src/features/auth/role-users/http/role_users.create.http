@@ -1,0 +1,29 @@
+
+@baseUrl = http://localhost:4000
+
+###
+@token = {{login.response.body.$.access_token}}
+
+
+# 5. Inicias sesión como ADMIN
+
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "identifier": "andres.moscote",
+  "password": "1042245578"
+}
+
+# 6. ASIGNAR ROL NUEVO A USUARIO NUEVO (Mira en DBEAVER LOS ID y remplazalos)
+
+### Assign/reactivate a role for a user
+POST {{baseUrl}}/api/asignaciones-rol
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "user_id": 0,
+  "role_id": 0
+}

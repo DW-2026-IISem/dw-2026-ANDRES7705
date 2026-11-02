@@ -8,6 +8,7 @@ import { saleDetailsSwagger } from "../features/businesses/sale-details/sale-det
 import { sparePartConsumptionsSwagger } from "../features/businesses/spare-part-consumptions/spare-part-consumptions.swagger";
 import { extraSwagger } from "./extra.swagger";
 import authSwagger from "../features/auth/auth.swagger";
+import { usersSwagger } from "../features/auth/users/users.swagger";
 
 export type FeatureSwaggerModule = {
   tags: unknown[];
@@ -24,6 +25,7 @@ const featureSwaggerModules: FeatureSwaggerModule[] = [
   sparePartConsumptionsSwagger,
   extraSwagger,
   authSwagger,
+  usersSwagger,
 
 ];
 
@@ -57,7 +59,16 @@ export function buildOpenApiDocument() {
     ],
     tags,
     paths,
-    components: { schemas },
+    components: {
+      schemas,
+      securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+        },
+      },
+    },
   };
 }
 

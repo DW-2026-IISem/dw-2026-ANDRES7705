@@ -1,0 +1,84 @@
+@baseUrl = http://localhost:4000/api
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxNSIsInVzZXJuYW1lIjoiamFkZXJpdG8iLCJpYXQiOjE3OTIxMTc1NjksImV4cCI6MTc5MjExODQ2OSwiYXVkIjoibW92aWxjYXJlLWFwaSIsImlzcyI6Im1vdmlsY2FyZS1leHByZXNzIn0.OfnLntS3Ful7XdjCXQ15RLjYNpsLb9FLcnNd7GZmEI4
+### PRODUCT-TYPES - solicitudes HTTP
+# Reemplaza el token y ajusta los cuerpos JSON al modelo de la entidad.
+
+### GET /product-types
+GET {{baseUrl}}/product-types
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###
+
+### GET /product-types/1
+GET {{baseUrl}}/product-types/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###
+
+### POST /product-types
+POST {{baseUrl}}/product-types
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "name": "Equipos de prueba",
+  "description": "Tipo de producto de prueba",
+  "status": "active"
+}
+
+###
+
+### PUT /product-types/1
+PUT {{baseUrl}}/product-types/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "name": "Equipos de prueba",
+  "description": "Tipo de producto de prueba",
+  "status": "active"
+}
+
+###
+
+### PATCH /product-types/1
+PATCH {{baseUrl}}/product-types/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "name": "Equipos de prueba",
+  "description": "Tipo de producto de prueba",
+  "status": "active"
+}
+
+###
+
+### DELETE /product-types/1
+DELETE {{baseUrl}}/product-types/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###
+
+### PATCH /product-types/1/deactivate
+PATCH {{baseUrl}}/product-types/1/deactivate
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "name": "Equipos de prueba",
+  "description": "Tipo de producto de prueba",
+  "status": "active"
+}
+
+###

@@ -1,0 +1,15 @@
+@baseUrl = http://localhost:4000/api
+@accessToken = PEGA_AQUI_TU_TOKEN_DE_ACCESO
+@userId = 1
+
+### Listar usuarios
+GET {{baseUrl}}/users?limit=20&offset=0
+Authorization: Bearer {{accessToken}}
+Accept: application/json
+
+###
+
+### Consultar usuario por ID
+GET {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{accessToken}}
+Accept: application/json

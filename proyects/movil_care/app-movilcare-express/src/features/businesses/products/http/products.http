@@ -1,0 +1,133 @@
+@baseUrl = http://localhost:4000/api
+@token = PEGA_AQUI_TU_TOKEN_DE_ACCESO
+
+### PRODUCTS - solicitudes HTTP
+# Reemplaza el token y ajusta los cuerpos JSON al modelo de la entidad.
+
+### GET /products
+GET {{baseUrl}}/products
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###
+
+### GET /products/1
+GET {{baseUrl}}/products/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###
+
+### POST /products
+POST {{baseUrl}}/products
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "sku": "DEMO-EQUIPO-001",
+  "name": "Teléfono de prueba",
+  "description": "Registro de prueba para la API",
+  "type": "EQUIPMENT",
+  "productTypeId": 1,
+  "stockQuantity": 10,
+  "brand": "Demo",
+  "model": "X100",
+  "requiresSerial": true,
+  "cost": "500000.00",
+  "price": "650000.00",
+  "taxPercentage": "19.00",
+  "defaultWarrantyMonths": 12
+}
+
+###
+
+### PUT /products/1
+PUT {{baseUrl}}/products/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "sku": "DEMO-EQUIPO-001",
+  "name": "Teléfono de prueba",
+  "description": "Registro de prueba para la API",
+  "type": "EQUIPMENT",
+  "productTypeId": 1,
+  "stockQuantity": 10,
+  "brand": "Demo",
+  "model": "X100",
+  "requiresSerial": true,
+  "cost": "500000.00",
+  "price": "650000.00",
+  "taxPercentage": "19.00",
+  "defaultWarrantyMonths": 12
+}
+
+###
+
+### PATCH /products/1
+PATCH {{baseUrl}}/products/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "sku": "DEMO-EQUIPO-001",
+  "name": "Teléfono de prueba",
+  "description": "Registro de prueba para la API",
+  "type": "EQUIPMENT",
+  "productTypeId": 1,
+  "stockQuantity": 10,
+  "brand": "Demo",
+  "model": "X100",
+  "requiresSerial": true,
+  "cost": "500000.00",
+  "price": "650000.00",
+  "taxPercentage": "19.00",
+  "defaultWarrantyMonths": 12
+}
+
+###
+
+### DELETE /products/1
+DELETE {{baseUrl}}/products/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###
+
+### DELETE /products/1/permanent
+DELETE {{baseUrl}}/products/1/permanent
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###
+
+### PATCH /products/1/deactivate
+PATCH {{baseUrl}}/products/1/deactivate
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "sku": "DEMO-EQUIPO-001",
+  "name": "Teléfono de prueba",
+  "description": "Registro de prueba para la API",
+  "type": "EQUIPMENT",
+  "productTypeId": 1,
+  "stockQuantity": 10,
+  "brand": "Demo",
+  "model": "X100",
+  "requiresSerial": true,
+  "cost": "500000.00",
+  "price": "650000.00",
+  "taxPercentage": "19.00",
+  "defaultWarrantyMonths": 12
+}
+
+###

@@ -1,0 +1,97 @@
+@baseUrl = http://localhost:4000/api
+@token = PEGA_AQUI_TU_TOKEN_DE_ACCESO
+
+### SERIALIZED-UNITS - solicitudes HTTP
+# Reemplaza el token y ajusta los cuerpos JSON al modelo de la entidad.
+
+### GET /serialized-units
+GET {{baseUrl}}/serialized-units
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###
+
+### GET /serialized-units/1
+GET {{baseUrl}}/serialized-units/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###
+
+### POST /serialized-units
+POST {{baseUrl}}/serialized-units
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "productId": 1,
+  "serial": "SERIAL-DEMO-001",
+  "secondarySerial": null,
+  "state": "IN_STOCK",
+  "receivedAt": "2026-10-14T10:00:00.000Z"
+}
+
+###
+
+### PUT /serialized-units/1
+PUT {{baseUrl}}/serialized-units/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "productId": 1,
+  "serial": "SERIAL-DEMO-001",
+  "secondarySerial": null,
+  "state": "IN_STOCK",
+  "receivedAt": "2026-10-14T10:00:00.000Z"
+}
+
+###
+
+### PATCH /serialized-units/1
+PATCH {{baseUrl}}/serialized-units/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "state": "IN_STOCK"
+}
+
+###
+
+### PATCH /serialized-units/1/sell
+PATCH {{baseUrl}}/serialized-units/1/sell
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "state": "SOLD"
+}
+
+###
+
+### PATCH /serialized-units/1/in-service
+PATCH {{baseUrl}}/serialized-units/1/in-service
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "state": "IN_SERVICE"
+}
+
+###
+
+### DELETE /serialized-units/1
+DELETE {{baseUrl}}/serialized-units/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###

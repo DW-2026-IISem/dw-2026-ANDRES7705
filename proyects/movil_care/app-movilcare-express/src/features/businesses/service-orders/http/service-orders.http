@@ -1,0 +1,99 @@
+@baseUrl = http://localhost:4000/api
+@token = PEGA_AQUI_TU_TOKEN_DE_ACCESO
+
+### SERVICE-ORDERS - solicitudes HTTP
+# Reemplaza el token y ajusta los cuerpos JSON al modelo de la entidad.
+
+### GET /service-orders
+GET {{baseUrl}}/service-orders
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###
+
+### GET /service-orders/1
+GET {{baseUrl}}/service-orders/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###
+
+### POST /service-orders
+POST {{baseUrl}}/service-orders
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "number": "OS-DEMO-001",
+  "customerId": 1,
+  "serializedUnitId": 1,
+  "technicianId": 1,
+  "serviceType": "PAID_REPAIR",
+  "warrantyId": null,
+  "originOrderId": null,
+  "reportedIssue": "El equipo no enciende",
+  "intakeCondition": "Equipo con pantalla en buen estado",
+  "receivedAccessories": "Cargador",
+  "openedAt": "2026-10-14T10:00:00.000Z",
+  "estimatedDeliveryDate": "2026-10-17T10:00:00.000Z",
+  "closedAt": null,
+  "total": "80000.00",
+  "state": "RECEIVED"
+}
+
+###
+
+### PATCH /service-orders/1
+PATCH {{baseUrl}}/service-orders/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "number": "OS-DEMO-001",
+  "customerId": 1,
+  "serializedUnitId": 1,
+  "technicianId": 1,
+  "serviceType": "PAID_REPAIR",
+  "warrantyId": null,
+  "originOrderId": null,
+  "reportedIssue": "El equipo no enciende",
+  "intakeCondition": "Equipo con pantalla en buen estado",
+  "receivedAccessories": "Cargador",
+  "openedAt": "2026-10-14T10:00:00.000Z",
+  "estimatedDeliveryDate": "2026-10-17T10:00:00.000Z",
+  "closedAt": null,
+  "total": "80000.00",
+  "state": "RECEIVED"
+}
+
+###
+
+### PATCH /service-orders/1/state
+PATCH {{baseUrl}}/service-orders/1/state
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "number": "OS-DEMO-001",
+  "customerId": 1,
+  "serializedUnitId": 1,
+  "technicianId": 1,
+  "serviceType": "PAID_REPAIR",
+  "warrantyId": null,
+  "originOrderId": null,
+  "reportedIssue": "El equipo no enciende",
+  "intakeCondition": "Equipo con pantalla en buen estado",
+  "receivedAccessories": "Cargador",
+  "openedAt": "2026-10-14T10:00:00.000Z",
+  "estimatedDeliveryDate": "2026-10-17T10:00:00.000Z",
+  "closedAt": null,
+  "total": "80000.00",
+  "state": "RECEIVED"
+}
+
+###

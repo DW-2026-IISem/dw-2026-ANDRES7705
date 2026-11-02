@@ -1,0 +1,80 @@
+@baseUrl = http://localhost:4000/api
+@token = PEGA_AQUI_TU_TOKEN_DE_ACCESO
+
+### SPARE-PART-CONSUMPTIONS - solicitudes HTTP
+# Reemplaza el token y ajusta los cuerpos JSON al modelo de la entidad.
+
+### GET /spare-part-consumptions
+GET {{baseUrl}}/spare-part-consumptions
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###
+
+### GET /spare-part-consumptions/1
+GET {{baseUrl}}/spare-part-consumptions/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###
+
+### POST /spare-part-consumptions
+POST {{baseUrl}}/spare-part-consumptions
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "serviceOrderId": 1,
+  "sparePartId": 1,
+  "quantity": 2,
+  "unitCost": "80000.00",
+  "totalCost": "160000.00",
+  "observations": "Repuestos utilizados durante la reparación"
+}
+
+###
+
+### PUT /spare-part-consumptions/1
+PUT {{baseUrl}}/spare-part-consumptions/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "serviceOrderId": 1,
+  "sparePartId": 1,
+  "quantity": 2,
+  "unitCost": "80000.00",
+  "totalCost": "160000.00",
+  "observations": "Repuestos utilizados durante la reparación"
+}
+
+###
+
+### PATCH /spare-part-consumptions/1
+PATCH {{baseUrl}}/spare-part-consumptions/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "serviceOrderId": 1,
+  "sparePartId": 1,
+  "quantity": 2,
+  "unitCost": "80000.00",
+  "totalCost": "160000.00",
+  "observations": "Repuestos utilizados durante la reparación"
+}
+
+###
+
+### DELETE /spare-part-consumptions/1
+DELETE {{baseUrl}}/spare-part-consumptions/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###

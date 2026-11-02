@@ -1,0 +1,31 @@
+@baseUrl = http://localhost:4000/api
+@refreshToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwidXNlcm5hbWUiOiJhbmRyZXMubW9zY290ZSIsImlhdCI6MTc5MjAzMjc3NywiZXhwIjoxNzkyMDMyNzgwLCJhdWQiOiJtb3ZpbGNhcmUtYXBpIiwiaXNzIjoibW92aWxjYXJlLWV4cHJlc3MifQ.t5bfPJuswhi4xj7b-LVDgxTT09cMxXg3L6oz_tvWoko
+
+### LOGIN
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "identifier": "admin",
+  "password": "admin123"
+}
+
+###
+
+### REFRESH TOKEN
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "XLEXYe9Y90o-T6N-0QY2u7XqqDRHVMUzOCX48YY_iRIf7d2_Zm3TtKqWAlQVfuNQ"
+}
+
+###
+
+### LOGOUT
+POST {{baseUrl}}/auth/logout
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}

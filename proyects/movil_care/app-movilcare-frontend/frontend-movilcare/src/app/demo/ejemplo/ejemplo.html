@@ -1,0 +1,74 @@
+<div class="flex flex-col gap-6">
+  <p-card>
+    <ng-template #title>Objeto producto</ng-template>
+    <div class="mt-4 flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <p class="text-sm text-slate-500">Precio base</p>
+        <p class="text-2xl font-bold text-slate-900">
+          {{ precioFormateado() }}
+        </p>
+        <p class="mt-1 text-sm text-slate-500">
+          Precio final con IVA (19 %):
+          <strong>{{ precioFinalFormateado() }}</strong>
+        </p>
+      </div>
+      <p-tag
+        [value]="estadoTexto()"
+        [severity]="producto().activo ? 'success' : 'danger'"
+      />
+    </div>
+    <div class="mt-5 flex flex-wrap gap-2">
+      <button pButton type="button" (click)="variarPrecio(1000)">
+        <span pButtonLabel>+1000</span>
+      </button>
+      <button pButton type="button" severity="secondary" (click)="variarPrecio(-1000)">
+        <span pButtonLabel>-1000</span>
+      </button>
+      <button pButton type="button" severity="secondary" (click)="alternarEstado()">
+        <span pButtonLabel>Cambiar estado</span>
+      </button>
+      <button pButton type="button" severity="contrast" (click)="reiniciar()">
+        <span pButtonLabel>Reiniciar</span>
+      </button>
+    </div>
+    <label class="mt-5 block text-sm font-medium text-slate-700" for="nombre-producto">
+      Nombre
+    </label>
+    <input
+      id="nombre-producto"
+      pInputText
+      class="mt-2 w-full"
+      [value]="producto().nombre"
+      (input)="cambiarNombre($event)"
+    />
+    <p class="mt-2 text-sm text-slate-500">
+      Vista previa: <strong>{{ producto().nombre }}</strong>
+    </p>
+  </p-card>
+
+  <div class="grid gap-6 md:grid-cols-2">
+    <p-card>
+      <ng-template #title>Signals y valores derivados</ng-template>
+      <p class="mt-3 text-sm text-slate-600">
+        <code>signal()</code> guarda el producto, <code>computed()</code> deriva el precio
+        con IVA y el estado, y <code>effect()</code> registra cada cambio.
+      </p>
+    </p-card>
+    <p-card class="demo-card">
+      <ng-template #title>Estilos del componente</ng-template>
+      <p class="mt-3 text-sm text-slate-600">
+        Esta tarjeta demuestra el aislamiento de una regla CSS local.
+      </p>
+    </p-card>
+  </div>
+
+  @if (producto().activo) {
+    <p-message severity="success" variant="simple">
+      Producto activo: la API lo devolvería en <code>GET /api/productos</code>.
+    </p-message>
+  } @else {
+    <p-message severity="warn" variant="simple">
+      Producto inactivo: el borrado lógico lo oculta de las listas.
+    </p-message>
+  }
+</div>

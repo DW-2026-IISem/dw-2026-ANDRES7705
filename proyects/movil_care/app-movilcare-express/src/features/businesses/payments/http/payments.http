@@ -1,0 +1,80 @@
+@baseUrl = http://localhost:4000/api
+@token = PEGA_AQUI_TU_TOKEN_DE_ACCESO
+
+### PAYMENTS - solicitudes HTTP
+# Reemplaza el token y ajusta los cuerpos JSON al modelo de la entidad.
+
+### GET /payments
+GET {{baseUrl}}/payments
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###
+
+### GET /payments/1
+GET {{baseUrl}}/payments/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###
+
+### POST /payments
+POST {{baseUrl}}/payments
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "referenceType": "SALE",
+  "referenceId": 1,
+  "method": "CASH",
+  "amount": "650000.00",
+  "date": "2026-10-14T10:00:00.000Z",
+  "status": "COMPLETED"
+}
+
+###
+
+### PUT /payments/1
+PUT {{baseUrl}}/payments/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "referenceType": "SALE",
+  "referenceId": 1,
+  "method": "CASH",
+  "amount": "650000.00",
+  "date": "2026-10-14T10:00:00.000Z",
+  "status": "COMPLETED"
+}
+
+###
+
+### PATCH /payments/1
+PATCH {{baseUrl}}/payments/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "referenceType": "SALE",
+  "referenceId": 1,
+  "method": "CASH",
+  "amount": "650000.00",
+  "date": "2026-10-14T10:00:00.000Z",
+  "status": "COMPLETED"
+}
+
+###
+
+### DELETE /payments/1
+DELETE {{baseUrl}}/payments/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###

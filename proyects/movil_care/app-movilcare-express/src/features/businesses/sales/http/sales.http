@@ -1,0 +1,149 @@
+@baseUrl = http://localhost:4000/api
+@token = PEGA_AQUI_TU_TOKEN_DE_ACCESO
+
+### SALES - solicitudes HTTP
+# Reemplaza el token y ajusta los cuerpos JSON al modelo de la entidad.
+
+### GET /sales
+GET {{baseUrl}}/sales
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###
+
+### GET /sales/1
+GET {{baseUrl}}/sales/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###
+
+### POST /sales
+POST {{baseUrl}}/sales
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "number": "VENTA-DEMO-001",
+  "customerId": 1,
+  "sellerId": 1,
+  "soldAt": "2026-10-14T10:00:00.000Z",
+  "subtotal": "100000.00",
+  "discount": "0.00",
+  "taxes": "19000.00",
+  "total": "119000.00",
+  "state": "DRAFT"
+}
+
+###
+
+### PUT /sales/1
+PUT {{baseUrl}}/sales/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "number": "VENTA-DEMO-001",
+  "customerId": 1,
+  "sellerId": 1,
+  "soldAt": "2026-10-14T10:00:00.000Z",
+  "subtotal": "100000.00",
+  "discount": "0.00",
+  "taxes": "19000.00",
+  "total": "119000.00",
+  "state": "DRAFT"
+}
+
+###
+
+### PATCH /sales/1
+PATCH {{baseUrl}}/sales/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "number": "VENTA-DEMO-001",
+  "customerId": 1,
+  "sellerId": 1,
+  "soldAt": "2026-10-14T10:00:00.000Z",
+  "subtotal": "100000.00",
+  "discount": "0.00",
+  "taxes": "19000.00",
+  "total": "119000.00",
+  "state": "DRAFT"
+}
+
+###
+
+### POST /sales/1/confirm
+POST {{baseUrl}}/sales/1/confirm
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "number": "VENTA-DEMO-001",
+  "customerId": 1,
+  "sellerId": 1,
+  "soldAt": "2026-10-14T10:00:00.000Z",
+  "subtotal": "100000.00",
+  "discount": "0.00",
+  "taxes": "19000.00",
+  "total": "119000.00",
+  "state": "DRAFT"
+}
+
+###
+
+### PATCH /sales/1/confirm
+PATCH {{baseUrl}}/sales/1/confirm
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "number": "VENTA-DEMO-001",
+  "customerId": 1,
+  "sellerId": 1,
+  "soldAt": "2026-10-14T10:00:00.000Z",
+  "subtotal": "100000.00",
+  "discount": "0.00",
+  "taxes": "19000.00",
+  "total": "119000.00",
+  "state": "DRAFT"
+}
+
+###
+
+### PATCH /sales/1/cancel
+PATCH {{baseUrl}}/sales/1/cancel
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "number": "VENTA-DEMO-001",
+  "customerId": 1,
+  "sellerId": 1,
+  "soldAt": "2026-10-14T10:00:00.000Z",
+  "subtotal": "100000.00",
+  "discount": "0.00",
+  "taxes": "19000.00",
+  "total": "119000.00",
+  "state": "DRAFT"
+}
+
+###
+
+### DELETE /sales/1
+DELETE {{baseUrl}}/sales/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###

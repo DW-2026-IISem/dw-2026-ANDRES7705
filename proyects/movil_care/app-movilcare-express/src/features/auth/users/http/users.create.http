@@ -1,0 +1,54 @@
+@baseUrl = http://localhost:4000/api
+
+#http://localhost:4000/api
+@userId = 1
+@roleId = 1
+
+###
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwidXNlcm5hbWUiOiJhbmRyZXMubW9zY290ZSIsImlhdCI6MTc5MjExNTQ5NywiZXhwIjoxNzkyMTE2Mzk3LCJhdWQiOiJtb3ZpbGNhcmUtYXBpIiwiaXNzIjoibW92aWxjYXJlLWV4cHJlc3MifQ.Tq5V9OU3bi5nAR23htsCizEuLzerIAcT49dLPiCu8RU
+# @name login
+
+
+@baseUrl = http://localhost:4000/api
+
+### PASO 1: INICIAR SESIÓN
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "identifier": "andres.moscote",
+  "password": "1042245578"
+}
+
+### PASO 2: CREAR USUARIO
+POST {{baseUrl}}/users
+Authorization: Bearer {{login.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "username": "jaderito",
+  "email": "jaderito@example.com",
+  "password": "1234567890",
+  "roleIds": [7]
+}
+
+
+###
+
+### Actualizar usuario o roles
+PATCH {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "roleIds": [{{roleId}}]
+}
+
+###
+
+### Desactivar usuario
+DELETE {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{token}}
+Accept: application/json

@@ -11,11 +11,12 @@ import warrantiesRouter from "../features/businesses/warranties/warranties.route
 import serviceOrdersRouter from "../features/businesses/service-orders/service-orders.routes";
 import sparePartConsumptionsRouter from "../features/businesses/spare-part-consumptions/spare-part-consumptions.routes";
 import paymentsRouter from "../features/businesses/payments/payments.routes";
-
+import rolesRouter from "../features/auth/roles/roles.routes";
 import authRouter from "../features/auth/routes/auth.routes";
+import usersRouter from "../features/auth/users/users.routes";
 import { authenticate } from "../features/auth/middlewares/authenticate.middleware";
 import { authorizeResource } from "../features/auth/middlewares/authorize-resource.middleware";
-
+import resourceRolesRouter from "../features/auth/resource-roles/resource-roles.routes";
 const router = Router();
 
 router.use(authRouter);
@@ -23,6 +24,9 @@ router.use(authRouter);
 // Las rutas de negocio requieren autenticación y autorización RBAC.
 router.use(authenticate, authorizeResource);
 
+router.use(rolesRouter);
+router.use(usersRouter);
+router.use(resourceRolesRouter);
 router.use(customersRouter);
 router.use(employeesRouter);
 router.use(productsRouter);

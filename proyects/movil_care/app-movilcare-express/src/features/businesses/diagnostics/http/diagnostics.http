@@ -1,0 +1,40 @@
+@baseUrl = http://localhost:4000/api
+@token = PEGA_AQUI_TU_TOKEN_DE_ACCESO
+
+### DIAGNOSTICS - solicitudes HTTP
+# Reemplaza el token y ajusta los cuerpos JSON al modelo de la entidad.
+
+### GET /diagnostics
+GET {{baseUrl}}/diagnostics
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###
+
+### GET /diagnostics/1
+GET {{baseUrl}}/diagnostics/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###
+
+### POST /diagnostics
+POST {{baseUrl}}/diagnostics
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "serviceOrderId": 1,
+  "technicianId": 1,
+  "description": "El equipo no enciende; se requiere revisar el sistema de alimentación.",
+  "cause": "OTHER",
+  "warrantyCovered": false,
+  "laborCost": "50000.00",
+  "estimatedTotal": "80000.00",
+  "diagnosedAt": "2026-10-14T10:30:00.000Z"
+}
+
+###

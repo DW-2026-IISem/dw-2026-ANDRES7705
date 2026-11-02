@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "nodemon --watch src --ext ts --exec ts-node -- src/server.ts",
-    "db:seed": "ts-node -- src/database/seeders/index.ts"
+    "db:seed": "ts-node -- src/database/seeders/index.ts",
+    "db:init-rbac": "ts-node -- src/features/auth/scripts/initialize-rbac.ts"
   },
   "type": "commonjs",
   "keywords": [],

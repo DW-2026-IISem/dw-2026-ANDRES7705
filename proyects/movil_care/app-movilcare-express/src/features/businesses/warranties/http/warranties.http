@@ -1,0 +1,78 @@
+@baseUrl = http://localhost:4000/api
+@token = PEGA_AQUI_TU_TOKEN_DE_ACCESO
+
+### WARRANTIES - solicitudes HTTP
+# Reemplaza el token y ajusta los cuerpos JSON al modelo de la entidad.
+
+### GET /warranties
+GET {{baseUrl}}/warranties
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###
+
+### GET /warranties/1
+GET {{baseUrl}}/warranties/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###
+
+### POST /warranties
+POST {{baseUrl}}/warranties
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "saleDetailId": 1,
+  "serializedUnitId": 1,
+  "type": "COMMERCIAL",
+  "coverageDescription": "Garantía comercial de prueba",
+  "startDate": "2026-10-14T00:00:00.000Z",
+  "endDate": "2027-10-14T00:00:00.000Z",
+  "state": "VALID"
+}
+
+###
+
+### PUT /warranties/1
+PUT {{baseUrl}}/warranties/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "saleDetailId": 1,
+  "serializedUnitId": 1,
+  "type": "COMMERCIAL",
+  "coverageDescription": "Garantía comercial actualizada",
+  "startDate": "2026-10-14T00:00:00.000Z",
+  "endDate": "2027-10-14T00:00:00.000Z",
+  "state": "VALID"
+}
+
+###
+
+### PATCH /warranties/1
+PATCH {{baseUrl}}/warranties/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "coverageDescription": "Garantía comercial modificada",
+  "state": "VALID"
+}
+
+###
+
+### DELETE /warranties/1
+DELETE {{baseUrl}}/warranties/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###

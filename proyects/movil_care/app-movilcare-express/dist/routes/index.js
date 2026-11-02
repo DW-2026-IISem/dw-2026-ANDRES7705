@@ -17,12 +17,14 @@ const service_orders_routes_1 = __importDefault(require("../features/businesses/
 const spare_part_consumptions_routes_1 = __importDefault(require("../features/businesses/spare-part-consumptions/spare-part-consumptions.routes"));
 const payments_routes_1 = __importDefault(require("../features/businesses/payments/payments.routes"));
 const auth_routes_1 = __importDefault(require("../features/auth/routes/auth.routes"));
+const users_routes_1 = __importDefault(require("../features/auth/users/users.routes"));
 const authenticate_middleware_1 = require("../features/auth/middlewares/authenticate.middleware");
 const authorize_resource_middleware_1 = require("../features/auth/middlewares/authorize-resource.middleware");
 const router = (0, express_1.Router)();
 router.use(auth_routes_1.default);
 // Las rutas de negocio requieren autenticación y autorización RBAC.
 router.use(authenticate_middleware_1.authenticate, authorize_resource_middleware_1.authorizeResource);
+router.use(users_routes_1.default);
 router.use(customers_routes_1.default);
 router.use(employees_routes_1.default);
 router.use(products_routes_1.default);

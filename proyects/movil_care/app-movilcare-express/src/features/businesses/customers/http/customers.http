@@ -1,0 +1,100 @@
+@baseUrl = http://localhost:4000/api
+
+###
+@token = {{login.response.body.$.access_token}}
+
+
+# 9. Inicias sesión con el usuario NUEVO
+
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "identifier": "name",
+  "password": "1042245578"
+}
+
+### CUSTOMERS - solicitudes HTTP
+
+# 10. LISTAR TODOS LOS CLIENTES
+
+### GET /customers
+GET {{baseUrl}}/customers
+Authorization: Bearer {{token}}
+
+###
+
+# 11. CONSULTAR UN CLIENTE POR ID
+
+### GET /customers/1
+GET {{baseUrl}}/customers/1
+Authorization: Bearer {{token}}
+
+###
+
+# 12. CREAR UN CLIENTE - PASO FINAL
+
+### POST /customers
+POST {{baseUrl}}/customers
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "documentType": "CC",
+  "documentNumber": "1000000001",
+  "firstName": "Carlos",
+  "lastName": "Pérez",
+  "companyName": null,
+  "phone": "3001234567",
+  "email": "carlos@example.com",
+  "address": "Riohacha, La Guajira"
+}
+
+###
+
+### PUT /customers/1
+PUT {{baseUrl}}/customers/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "documentType": "CC",
+  "documentNumber": "1000000001",
+  "firstName": "Carlos",
+  "lastName": "Pérez",
+  "companyName": null,
+  "phone": "3001234567",
+  "email": "carlos@example.com",
+  "address": "Riohacha, La Guajira"
+}
+
+###
+
+### PATCH /customers/1
+PATCH {{baseUrl}}/customers/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "documentType": "CC",
+  "documentNumber": "1000000001",
+  "firstName": "Carlos",
+  "lastName": "Pérez",
+  "companyName": null,
+  "phone": "3001234567",
+  "email": "carlos@example.com",
+  "address": "Riohacha, La Guajira"
+}
+
+###
+
+### DELETE /customers/1
+DELETE {{baseUrl}}/customers/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###

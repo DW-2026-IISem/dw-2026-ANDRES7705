@@ -1,0 +1,1907 @@
+# Bitacora de creación del frontned en Angular
+
+
+
+## ISS-01 · Bootstrap del frontend MovilCare Express con Angular 22
+
+**Objetivo**
+
+- Preparar la base del frontend administrativo de MovilCare Express con Angular 22, Tailwind CSS 4 y PrimeNG 22/Aura. La aplicación servirá como cliente de la API Express descrita en [RESUMEN_TECNICO.md](./RESUMEN_TECNICO.md), para gestionar ventas y reparación de equipos móviles.
+
+### Alcance adaptado a MovilCare
+
+El resumen técnico define los módulos que la interfaz deberá cubrir:
+
+- **Gestión comercial:** clientes, empleados, ventas, detalles de venta, pagos y garantías.
+- **Inventario:** tipos de producto, productos, unidades serializadas y repuestos.
+- **Servicio técnico:** órdenes de servicio, diagnósticos, autorizaciones y consumos de repuestos.
+- **Seguridad y acceso:** inicio/renovación/cierre de sesión, usuarios, roles, recursos y asignaciones RBAC.
+
+La API se monta bajo `/api`. Las rutas de sesión son públicas; las operaciones de negocio requieren un token `Bearer` y permisos RBAC. ISS-01 prepara únicamente la aplicación y sus dependencias: no implementa CRUD, autenticación ni llamadas HTTP. Esos comportamientos se incorporan en sus entregas correspondientes. El menú y la pantalla de ejemplo de esta fase son navegación/maqueta, no datos reales ni una simulación de autorización.
+
+**Criterios de aceptación del issue**
+
+- [X] El frontend conserva Angular standalone, routing y ejecución zoneless.
+- [X] Tailwind CSS 4 y PrimeNG 22 con el preset Aura quedan configurados.
+- [X] La estructura permite incorporar los módulos de negocio y seguridad listados arriba.
+- [X] La aplicación inicia y compila sin depender de que la API esté disponible.
+- [X] No se incluyen credenciales, tokens ni datos reales del negocio en la maqueta.
+
+### 1.1 Crear el proyecto en la carpeta actual
+
+Desde la carpeta del proyecto:
+
+```bash
+
+npx @angular/cli@22 new frontend-movilcare \
+  --style=tailwind \
+  --ssr=false \
+  --routing \
+  --zoneless \
+  --skip-git \
+  --package-manager=npm
+```
+
+![alt text](image.png)
+
+### 1.2 Instalar PrimeNG compatible con Angular
+
+**Criterios de este sub-ítem**
+
+- [X] primeng, @primeuix/themes, primeicons y @angular/cdk instalados
+- [X] Las versiones instaladas declaran compatibilidad con Angular 22
+- [X] package-lock.json actualizado y conservado
+
+El tema moderno no se importa desde `primeng/resources/themes`. El preset Aura vive en `@primeuix/themes`.
+
+Consulta primero las peer dependencies:
+
+```bash
+ng version
+npm view primeng version peerDependencies --json
+npm install primeng @primeuix/themes primeicons @angular/cdk
+```
+
+![alt text](image-1.png)
+
+Verifica versiones:
+
+```bash
+npm ls primeng @primeuix/themes primeicons @angular/cdk --depth=0
+```
+
+![alt text](image-2.png)
+
+### 1.3 Estilos globales
+
+**Criterios de este sub-ítem**
+
+- [X] src/styles.css declara @layer theme, base, primeng, utilities;
+- [X] Importa tailwindcss
+- [X] Importa primeicons/primeicons.css
+- [X] No contiene selectores .p-*, ::ng-deep ni clases de aplicación
+
+**Crea/reemplaza src/styles.css:**
+
+```bash
+cat > src/styles.css <<'EOF'
+@layer theme, base, primeng, utilities;
+@import 'tailwindcss';
+@import 'primeicons/primeicons.css';
+EOF
+```
+
+El orden de capas es lo que permite que las utilidades de Tailwind ganen sobre el tema de PrimeNG sin !important. Es la única hoja global del proyecto.
+
+### 1.4 Configurar PrimeNG en app.config.ts
+
+**Criterios de este sub-ítem**
+
+- [X] providePrimeNG registra preset: Aura
+- [X] darkModeSelector: '.app-dark'
+- [X] cssLayer declara name: 'primeng' y order: 'theme, base, primeng, utilities'
+- [X] MessageService y ConfirmationService registrados
+- [X] provideRouter incluye withComponentInputBinding() y withInMemoryScrolling
+
+**Reemplaza src/app/app.config.ts:**
+
+```bash
+cat > src/app/app.config.ts <<'EOF'
+import {
+  ApplicationConfig,
+  provideBrowserGlobalErrorListeners,
+} from '@angular/core';
+import {
+  provideRouter,
+  withComponentInputBinding,
+  withInMemoryScrolling,
+} from '@angular/router';
+import { ConfirmationService, MessageService } from 'primeng/api';
+import { providePrimeNG } from 'primeng/config';
+import Aura from '@primeuix/themes/aura';
+import { environment } from '../environments/environment';
+
+import { routes } from './app.routes';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideBrowserGlobalErrorListeners(),
+
+    provideRouter(
+      routes,
+      withComponentInputBinding(),
+      withInMemoryScrolling({ scrollPositionRestoration: 'top' }),
+    ),
+
+    // PrimeNG 22: tema Aura. El modo oscuro se activa con la clase .app-dark.
+    providePrimeNG({
+      license: environment.primeUiLicense || undefined,
+      ripple: true,
+      inputVariant: 'outlined',
+      theme: {
+        preset: Aura,
+        options: {
+          darkModeSelector: '.app-dark',
+          cssLayer: { name: 'primeng', order: 'theme, base, primeng, utilities' },
+        },
+      },
+    }),
+
+    MessageService,
+    ConfirmationService,
+  ],
+};
+EOF
+```
+
+En ISS-02 se añade `provideHttpClient()`. Los interceptores se generan e incorporan en ISS-08, cuando sus servicios ya existen.
+
+### 1.4.1 Licencia de PrimeNG 22 (obligatoria para la entrega limpia)
+
+**Criterios de este sub-ítem**
+
+- [X] Se identifica [PrimeUI] No license key configured en la consola como aviso de licencia, no un error de código
+- [X] La clave Community se pega en primeUiLicense (environment*.ts, ISS-02 §2.1) y el aviso desaparece
+- [X] La clave no se publica en el repositorio si es comercial
+
+Desde la versión 22, PrimeNG es parte de PrimeUI, una familia comercial. El paquete incluye @primeui/license-manager, que verifica la clave sin conexión al arrancar (providePrimeNG). Si no hay clave o no es válida:
+
+|Dónde|	Qué aparece|
+|-----|------------|
+|Consola|	[PrimeUI] No license key configured for primeui.|
+|Consola|	[PrimeUI] PrimeUI license is not configured.|
+|Esquina inferior derecha|	Banda roja Invalid PrimeUI License (Shadow DOM, pointer-events: none)|
+
+
+**La aplicación funciona igual:** los componentes se dibujan y el tema Aura se aplica. El aviso es de licencia, no un fallo de Angular. Para una entrega profesional y para capturas de evidencia limpias hay que registrar la clave.
+
+Cómo obtenerla (gratuita para el laboratorio):
+
+1. Entra a https://primeui.dev/licenses y revisa los requisitos de la Community License: menos de 1 M USD de ingresos anuales, menos de 5 desarrolladores, menos de 10 empleados y menos de 3 M USD de financiación. Los estudiantes y el uso académico califican.
+
+2. Solicítala en https://primeui.dev con tu correo.
+
+3. Recibes la clave por correo. Pégala en src/environments/environment.development.ts (primeUiLicense) para ng serve, y en environment.ts para ng build (misma clave en ambos en el laboratorio).
+
+4. Recarga: el aviso desaparece y la consola no vuelve a registrar el mensaje.
+
+```
+// src/environments/environment.development.ts (y el mismo valor en environment.ts)
+export const environment = {
+  // ...
+  primeUiLicense: '', // clave personal; no uses una cadena de ejemplo del manual
+};
+```
+
+`app.config.ts` ya enlaza la licencia: `license: environment.primeUiLicense || undefined`. Los pasos detallados del campo están en ISS-02 §2.1.
+
+### 1.5 Pantalla inicial de aprendizaje: App compone demo/ejemplo
+
+**Criterios de este sub-ítem**
+
+- [X] src/app/app.ts importa el componente Ejemplo y lo declara en imports
+- [X] src/app/app.html contiene <app-ejemplo /> dentro de un <main> con utilidades Tailwind
+- [X] src/app/app.css queda vacío: el aspecto viene de Tailwind y del tema Aura
+- [X] src/app/app.spec.ts prueba que app-ejemplo se pinta, en lugar del `<h1>` por defecto
+- [X] src/app/app.routes.ts sigue vacío: en ISS-01 no hay rutas
+- [X] Existe src/app/demo/ejemplo/ con ejemplo.ts, ejemplo.html, ejemplo.css y ejemplo.spec.ts
+- [X] Al abrir http://localhost:4000 se ve una tarjeta ilustrativa con datos ficticios, sin conexión a la API
+
+La plantilla que genera el CLI es una página de bienvenida de Angular llena de enlaces. Se reemplaza por una pantalla didáctica mínima para explicar los componentes y signals de la sección 1.9. La tarjeta es solo un ejemplo de interfaz: no representa el catálogo ni los precios reales de MovilCare, no persiste cambios y no consume endpoints.
+
+La pantalla vive en un componente aparte, `demo/ejemplo`, para que la explicación no se mezcle con App. App se queda con una sola responsabilidad: poner la etiqueta. No se usa el router todavía: en ISS-01 el objetivo es entender qué es un componente, y eso se ve con una etiqueta en la plantilla. El router aparece en ISS-01B, cuando hay una pantalla de negocio que mostrar.
+
+```
+index.html → <app-root> → App (composición) → <app-ejemplo /> → demo/ejemplo
+```
+
+La regla mental que queda de esta sección: un componente es una etiqueta HTML que se escribe en la plantilla de otro componente. La etiqueta es el selector de su @Component.
+
+`src/app/app.ts`
+
+```bash
+cat > src/app/app.ts <<'EOF'
+import { Component } from '@angular/core';
+import { Ejemplo } from './demo/ejemplo/ejemplo';
+
+/**
+ * Componente principal (`<app-root>`).
+ *
+ * Es el primero que Angular dibuja. En ISS-01 solo compone el componente de
+ * ejemplo, para que se vea en pantalla con una etiqueta. Las rutas llegan en
+ * ISS-01B, cuando existe una pantalla de negocio que mostrar.
+ */
+@Component({
+  host: { class: 'block' },
+  selector: 'app-root',
+  imports: [Ejemplo],
+  templateUrl: './app.html',
+  styleUrl: './app.css',
+})
+export class App {}
+EOF
+```
+
+`src/app/app.html`
+
+```bash
+cat > src/app/app.html <<'EOF'
+<!-- Marco de la aplicación: fondo, ancho máximo y padding con utilidades Tailwind. -->
+<main class="min-h-dvh bg-slate-50 p-6 text-slate-900">
+  <div class="mx-auto w-full max-w-4xl">
+    <!-- Composición: una etiqueta en la plantilla pinta el componente Ejemplo. -->
+    <app-ejemplo />
+  </div>
+</main>
+EOF
+```
+
+`<app-ejemplo />` es una etiqueta normal de HTML: Angular la reconoce porque Ejemplo declara selector: 'app-ejemplo' y está en el imports de App. No hay nada más. Si quitáramos Ejemplo de imports, la etiqueta no se pintaría.
+
+`src/app/app.routes.ts`
+
+```bash
+cat > src/app/app.routes.ts <<'EOF'
+import { Routes } from '@angular/router';
+
+/**
+ * Rutas de la aplicación.
+ *
+ * Vacío a propósito: en ISS-01 la pantalla se compone con etiquetas en `app.html`
+ * (`<app-ejemplo />`). El router se presenta en ISS-01B, con una pantalla real.
+ */
+export const routes: Routes = [];
+EOF
+```
+
+`provideRouter(routes)` ya está en app.config.ts desde que el CLI creó el proyecto; el arreglo vacío es válido y no impide arrancar. No se rellena hasta ISS-01B.
+
+`src/app/app.css`
+
+```bash
+cat > src/app/app.css <<'EOF'
+/*
+ * Estilos propios del componente App.
+ *
+ * Queda VACÍO a propósito: el aspecto se resuelve con utilidades Tailwind en el
+ * HTML y con el tema Aura de PrimeNG (PATRON-VISUAL). Angular mantiene el archivo
+ * porque `styleUrl` lo referencia y solo afecta a `<app-root>`.
+ */
+EOF
+```
+
+![alt text](img-angular/archivos_app.png)
+
+**PARCHE** — prueba del componente. La prueba generada por el CLI busca el `<h1>` de la plantilla por defecto y falla después de reemplazar app.html. Reemplázala por pruebas de la composición. El componente `demo/ejemplo` tiene su propia prueba (`ejemplo.spec.ts`), que se explica en 1.9.
+
+```bash
+import { TestBed } from '@angular/core/testing';
+import { App } from './app';
+
+describe('App', () => {
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [App],
+    }).compileComponents();
+  });
+
+  it('should create the app', () => {
+    const fixture = TestBed.createComponent(App);
+    expect(fixture.componentInstance).toBeTruthy();
+  });
+
+  it('should render the example component', async () => {
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('app-ejemplo')).toBeTruthy();
+  });
+
+  it('should show the product loaded by the example component', async () => {
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.textContent).toContain('Café molido 500 g');
+  });
+});
+```
+
+### 1.6 Personalizar index.html
+Criterios de este sub-ítem
+
+- [X] lang="es"
+- [X] `<title>StoreLab Express II · Angular 22</title>`
+- [X] `<body class="m-0 bg-slate-100 font-sans text-slate-900">`
+- [X] `meta description` presente
+
+```bash
+cat > src/index.html <<'EOF'
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>StoreLab Express II · Angular 22</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Frontend Angular 22 con Signals, PrimeNG y Tailwind para StoreLab Express.">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+</head>
+<body class="m-0 bg-slate-100 font-sans text-slate-900">
+  <app-root></app-root>
+</body>
+</html>
+EOF
+```
+
+![alt text](img-angular/index.html.png)
+
+Las clases del `<body>` son utilidades Tailwind: fondo, fuente y color de texto. No se redefinen fuentes ni colores del tema con CSS propio.
+
+### 1.7 Ajustar el presupuesto de build
+
+**Criterios de este sub-ítem**
+
+- [ ] En projects → … → architect → build → configurations → production → budgets, el presupuesto initial es maximumWarning: "750kB" y maximumError: "1MB"
+
+El bundle inicial con PrimeNG supera los 500 kB por defecto. En angular.json, dentro de projects → ... → architect → build → configurations → production → budgets, cambia el primer presupuesto:
+
+```json
+{
+  "type": "initial",
+  "maximumWarning": "750kB",
+  "maximumError": "1MB"
+}
+```
+
+### 1.8 Primera ejecución
+
+**Criterios de este sub-ítem**
+
+- [X] npm start compila sin errores
+- [X] http://localhost:4200 responde 200 y muestra el componente de ejemplo
+- [X] Se ve la tarjeta del producto con nombre, precio, estado y botones
+- [X] Pulsar +1000 cambia el precio y el «Precio final con IVA» sin recargar la página
+- [X] Cambiar estado cambia la etiqueta (Activo/Inactivo) y el mensaje inferior
+- [X] Escribir en Nombre actualiza el texto «Vista previa»
+- [X] Console muestra [ejemplo] … en cada cambio (lo escribe effect())
+- [X] Network carga styles.css, main.js y los chunks con estado 200
+- [X] El `<title>` de la pestaña es StoreLab Express II · Angular 22
+
+```bash
+npm start
+```
+
+![alt text](img-angular/start_demo.png)
+
+Abre http://localhost:4200. Debe verse la pantalla de 1.5: la tarjeta Objeto producto, las dos tarjetas de explicación y las utilidades Tailwind que lo centran. Al pulsar +1000 el precio base sube y el valor con IVA se recalcula; Cambiar estado alterna la etiqueta y el aviso; Reiniciar vuelve al objeto inicial.
+
+No hay URL por pantalla: en ISS-01 el router está configurado pero sin rutas, así que cualquier dirección muestra la misma composición.
+
+Sin este ajuste, ng build termina con un warning (no error). En ISS-11 se explica por qué no conviene subirlo más allá de 1 MB.
+
+### 1.9 Anatomía del componente demo/ejemplo y signals
+
+**Criterios de este sub-ítem**
+
+- [X] Explica en qué orden arranca la aplicación y qué archivo hace cada paso
+- [X] Identifica los cuatro archivos de un componente y la función de cada uno
+- [X] Relaciona cada parte de la pantalla con la línea de ejemplo.ts o ejemplo.html que la produce
+- [X] Distingue signal (estado), computed (valor derivado) y effect (efecto secundario)
+- [X] Explica cómo se actualiza un objeto guardado en un signal sin mutarlo
+- [X] Explica por qué no hace falta Zone.js ni llamar a ChangeDetectorRef
+- [X] Explica cómo el selector: 'app-ejemplo' produce la etiqueta `<app-ejemplo />` de app.html
+
+Esta sección explica el mismo código que ya está en pantalla: `src/app/demo/ejemplo/`. Es un componente pequeño y completo: un objeto, cuatro operaciones y tres tarjetas. No hay un ejemplo aparte que borrar después.
+
+```
+src/app/demo/ejemplo/
+├── ejemplo.ts       ← la clase: estado, derivados, efecto y métodos
+├── ejemplo.html     ← la plantilla: tarjetas, campos y botones
+├── ejemplo.css      ← la excepción: una clase para explicar el aislamiento
+└── ejemplo.spec.ts  ← la prueba: crea el componente y comprueba el cambio de estado
+```
+
+### 1.9.1 De index.html a la pantalla
+
+Cuando el navegador carga http://localhost:4200, Angular recorre siempre estos pasos:
+
+```
+index.html
+   └─ <app-root></app-root>                  ← el HTML solo tiene esta etiqueta
+         │
+         ├─ src/main.ts                      bootstrapApplication(App, appConfig)
+         ├─ src/app/app.config.ts            providers globales (router, PrimeNG, …)
+         └─ src/app/app.ts                    clase App + @Component(...)
+               ├─ app.html                    plantilla: <main> + <app-ejemplo />
+               ├─ app.css                     estilos propios (vacío)
+               ├─ app.spec.ts                 pruebas de App
+               └─ app.routes.ts               rutas (vacío en ISS-01)
+                     │
+                     │  <app-ejemplo />  ← la etiqueta de app.html encuentra este componente
+                     ▼
+               src/app/demo/ejemplo/
+                     ├─ ejemplo.ts            clase Ejemplo + @Component(...)
+                     ├─ ejemplo.html          plantilla: las tres tarjetas
+                     ├─ ejemplo.css           una clase de demostración
+                     └─ ejemplo.spec.ts       4 pruebas
+```
+
+**La idea central:** index.html solo tiene una etiqueta. Angular la sustituye por App, y App pinta demo/ejemplo porque escribió su etiqueta en la plantilla. El componente de ejemplo declara su estado en ejemplo.ts y lo dibuja con ejemplo.html. Todo lo demás del curso son componentes dentro de componentes.
+
+De selector a etiqueta: por qué `<app-ejemplo />` funciona
+app.html contiene una sola referencia al componente:
+
+```html
+<main class="min-h-dvh bg-slate-50 p-6 text-slate-900">
+  <div class="mx-auto w-full max-w-4xl">
+    <app-ejemplo />
+  </div>
+</main>
+```
+
+Si el selector es 'app-ejemplo', la etiqueta es <app-ejemplo>. Si se quita Ejemplo de imports, Angular no reconoce la etiqueta y la deja como un elemento HTML inerte (sin error de compilación, porque el nombre es válido). Ese es el primer error del curso: el componente «no se ve» porque falta el import.
+
+En el DOM, el elemento conserva su etiqueta y recibe las clases de host:
+
+```
+div.mx-auto.w-full.max-w-4xl
+└── <app-ejemplo class="block" _ngcontent-…>   ← la etiqueta que escribiste en app.html
+      └── <div class="flex flex-col gap-6">     ← ejemplo.html
+```
+Ese `class="block"` no está escrito en app.html: sale de host: { class: 'block' } en la metadata de Ejemplo. Es la forma de dar clases al elemento anfitrión sin envolverlo en otro div.
+
+> El router llega después. Preguntar «¿y si quiero que la URL decida qué componente se pinta?» es correcto, pero es otra lección: ISS-01B introduce RouterOutlet cuando ya hay una pantalla de negocio. En ISS-01 el router está configurado (provideRouter) pero sin rutas.
+
+### 1.9.2 Los cuatro archivos de un componente
+Un componente Angular es una clase TypeScript + una plantilla + unos estilos + una prueba:
+
+```
+src/app/demo/ejemplo/
+├── ejemplo.ts        ← la clase (estado y lógica) + @Component(...)
+├── ejemplo.html      ← la plantilla (lo que se ve)
+├── ejemplo.css       ← los estilos de ESTE componente
+└── ejemplo.spec.ts   ← la prueba
+```
+
+La metadata es lo que convierte una clase normal en un componente:
+
+```typescript
+@Component({
+  host: { class: 'block' },              // clases del elemento anfitrión <app-ejemplo>
+  selector: 'app-ejemplo',               // etiqueta HTML que lo representa
+  imports: [ButtonModule, CardModule, InputTextModule, MessageModule, TagModule],
+  templateUrl: './ejemplo.html',         // vista externa
+  styleUrl: './ejemplo.css',             // estilos externos
+})
+export class Ejemplo {}
+```
+
+> Nombres en Angular 22: el CLI ya no genera app.component.ts ni AppComponent. Genera app.ts con la clase App. Ambos estilos funcionan, pero el material usa el actual: el sufijo .component se omite porque la carpeta y el @Component ya lo dicen.
+
+### 1.9.3 Leer ejemplo.ts línea a línea
+
+```typescript
+// 1. Se importan solo las piezas que se usan.
+import { Component, computed, effect, signal } from '@angular/core';
+import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
+import { InputTextModule } from 'primeng/inputtext';
+import { MessageModule } from 'primeng/message';
+import { TagModule } from 'primeng/tag';
+
+// 2. El objeto que se muestra y se modifica.
+export interface Producto {
+  nombre: string;
+  precio: number;
+  activo: boolean;
+}
+
+// 3. @Component describe CÓMO se pinta la clase.
+@Component({
+  host: { class: 'block' },              // <app-ejemplo> se comporta como bloque
+  selector: 'app-ejemplo',               // se usa como <app-ejemplo></app-ejemplo>
+  imports: [ButtonModule, CardModule, InputTextModule, MessageModule, TagModule],
+  templateUrl: './ejemplo.html',
+  styleUrl: './ejemplo.css',
+})
+export class Ejemplo {
+  // 4. ESTADO: el signal guarda un objeto completo.
+  protected readonly producto = signal<Producto>(productoInicial());
+
+  // 5. DERIVADOS: se calculan desde `producto()`, nunca se asignan.
+  protected readonly precioFinal = computed(() =>
+    Math.round(this.producto().precio * 1.19),
+  );
+  protected readonly estadoTexto = computed(() =>
+    this.producto().activo ? 'Activo' : 'Inactivo',
+  );
+
+  // 6. EFECTO: se ejecuta al crear y en cada cambio del objeto.
+  private readonly registro = effect(() => {
+    const { nombre, precio, activo } = this.producto();
+    console.log(`[ejemplo] ${nombre} · precio ${precio} · ${activo ? 'activo' : 'inactivo'}`);
+  });
+
+  // 7. Métodos que la plantilla llama desde los eventos.
+  protected cambiarNombre(event: Event): void {
+    const nombre = (event.target as HTMLInputElement).value;
+    this.producto.update((actual) => ({ ...actual, nombre }));
+  }
+
+  protected variarPrecio(delta: number): void {
+    this.producto.update((actual) => ({
+      ...actual,
+      precio: Math.max(0, actual.precio + delta),
+    }));
+  }
+
+  protected alternarEstado(): void {
+    this.producto.update((actual) => ({ ...actual, activo: !actual.activo }));
+  }
+
+  protected reiniciar(): void {
+    this.producto.set(productoInicial());
+  }
+}
+```
+
+La función auxiliar evita compartir el mismo objeto entre el estado inicial y el reinicio:
+
+```typescript
+function productoInicial(): Producto {
+  return { nombre: 'Café molido 500 g', precio: 18000, activo: true };
+}
+```
+
+Las piezas de la plantilla que producen lo que se ve:
+
+```html
+<!-- 1. Interpolación: muestra un campo del objeto. -->
+<p class="text-2xl font-bold text-slate-900">{{ producto().precio }}</p>
+
+<!-- 2. Property binding + event binding sobre un campo editable. -->
+<input pInputText [value]="producto().nombre" (input)="cambiarNombre($event)" />
+
+<!-- 3. Event binding con argumento: el botón llama al método con 1000. -->
+<button pButton type="button" (click)="variarPrecio(1000)">
+  <span pButtonLabel>+1000</span>
+</button>
+
+<!-- 4. Property binding booleano: el tag cambia de color según `activo`. -->
+<p-tag [value]="estadoTexto()" [severity]="producto().activo ? 'success' : 'danger'" />
+```
+
+`{{ producto().precio }}` no es una función de la plantilla: es la lectura del signal (producto()) y, sobre el objeto, la propiedad (precio). Sin el primer paréntesis Angular mostraría la función en lugar del valor.
+
+> Qué pasa con app.routes.ts. Sigue vacío (export const routes: Routes = [];). provideRouter(routes) está configurado, pero sin rutas no hay navegación: la pantalla se compone con etiquetas. El router se presenta en ISS-01B con una pantalla real.
+
+### 1.9.4 Las cuatro formas de conectar la clase con el HTML
+
+> [(ngModel)] requiere FormsModule y se usa en formularios sencillos. En este curso los formularios de negocio usan Reactive Forms (FormGroup y formControlName), que se presentan en ISS-03. El ejemplo escribe el binding a mano ([value] + (input)) para que se vea de dónde sale el valor nuevo.
+
+Y el flujo de control moderno, que reemplaza a *ngIf y *ngFor. El ejemplo lo usa para elegir el mensaje según el estado del producto:
+
+```typescript
+@if (producto().activo) {
+  <p-message severity="success" variant="simple">
+    Producto activo: la API lo devolvería en <code>GET /api/productos</code>.
+  </p-message>
+} @else {
+  <p-message severity="warn" variant="simple">
+    Producto inactivo: el borrado lógico lo oculta de las listas.
+  </p-message>
+}
+
+<!-- El mismo bloque aplica a una lista del negocio. -->
+@if (clients().length === 0) {
+  <p>No hay clientes activos.</p>
+} @else {
+  <ul>
+    @for (client of clients(); track client.id) {
+      <li>{{ client.name }}</li>
+    }
+  </ul>
+}
+```
+
+track le dice a Angular cómo identificar cada elemento de la lista; con él evita volver a dibujar filas que no cambiaron. @for exige track en Angular 22.
+
+### 1.9.5 Signals: el estado que avisa a la vista
+
+Un signal es una caja con un valor que notifica a quien lo lee cuando cambia. Se crea con signal(valorInicial), se lee con () y se modifica con .set() o .update().
+
+Dónde está en Ejemplo. El estado es un objeto Producto; la plantilla lee sus campos y los botones lo cambian:
+
+```typescript
+// ejemplo.ts — declaración y cambios del estado
+protected readonly producto = signal<Producto>(productoInicial());
+
+protected variarPrecio(delta: number): void {
+  this.producto.update((actual) => ({
+    ...actual,                              // conserva nombre y activo
+    precio: Math.max(0, actual.precio + delta),
+  }));
+}
+
+protected reiniciar(): void {
+  this.producto.set(productoInicial());     // valor nuevo, no depende del anterior
+}
+```
+
+```html
+<!-- ejemplo.html — lectura del signal: siempre con paréntesis -->
+<p class="text-2xl font-bold text-slate-900">{{ producto().precio }}</p>
+<p class="text-sm text-slate-500">
+  Precio final con IVA (19 %): <strong>{{ precioFinal() }}</strong>
+</p>
+<p-tag [value]="estadoTexto()" [severity]="producto().activo ? 'success' : 'danger'" />
+```
+
+**Actualizar un objeto dentro de un signal**
+
+Este es el punto que más se equivoca al empezar. Un signal compara referencias, no campos: si se modifica el objeto en el sitio, el signal sigue apuntando al mismo objeto y la vista no se entera.
+
+```typescript
+// MAL: muta el objeto y conserva la misma referencia.
+const actual = this.producto();
+actual.precio = actual.precio + 1000;   // el signal no notifica: nadie llamó a set/update
+
+// BIEN: crea un objeto nuevo y entrégaselo al signal.
+this.producto.update((actual) => ({ ...actual, precio: actual.precio + 1000 }));
+```
+
+Al pulsar +1000, el signal cambia, Angular repinta el precio base y el valor con IVA, y la etiqueta de estado sigue igual porque producto().activo no cambió. Nadie llamó a ChangeDetectorRef.
+
+> Comprobado en este workspace: la pantalla arranca con 18000 y IVA 21420; +1000 deja 19000 y 22610, -1000 vuelve a 18000, y Reiniciar restaura el objeto completo. Esas cuatro transiciones están en ejemplo.spec.ts y se ejecutan con npm test -- --watch=false.
+
+Si el número no cambia, revisa que leíste producto() con paréntesis y que el método devuelve un objeto nuevo dentro de .update(), no una mutación.
+
+### 1.9.6 computed y effect: derivar y reaccionar
+
+- computed calcula un valor a partir de otros signals. No guarda estado propio: se recalcula cuando cambia una dependencia y solo se recalcula si alguien lo lee.
+
+- effect ejecuta un efecto secundario (guardar, registrar, enfocar) cuando cambian los signals que lee. No se usa para calcular estado.
+
+```typescript
+// ejemplo.ts — dos valores derivados y un efecto secundario
+protected readonly precioFinal = computed(() =>
+  Math.round(this.producto().precio * 1.19),
+);
+
+protected readonly estadoTexto = computed(() =>
+  this.producto().activo ? 'Activo' : 'Inactivo',
+);
+
+private readonly registro = effect(() => {
+  const { nombre, precio, activo } = this.producto();
+  console.log(`[ejemplo] ${nombre} · precio ${precio} · ${activo ? 'activo' : 'inactivo'}`);
+});
+```
+
+```html
+<!-- ejemplo.html — los derivados se leen igual que un signal -->
+<p class="text-sm text-slate-500">
+  Precio final con IVA (19 %): <strong>{{ precioFinal() }}</strong>
+</p>
+<p-tag [value]="estadoTexto()" [severity]="producto().activo ? 'success' : 'danger'" />
+```
+
+**Regla del curso:** si un valor se puede calcular a partir de otros signals, es computed. Si hay que hacer algo cuando cambia, es effect. Guardar en un signal lo que ya se deduce de otro signal crea dos fuentes de verdad que se desincronizan. Aquí precioFinal no existe como signal propio: se deriva de producto().precio. Si se guardara el IVA en el objeto, habría que acordarse de recalcularlo en cada cambio de precio.
+
+### 1.9.7 Zoneless: por qué la vista se actualiza sin Zone.js
+
+Angular 22 arranca sin Zone.js por defecto. Antes, Angular parcheaba todas las APIs asíncronas para saber cuándo revisar la vista; ahora el propio código avisa:
+
+Por eso el estado del curso se declara con signal. Una propiedad public total = 0 funciona al inicio, pero al cambiarla desde una promesa el HTML puede quedarse con el valor viejo. Con signal, el cambio siempre llega a la vista.
+
+### 1.9.8 Estilos globales y estilos del componente
+
+**Regla del curso:** el aspecto de la aplicación se construye con PrimeNG (controles) y Tailwind (espaciado, tipografía, color). No se escribe CSS de negocio. La única excepción es la caja de la tarjeta «Estilos» del ejemplo, porque su propósito es explicar cómo funciona el CSS del componente:
+
+```css
+/* src/app/demo/ejemplo/ejemplo.css — únicamente demostrativo. */
+.ejemplo-alcance {
+  border: 2px dashed #0f766e;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  background-color: #f0fdfa;
+}
+```
+
+```html
+<!-- La misma caja, con el resto del contenido en Tailwind. -->
+<div class="ejemplo-alcance mt-4 text-sm text-slate-700">…</div>
+```
+
+**Qué es el encapsulamiento**: Angular compila el CSS del componente con `ViewEncapsulation.Emulated`: agrega un atributo como `_ngcontent-ng-c4132172110` a los elementos de la plantilla y escribe la regla calificada (`.ejemplo-alcance[_ngcontent-…]`). Por eso una clase definida en ejemplo.css no afecta a otro componente, aunque se llame igual. El atributo se ve al inspeccionar el DOM y es normal.
+
+```html
+<div class="ejemplo-alcance mt-4 …" _ngcontent-ng-c4132172110>…</div>
+```
+
+**Consecuencia práctica:** si dos componentes necesitan el mismo borde, no se copia la clase en los dos `.css`; se resuelve con una utilidad Tailwind o con un componente compartido. En el curso ganan Tailwind y PrimeNG porque el estilo queda en el HTML, junto a la estructura, y el tema Aura mantiene la coherencia entre controles.
+
+## Verificación del ISS
+
+```bash
+# 1. El servidor debe compilar
+ng build
+
+# 2. Debe imprimir la configuración de Tailwind/PrimeNG
+grep -R "providePrimeNG\|@import 'tailwindcss'" src | head
+
+# 3. Versiones compatibles
+npm ls primeng @primeuix/themes primeicons @angular/cdk --depth=0
+
+# 4. Presupuesto y estilos
+node -e "const a=require('./angular.json');const p=a.projects[Object.keys(a.projects)[0]];console.log(p.architect.build.configurations.production.budgets[0])"
+cat src/styles.css
+
+# 5. La composición y el componente de ejemplo declaran signals
+grep -n "imports: \[Ejemplo\]" src/app/app.ts
+grep -n "app-ejemplo" src/app/app.html
+grep -n "signal(\|computed(\|effect(" src/app/demo/ejemplo/ejemplo.ts
+```
+
+```bash
+# 6. Pruebas de App y del componente de ejemplo
+npm test -- --watch=false
+```
+
+![alt text](img-angular/verificacion_iss01A.png)
+
+![alt text](img-angular/demo.png)
+
+## Fase I: Frontend — ISS-01A — Esqueleto Header / Aside / contenido / Footer
+
+**Objetivo:** construir primero la pantalla. Al terminar, http://localhost:4200 muestra Header arriba, Aside a la izquierda del contenido y Footer abajo a todo el ancho, con datos fijos y sin llamadas a la API.
+
+**Bloqueado por:** ISS-01.
+
+**Criterios de aceptación (ISS-01A) — consolidados**
+
+- [X] 1.1 Explica por qué un componente generado no aparece hasta que el padre lo declara en imports y usa su selector
+- [X] 1.2 Existen src/app/layout/header/, src/app/layout/aside/ y src/app/layout/footer/, cada una con .ts, .html y .css
+- [X] 1.3 header.ts declara title y header.html lo muestra con {{ title }}
+- [X] 1.3 Los tres .css de layout/ no contienen reglas: solo un comentario que explica por qué están vacíos
+- [X] 1.4 app.ts importa Header, Aside y Footer y los declara en imports
+- [X] 1.4 app.html compone las cuatro regiones: `<app-header />`, `<aside>`con `<app-aside />`, `<main>` con el contenido y `<app-footer />`
+- [X] 1.4 app.html ya no contiene `<app-ejemplo />`: demo/ejemplo no forma parte de la aplicación
+- [X] 1.5 Se ven las cuatro regiones, el Footer queda abajo y no hay desplazamiento horizontal
+- [X] 1.5 En Network no aparece ninguna petición /api
+- [X] ng build termina con código 0 y las pruebas pasan
+
+> **demo/ejemplo** no se usa en ningún ISS posterior. Fue la introducción a Angular de ISS-01. No está en el menú, no tiene ruta, no se compone en el layout y no se reutiliza. Al reemplazar app.html en 1.4 deja de verse; el componente y su prueba siguen en el proyecto solo como material de consulta de ISS-01.
+
+### 1.1 Qué es un componente y por qué el padre debe importarlo
+
+Un componente reúne una clase TypeScript (datos y lógica), una plantilla HTML (lo que se ve) y un archivo de estilos. `@Component` relaciona esos archivos:
+
+|Campo	|Pregunta que responde	|Ejemplo en este ISS|
+|-------|-----------------------|-------------------|
+|selector	|¿Con qué etiqueta se usa en otra plantilla?	|selector: 'app-header' → <app-header />|
+|imports|	¿Qué usa su plantilla?|	[] en Header de ISS-01A|
+|templateUrl	|¿Dónde está el HTML?|	./header.html|
+|styleUrl|	¿Dónde están los estilos privados?	|./header.css|
+|host|	¿Qué clases lleva el elemento anfitrión?	|host: { class: |'block' }|
+
+**Regla que resuelve el error más común:** un componente generado existe, pero no se ve hasta que otro componente lo declara en su imports y escribe su etiqueta en su plantilla. Son dos pasos, no uno:
+
+```typescript
+// app.ts — paso 1: declarar el componente para que la plantilla lo reconozca
+imports: [Header, Aside, Footer],
+```
+
+```html
+<!-- app.html — paso 2: usar su selector como etiqueta -->
+<app-header />
+```
+
+**PARCHE** — standalone: true ya no hace falta. El CLI de Angular 22 genera componentes standalone por defecto. Escribir standalone: true es válido y no rompe nada, pero la plantilla del proyecto lo omite. Si copias ejemplos antiguos que lo incluyen, no hay conflicto: simplemente es redundante.
+
+Usamos `layout/` para conservar la organización del curso. El Header de la aplicación es distinto de `shared/ui/page-header`, que titula una pantalla de negocio.
+
+### 1.2 Generar las tres piezas de layout/
+Criterios de este sub-ítem
+
+
+```bash
+ng generate component layout/header --skip-tests --defaults
+ng generate component layout/aside --skip-tests --defaults
+ng generate component layout/footer --skip-tests --defaults
+```
+
+En una reconstrucción desde cero, el CLI crea además un `header.spec.ts` si no usas `--skip-tests`. En este curso esas pruebas no se necesitan: el comportamiento de la pantalla se comprueba desde `app.spec.ts`.
+
+### 1.3 Contenido de cada componente
+Criterios de este sub-ítem
+
+
+Los tres componentes son de presentación: no inyectan servicios, no consultan la API y no conocen permisos. Esa frontera es la que permite reutilizar el layout en ISS-02 sin duplicarlo.
+
+**Header**
+
+`src/app/layout/header/header.ts`
+
+```typescript
+import { Component } from '@angular/core';
+
+/**
+ * Barra superior de la aplicación.
+ *
+ * ISS-01A: solo muestra el nombre. En ISS-01B recibe datos por `input()`, emite
+ * `menuRequested` y añade el menú de usuario. No consulta la API.
+ */
+@Component({
+  host: { class: 'block' },
+  selector: 'app-header',
+  templateUrl: './header.html',
+  styleUrl: './header.css',
+})
+export class Header {
+  readonly title = 'EnlaceExpress';
+}
+```
+
+`src/app/layout/header/header.html`
+
+```html
+<header
+  class="flex h-16 items-center border-b border-slate-200 bg-white px-6 font-semibold"
+>
+  <!-- Interpolación: `title` es una propiedad de la clase Header. -->
+  <p class="truncate text-sm font-semibold text-slate-900">{{ title }}</p>
+</header>
+```
+
+`{{ title }}` es interpolación: Angular lee la propiedad de la clase y escribe su texto. Cambia el valor en header.ts y comprueba que cambia el encabezado sin tocar el HTML. Ese es el primer enlace entre clase y plantilla.
+
+h-16 fija la altura, border-b dibuja la separación y truncate evita que un texto largo rompa la barra. Todo es Tailwind: no hay CSS propio.
+
+**Aside**
+
+`src/app/layout/aside/aside.ts`
+
+```typescript
+import { Component } from '@angular/core';
+
+/**
+ * Menú lateral de la aplicación.
+ *
+ * ISS-01A: solo el contenedor. En ISS-01B recibe `items` por `input()` y pinta
+ * `p-panelmenu`. No conoce rutas ni permisos: eso llega en ISS-02/ISS-08.
+ */
+@Component({
+  host: { class: 'block h-full' },
+  selector: 'app-aside',
+  templateUrl: './aside.html',
+  styleUrl: './aside.css',
+})
+export class Aside {}
+```
+
+`src/app/layout/aside/aside.html`
+
+```html
+<nav aria-label="Navegación principal" class="h-full bg-slate-950 p-6 text-white">
+  <p class="text-xs font-medium uppercase tracking-wider text-slate-400">Navegación</p>
+  <p class="mt-2 text-sm">Menú de EnlaceExpress</p>
+  <p class="mt-4 text-xs text-slate-400">
+    En ISS-01B este bloque pasa a ser un <code>p-panelmenu</code>.
+  </p>
+</nav>
+```
+
+`aria-label` no es decorativo: nombra la región de navegación para lectores de pantalla y permite localizarla en las pruebas. El ancho no se decide aquí: lo fija el padre en app.html, porque el Aside debe poder ocultarse en móvil (ISS-01B) sin cambiar el componente.
+
+**Footer**
+
+`src/app/layout/footer/footer.ts`
+
+```typescript
+import { Component } from '@angular/core';
+
+/**
+ * Pie de página de la aplicación.
+ *
+ * Presentación pura: no tiene estado ni depende de servicios.
+ */
+@Component({
+  host: { class: 'block' },
+  selector: 'app-footer',
+  templateUrl: './footer.html',
+  styleUrl: './footer.css',
+})
+export class Footer {}
+```
+
+`src/app/layout/footer/footer.html`
+
+```html
+<footer
+  class="border-t border-slate-200 bg-white px-4 py-4 text-center text-xs text-slate-500 sm:px-6"
+>
+  EnlaceExpress · Gestión de clientes, productos y ventas
+</footer>
+```
+
+**Los tres** `.css`
+
+Cada archivo contiene solo un comentario. No hay reglas:
+
+```
+/*
+ * Estilos del Header.
+ *
+ * Vacío a propósito: la apariencia se resuelve con utilidades Tailwind en
+ * `header.html` y con el tema Aura de PrimeNG (PATRON-VISUAL).
+ */
+```
+
+`aside.css` y `footer.css` siguen el mismo criterio. El archivo existe porque styleUrl lo referencia y Angular lo necesita para el encapsulamiento (ISS-01, 1.9.8); si algún día se escribe una regla, solo afectará a ese componente.
+
+### 1.4 Componer las cuatro regiones en App
+Criterios de este sub-ítem
+
+
+`src/app/app.ts`
+
+```typescript
+import { Component } from '@angular/core';
+import { Header } from './layout/header/header';
+import { Aside } from './layout/aside/aside';
+import { Footer } from './layout/footer/footer';
+
+/**
+ * Componente principal (`<app-root>`).
+ *
+ * Es el primero que Angular dibuja. Compone las cuatro regiones de la pantalla:
+ * Header arriba, Aside a la izquierda, el contenido del centro y Footer abajo.
+ * El contenido del centro todavía es fijo; en ISS-01B pasa a cambiar con el menú
+ * y en ISS-02 llega el router.
+ */
+@Component({
+  host: { class: 'block' },
+  selector: 'app-root',
+  imports: [Header, Aside, Footer],
+  templateUrl: './app.html',
+  styleUrl: './app.css',
+})
+export class App {
+  /** Título de la pantalla inicial. En ISS-01B cambia al elegir el menú. */
+  protected readonly title = 'Inicio';
+}
+```
+
+`src/app/app.html`
+
+```html
+<!-- Contenedor de las cuatro regiones: Tailwind para el alto y la dirección. -->
+<div class="flex min-h-screen flex-col bg-slate-100">
+  <app-header />
+
+  <div class="flex flex-1">
+    <!-- Aside fijo de 16rem; en ISS-01B se oculta en pantallas pequeñas. -->
+    <aside class="w-64 shrink-0">
+      <app-aside />
+    </aside>
+
+    <!-- min-w-0 evita que un contenido ancho desborde el flex y cree scroll. -->
+    <main id="contenido" class="min-w-0 flex-1 p-6">
+      <h1 class="text-2xl font-semibold text-slate-900">{{ title }}</h1>
+      <p class="mt-2 text-slate-600">Bienvenido a EnlaceExpress.</p>
+    </main>
+  </div>
+
+  <app-footer />
+</div>
+```
+
+**Prueba de la composición**
+
+`src/app/app.spec.ts` no busca el `<h1>` de la plantilla por defecto: comprueba las regiones y el texto inicial.
+
+```typescript
+import { TestBed } from '@angular/core/testing';
+import { App } from './app';
+
+describe('App', () => {
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [App],
+    }).compileComponents();
+  });
+
+  async function crearApp() {
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    return fixture.nativeElement as HTMLElement;
+  }
+
+  it('should create the app', () => {
+    const fixture = TestBed.createComponent(App);
+    expect(fixture.componentInstance).toBeTruthy();
+  });
+
+  it('should compose the three layout regions', async () => {
+    const compilado = await crearApp();
+    expect(compilado.querySelector('app-header')).toBeTruthy();
+    expect(compilado.querySelector('aside app-aside')).toBeTruthy();
+    expect(compilado.querySelector('app-footer')).toBeTruthy();
+  });
+
+  it('should render the application name in the header', async () => {
+    const compilado = await crearApp();
+    const header = compilado.querySelector('app-header') as HTMLElement;
+    expect(header.textContent).toContain('EnlaceExpress');
+  });
+
+  it('should render the initial title in the content', async () => {
+    const compilado = await crearApp();
+    const main = compilado.querySelector('main') as HTMLElement;
+    expect(main.textContent).toContain('Inicio');
+    expect(main.textContent).toContain('Bienvenido a EnlaceExpress.');
+  });
+});
+```
+
+La consulta `aside app-aside` verifica dos cosas a la vez: que el Aside está dentro del elemento que fija su ancho y que el componente se pintó.
+
+### 1.5 Comprobar antes de avanzar
+Criterios de este sub-ítem
+
+
+```bash
+npm start
+```
+
+Abre http://localhost:4200 y comprueba:
+
+|Comprobación visual |Resultado esperado|
+|--------------------|------------------|
+|Header|	Barra blanca de 64 px con StoreLab Express II|
+|Aside|	Columna oscura de 256 px con Menú de StoreLab|
+|Contenido|	Inicio y Bienvenido a StoreLab.|
+|Footer	|Franja inferior a todo el ancho con StoreLab · Gestión de clientes, productos y ventas|
+|Con poco contenido	|El Footer queda pegado al borde inferior de la ventana|
+|Con mucho contenido|	El Footer baja; aparece scroll vertical, nunca horizontal|
+|Network	|Sin peticiones /api: aún no hay servicios|
+
+Para provocar el caso de contenido largo, añade párrafos dentro de `<main>` y observa que solo el Footer se desplaza: el Header y el Aside no se mueven porque están en el flujo normal del `flex` vertical.
+
+![alt text](img-angular/start_iss01A.png)
+
+## Fase I: Frontend — ISS-01B — Menú PrimeNG y primera interacción
+
+**Objetivo:** pasar de una maqueta a una pantalla que responde. Al terminar: PanelMenu en el Aside, botón de menú en el Header, Drawer en pantalla pequeña y selección que cambia el contenido local. Sin rutas de negocio y sin API.
+
+**Bloqueado por:** ISS-01A.
+
+**Criterios de aceptación (ISS-01B) — consolidados**
+
+- [X] 1.1 Explica la diferencia entre input() (dato del padre al hijo), output() (aviso del hijo al padre) y signal() (estado propio)
+- [X] 1.2 aside.ts declara `items = input<MenuItem[]>([])` y aside.html lo pinta con `<p-panelmenu [model]="items()" [multiple]="true" />`
+- [X] 1.2 aside.css sigue sin reglas: la apariencia es de Aura y Tailwind
+- [X] 1.3 El Header emite menuRequested y su botón está siempre visible: por debajo de lg abre el Drawer, desde lg alterna el Aside fijo
+- [X] 1.4 Existe src/app/features/construir/ con construir.ts, construir.html, construir.css y construir.spec.ts
+- [X] 1.4 mobileOpen, sidebarCollapsed y title son signal; elegir una opción cambia el título y cierra el Drawer
+- [X] 1.4 El layout se compone una sola vez en construir.html y se reutiliza en el Drawer
+- [X] 1.5 app.ts importa RouterOutlet y app.html contiene solo `<router-outlet />`
+- [X] 1.5 app.routes.ts declara construir con loadComponent, redirige '' y ** a construir
+- [X] 1.6 A 1280 px se ve Inicio, 11 opciones de Operación y 6 de Administración; a 390 px se oculta y el botón abre el Drawer
+- [X] 1.6 A 1280 px el botón de menú se ve y oculta/muestra el Aside sin abrir el Drawer
+- [X] 1.6 La URL no cambia al elegir una opción y Network no registra llamadas /api
+- [X] ng build termina con código 0, construir se empaqueta como chunk diferido y las pruebas pasan
+
+> demo/ejemplo no participa. La introducción a Angular quedó en ISS-01. No tiene ruta, no está en el menú y no se compone en este ISS.
+
+### 1.1 Los conceptos que se agregan, uno por vez
+
+`Criterios de este sub-ítem`
+
+- [X] Distingue los tres canales de datos: entrada, salida y estado
+- [X] Reconoce `MenuItem[]` como el contrato del menú de PrimeNG
+- [X] Explica `[(visible)]` como ida y vuelta en un solo atributo
+
+|Concepto	|Qué resuelve	|Dónde se ve en este ISS|
+|--------|-------------|-----------------------|
+|input()	|Dato que el padre entrega al hijo; el hijo no lo modifica|	items en Aside, appName en Header|
+|output()	|Aviso del hijo al padre; el hijo no navega ni cierra nada por su cuenta	|menuRequested, |navigated
+|signal()|	Estado propio del componente, observado por la plantilla|	title, mobileOpen en Construir|
+|[propiedad]|	Enlace de la clase a la plantilla|	[model]="items()" en PanelMenu|
+|(evento)|	Acción al recibir un aviso	|(menuRequested)="mobileOpen.set(true)"|
+|[(visible)]|	Ida y vuelta: el Drawer abre y también actualiza el estado al cerrarse|	[(visible)]|="mobileOpen"
+|MenuItem[]	|Forma tipada del menú de PrimeNG: label, icon, command|	items en Construir|
+
+**La frontera del ISS**. Los tres componentes de `layout/` son presentación: reciben datos y avisan. El único con estado es Construir. Esa separación es la que permite reutilizar el layout en `ISS-02` sin duplicar `Header`, `Aside` ni `Footer`, y la que evita inyectar servicios de autenticación en componentes visuales.
+
+**PARCHE** — standalone: true sobra. Angular 22 genera componentes standalone por defecto. Los ejemplos de material antiguo lo incluyen; es válido, pero redundante. Este curso no lo escribe.
+
+### 1.2 El Aside recibe el menú con input()
+Criterios de este sub-ítem
+
+- [X] Aside declara `items = input<MenuItem[]>([])`
+- [X] La plantilla usa `[model]="items()":` se lee el signal con paréntesis
+- [X] El Aside no construye el menú ni conoce rutas: solo lo pinta
+- [X] aside.css no contiene reglas
+
+`src/app/layout/aside/aside.ts`
+
+```typescript
+import { Component, input, output } from '@angular/core';
+import { MenuItem } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { PanelMenuModule } from 'primeng/panelmenu';
+
+/**
+ * Menú lateral de la aplicación.
+ *
+ * Presentación pura: recibe el menú ya construido por `input()` y avisa de la
+ * navegación con `output()`. No conoce rutas, permisos ni la API.
+ */
+@Component({
+  host: { class: 'block h-full' },
+  selector: 'app-aside',
+  imports: [ButtonModule, PanelMenuModule],
+  templateUrl: './aside.html',
+  styleUrl: './aside.css',
+})
+export class Aside {
+  readonly appName = input('EnlaceExpress');
+
+  /** Opciones del menú, en el formato `MenuItem` de PrimeNG. */
+  readonly items = input<MenuItem[]>([]);
+
+  /** Datos de sesión con valores por defecto: ISS-08 los completa. */
+  readonly showSession = input(false);
+  readonly username = input('');
+  readonly roleLabel = input('Sin rol');
+  readonly permissionCount = input(0);
+
+  /** Aviso al padre: se seleccionó una opción (lo usa el Drawer en móvil). */
+  readonly navigated = output<void>();
+
+  /** Aviso al padre: se pidió cerrar sesión. */
+  readonly logoutRequested = output<void>();
+
+  /**
+   * Un clic dentro del menú puede caer en el propio ítem o en un hijo suyo.
+   * `closest` resuelve ambos casos con un solo listener en el `<nav>`.
+   */
+  onNavigationClick(event: Event): void {
+    const target = event.target;
+    if (target instanceof Element && target.closest('.p-panelmenu-item-link')) {
+      this.navigated.emit();
+    }
+  }
+}
+```
+
+`src/app/layout/aside/aside.html`
+
+```html
+<div class="flex h-full flex-col border-r border-slate-200 bg-white text-slate-900">
+  <div class="flex h-16 items-center gap-3 border-b border-slate-200 px-5">
+    <i class="pi pi-link text-lg text-teal-700" aria-hidden="true"></i>
+    <div class="min-w-0">
+      <p class="truncate text-sm font-semibold text-slate-900">{{ appName() }}</p>
+      <p class="text-[11px] uppercase tracking-wider text-slate-400">
+        Panel administrativo
+      </p>
+    </div>
+  </div>
+
+  <div class="flex-1 overflow-y-auto p-3">
+    <nav aria-label="Navegación principal" (click)="onNavigationClick($event)">
+      <p-panelmenu [model]="items()" [multiple]="true" />
+    </nav>
+  </div>
+
+  @if (showSession()) {
+    <div class="border-t border-slate-200 p-4">
+      <p class="text-sm font-medium text-slate-900">{{ username() || 'Invitado' }}</p>
+      <p class="text-xs text-slate-400">{{ roleLabel() }}</p>
+      <div class="mt-3 flex items-center justify-between text-xs text-slate-400">
+        <span>{{ permissionCount() }} permisos</span>
+        <button
+          pButton
+          type="button"
+          text
+          rounded
+          aria-label="Cerrar sesión"
+          (click)="logoutRequested.emit()"
+        >
+          <i pButtonIcon class="pi pi-sign-out"></i>
+        </button>
+      </div>
+    </div>
+  }
+</div>
+```
+
+### 1.3 El Header avisa al padre con output()
+Criterios de este sub-ítem
+
+- [X] El botón de menú lleva `aria-label="Mostrar u ocultar el menú"` y no lleva `lg:hidden`
+- [X] Al pulsarlo emite menuRequested; el Header no abre nada ni consulta el ancho
+- [X] showSession sigue en false: no hay datos de sesión hasta ISS-08
+- [X] header.css no contiene reglas
+
+`src/app/layout/header/header.ts`
+
+```typescript
+import { Component, input, output } from '@angular/core';
+import { MenuItem } from 'primeng/api';
+import { AvatarModule } from 'primeng/avatar';
+import { ButtonModule } from 'primeng/button';
+import { MenuModule } from 'primeng/menu';
+import { TagModule } from 'primeng/tag';
+
+/**
+ * Barra superior de la aplicación.
+ *
+ * Es presentación pura: recibe los datos por `input()` y avisa al padre con
+ * `output()`. No inyecta servicios, no consulta la API y no conoce permisos.
+ */
+@Component({
+  host: { class: 'block' },
+  selector: 'app-header',
+  imports: [AvatarModule, ButtonModule, MenuModule, TagModule],
+  templateUrl: './header.html',
+  styleUrl: './header.css',
+})
+export class Header {
+  /** Nombre visible de la aplicación. */
+  readonly appName = input('EnlaceExpress');
+
+  /** Datos de sesión con valores por defecto: ISS-08 los completa. */
+  readonly username = input('');
+  readonly initials = input('IN');
+  readonly roleLabel = input('Sin rol');
+  readonly authEnabled = input(true);
+  readonly showSession = input(false);
+  readonly userItems = input<MenuItem[]>([]);
+
+  /** Aviso al padre: el botón de menú se pulsó (solo visible en móvil). */
+  readonly menuRequested = output<void>();
+}
+```
+
+`src/app/layout/header/header.html`
+
+```html
+<header
+  class="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-slate-200 bg-white px-4 sm:px-6"
+>
+  <!-- Botón de menú: siempre visible; el padre decide qué hacer (aside fijo o Drawer). -->
+  <button
+    pButton
+    type="button"
+    text
+    rounded
+    aria-label="Mostrar u ocultar el menú"
+    (click)="menuRequested.emit()"
+  >
+    <i pButtonIcon class="pi pi-bars"></i>
+  </button>
+
+  <div class="min-w-0 flex-1">
+    <p class="truncate text-sm font-semibold text-slate-900">{{ appName() }}</p>
+    <p class="truncate text-xs text-slate-500">
+      Gestión logística de envíos
+    </p>
+  </div>
+
+  @if (showSession() && !authEnabled()) {
+    <p-tag value="Fase I · sin auth" severity="warn" [rounded]="true" />
+  }
+  @if (username()) {
+    <p-tag
+      [value]="roleLabel()"
+      severity="info"
+      [rounded]="true"
+      class="hidden sm:inline-flex"
+    />
+  }
+
+  @if (showSession()) {
+    <button
+      pButton
+      type="button"
+      severity="secondary"
+      outlined
+      (click)="userMenuPanel.toggle($event)"
+      aria-label="Menú de usuario"
+    >
+      <p-avatar [label]="initials()" shape="circle" size="normal" />
+      <span class="hidden max-w-32 truncate text-sm font-medium text-slate-700 sm:block">
+        {{ username() }}
+      </span>
+      <i class="pi pi-chevron-down pr-1 text-[10px] text-slate-400"></i>
+    </button>
+    <p-menu #userMenuPanel [model]="userItems()" [popup]="true" appendTo="body" />
+  }
+</header>
+```
+
+**Por qué el hijo no abre el Drawer**. El Drawer vive en Construir. Si el Header lo abriera, tendría que conocer el estado de otra pantalla. Con `output()` el Header solo dice «se pulsó el botón»; quien decide qué hacer es el padre:
+
+```html
+<app-header (menuRequested)="onMenuToggle()" />
+```
+
+Esa es la diferencia entre un componente reutilizable y uno acoplado.
+
+> **PARCHE** — `<class="lg:hidden">` era un error de diseño. La primera versión ocultaba el botón con `lg:hidden`, así que desaparecía justo desde 1024 px, que es donde el Aside fijo ya se ve. Resultado: en escritorio el menú no se podía ocultar y en pantallas anchas el usuario no encontraba el botón. El botón debe estar siempre; lo que cambia es qué hace según el ancho. El Header no consulta el ancho (sigue siendo presentación pura): quien decide es el padre, con `onMenuToggle()`.
+
+`sticky top-0 z-30` mantiene la barra visible al hacer scroll y por encima del contenido. El `@if (showSession())` deja el bloque de usuario fuera del DOM hasta ISS-08: no se pinta un avatar vacío que luego haya que ocultar.
+
+### 1.4 features/construir: estado local y Drawer móvil
+Criterios de este sub-ítem
+
+- [X] mobileOpen, sidebarCollapsed y title son signal, no propiedades normales
+- [X] Todas las opciones seleccionables del menú llaman a un único método seleccionar
+- [X] seleccionar cambia el título y cierra el Drawer
+- [X] onMenuToggle alterna el Aside fijo en escritorio y abre el Drawer en móvil
+- [X] El Aside aparece una vez en el layout de escritorio y otra en el Drawer, con el mismo items
+- [X] construir.css no contiene reglas
+
+```bash
+ng generate component features/construir --skip-tests --defaults
+```
+
+El `--skip-tests` no es para evitar pruebas: la prueba de esta pantalla se escribe completa en este ISS (más abajo) y sustituye a la plantilla vacía del CLI.
+
+`src/app/features/construir/construir.ts`
+
+```typescript
+import { Component, signal } from '@angular/core';
+import { MenuItem } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
+import { DrawerModule } from 'primeng/drawer';
+import { watchMediaQuery } from '../../core/utils/media-query';
+import { Aside } from '../../layout/aside/aside';
+import { Footer } from '../../layout/footer/footer';
+import { Header } from '../../layout/header/header';
+
+/**
+ * Pantalla del prototipo.
+ *
+ * Es el único componente con estado en ISS-01B: guarda el título elegido y el
+ * estado del menú. El layout solo recibe datos por `input()`; así en ISS-02 se
+ * puede reutilizar sin duplicar Header, Aside ni Footer.
+ */
+@Component({
+  host: { class: 'block' },
+  selector: 'app-construir',
+  imports: [Aside, ButtonModule, CardModule, DrawerModule, Footer, Header],
+  templateUrl: './construir.html',
+  styleUrl: './construir.css',
+})
+export class Construir {
+  /** `lg` de Tailwind: desde aquí el Aside es fijo y el botón lo alterna. */
+  private readonly isDesktop = watchMediaQuery('(min-width: 1024px)');
+
+  /** Escritorio: el Aside fijo se oculta y el contenido se ensancha. */
+  readonly sidebarCollapsed = signal(false);
+
+  /** Móvil: el Drawer se abre desde el botón y se cierra al elegir una opción. */
+  readonly mobileOpen = signal(false);
+
+  /** Título del contenido. Cambia al elegir una opción del menú, sin HTTP. */
+  readonly title = signal('Inicio');
+
+  /**
+   * Menú en el formato `MenuItem` de PrimeNG.
+   *
+   * `command` ejecuta una función al elegir la opción. Todavía no navega: solo
+   * cambia el título. En ISS-02 cada comando apuntará a una ruta real.
+   */
+  readonly items: MenuItem[] = [
+    {
+      label: 'Operación',
+      icon: 'pi pi-truck',
+      items: [
+        { label: 'Empresas', icon: 'pi pi-building', command: () => this.seleccionar('Empresas') },
+        { label: 'Contactos', icon: 'pi pi-id-card', command: () => this.seleccionar('Contactos') },
+        { label: 'Direcciones', icon: 'pi pi-map-marker', command: () => this.seleccionar('Direcciones') },
+        { label: 'Mensajeros', icon: 'pi pi-send', command: () => this.seleccionar('Mensajeros') },
+        { label: 'Tarifas', icon: 'pi pi-dollar', command: () => this.seleccionar('Tarifas') },
+        { label: 'Rutas', icon: 'pi pi-map', command: () => this.seleccionar('Rutas') },
+        { label: 'Envíos', icon: 'pi pi-box', command: () => this.seleccionar('Envíos') },
+        { label: 'Paquetes', icon: 'pi pi-inbox', command: () => this.seleccionar('Paquetes') },
+        {
+          label: 'Eventos de seguimiento',
+          icon: 'pi pi-history',
+          command: () => this.seleccionar('Eventos de seguimiento'),
+        },
+        {
+          label: 'Comprobantes de entrega',
+          icon: 'pi pi-check-square',
+          command: () => this.seleccionar('Comprobantes de entrega'),
+        },
+        { label: 'Facturas', icon: 'pi pi-file', command: () => this.seleccionar('Facturas') },
+      ],
+    },
+    {
+      label: 'Administración',
+      icon: 'pi pi-shield',
+      items: [
+        { label: 'Usuarios', icon: 'pi pi-users', command: () => this.seleccionar('Usuarios') },
+        { label: 'Roles', icon: 'pi pi-key', command: () => this.seleccionar('Roles') },
+        { label: 'Recursos', icon: 'pi pi-list', command: () => this.seleccionar('Recursos') },
+        {
+          label: 'Asignaciones de rol',
+          icon: 'pi pi-user-plus',
+          command: () => this.seleccionar('Asignaciones de rol'),
+        },
+        {
+          label: 'Concesiones de recursos',
+          icon: 'pi pi-lock',
+          command: () => this.seleccionar('Concesiones de recursos'),
+        },
+        { label: 'Sesiones', icon: 'pi pi-history', command: () => this.seleccionar('Sesiones') },
+      ],
+    },
+  ];
+
+  /**
+   * Un solo botón, dos disposiciones: en escritorio alterna el Aside fijo; por
+   * debajo de `lg` abre el Drawer (donde el Aside fijo no cabe).
+   */
+  protected onMenuToggle(): void {
+    if (this.isDesktop()) {
+      this.sidebarCollapsed.update((collapsed) => !collapsed);
+      return;
+    }
+    this.mobileOpen.set(true);
+  }
+
+  /** Una sola puerta de entrada al estado: la usan las opciones seleccionables. */
+  protected seleccionar(titulo: string): void {
+    this.title.set(titulo);
+    this.mobileOpen.set(false);
+  }
+}
+```
+
+**El helper que decide el ancho**
+
+`src/app/core/utils/media-query.ts`
+
+```typescript
+import { DestroyRef, Signal, inject, signal } from '@angular/core';
+
+/**
+ * Observa una media query CSS y la expone como signal de solo lectura.
+ */
+export function watchMediaQuery(query: string): Signal<boolean> {
+  const destroyRef = inject(DestroyRef);
+
+  const media =
+    typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      ? window.matchMedia(query)
+      : null;
+
+  const matches = signal(media?.matches ?? false);
+
+  if (media) {
+    const listener = (event: MediaQueryListEvent): void => matches.set(event.matches);
+    media.addEventListener('change', listener);
+    destroyRef.onDestroy(() => media.removeEventListener('change', listener));
+  }
+
+  return matches.asReadonly();
+}
+```
+
+`src/app/features/construir/construir.html`
+
+```html
+<div class="flex min-h-screen flex-col bg-slate-100">
+  <app-header (menuRequested)="onMenuToggle()" />
+
+  <div class="flex flex-1">
+    <!--
+      Escritorio: Aside fijo que el botón del Header puede ocultar.
+      Por debajo de lg no se pinta: el menú vive en el Drawer.
+    -->
+    @if (!sidebarCollapsed()) {
+      <aside class="hidden w-72 shrink-0 lg:block">
+        <app-aside [items]="items" (navigated)="mobileOpen.set(false)" />
+      </aside>
+    }
+
+    <main id="contenido" class="min-w-0 flex-1 p-4 sm:p-6">
+      <p-card class="block">
+        <h1 class="text-2xl font-semibold text-slate-900">{{ title() }}</h1>
+        <p class="mt-3 text-slate-600">
+          Bienvenido a EnlaceExpress. Elige una opción del menú para explorar la estructura.
+        </p>
+        <p class="mt-2 text-sm text-slate-500">
+          Esta primera pantalla usa datos locales. Los formularios y la conexión con
+          Express se incorporan después.
+        </p>
+      </p-card>
+    </main>
+  </div>
+
+  <app-footer />
+</div>
+
+<!-- Móvil: el mismo Aside, otra disposición. -->
+<p-drawer [(visible)]="mobileOpen" header="Menú" position="left" styleClass="w-72">
+  <app-aside [items]="items" (navigated)="mobileOpen.set(false)" />
+</p-drawer>
+```
+
+**El flujo de un clic, de principio a fin**
+
+```
+clic en «Envíos» (dentro del Aside)
+  ├─ PanelMenu ejecuta item.command()
+  │     └─ seleccionar('Envíos') → title.set('Envíos') y mobileOpen.set(false)
+  └─ el clic burbujea al <nav>, que emite navigated
+        └─ Construir: (navigated)="mobileOpen.set(false)"   ← idempotente
+```
+
+Dos caminos que terminan en el mismo estado. No es redundancia inútil: el `command` funciona también con teclado, y `navigated` cubre el caso en que el Aside se reutilice con enlaces reales en ISS-02. Ambos llaman a .`set(false)`, así que no puede quedar desincronizado.
+
+**El flujo del botón de menú, según el ancho**
+
+        └─ Construir: (navigated)="mobileOpen.set(false)"   ← idempotente
+```
+clic en el botón del Header
+  ├─ Header: (click)="menuRequested.emit()"        ← no sabe dónde está
+  └─ Construir: onMenuToggle()
+        ├─ ancho ≥ 1024px  → sidebarCollapsed.update(v => !v)   ← aside fijo
+        └─ ancho < 1024px  → mobileOpen.set(true)               ← Drawer
+        └─ Construir: (navigated)="mobileOpen.set(false)"   ← idempotente
+```
+
+`@if (!sidebarCollapsed())` envuelve el `<aside>:` en escritorio desaparece del DOM, no se oculta con una clase. Así el contenido recupera el ancho real y no queda un hueco de 288 px.
+
+**Prueba de la pantalla**
+
+`src/app/features/construir/construir.spec.ts`
+
+```typescript
+import { TestBed } from '@angular/core/testing';
+import { Construir } from './construir';
+
+/**
+ * jsdom no implementa `matchMedia`, así que `watchMediaQuery` devuelve `false`
+ * y el componente se comporta como móvil. El caso de escritorio se prueba aquí
+ * sustituyendo la función antes de crear el componente.
+ */
+function stubDesktopMedia(matches: boolean): () => void {
+  const original = window.matchMedia;
+
+  Object.defineProperty(window, 'matchMedia', {
+    configurable: true,
+    writable: true,
+    value: (query: string) =>
+      ({
+        matches,
+        media: query,
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+      }) as unknown as MediaQueryList,
+  });
+
+  return () => {
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      writable: true,
+      value: original,
+    });
+  };
+}
+
+describe('Construir', () => {
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [Construir],
+    }).compileComponents();
+  });
+
+  async function crearPantalla() {
+    const fixture = TestBed.createComponent(Construir);
+    await fixture.whenStable();
+    return { fixture, compilado: fixture.nativeElement as HTMLElement };
+  }
+
+  function botonMenu(compilado: HTMLElement): HTMLButtonElement {
+    const boton = compilado.querySelector(
+      'app-header button[aria-label="Mostrar u ocultar el menú"]',
+    );
+    expect(boton).toBeTruthy();
+    return boton as HTMLButtonElement;
+  }
+
+  function opcionDelMenu(compilado: HTMLElement, etiqueta: string): HTMLElement {
+    const opcion = [...compilado.querySelectorAll('a, button')].find(
+      (elemento) => elemento.textContent?.trim() === etiqueta,
+    );
+    expect(opcion).toBeTruthy();
+    return opcion as HTMLElement;
+  }
+
+  it('should compose the layout and start on Inicio', async () => {
+    const { compilado } = await crearPantalla();
+
+    expect(compilado.querySelector('app-header')).toBeTruthy();
+    expect(compilado.querySelector('aside app-aside')).toBeTruthy();
+    expect(compilado.querySelector('app-footer')).toBeTruthy();
+    expect(compilado.querySelector('main h1')?.textContent).toContain('Inicio');
+  });
+
+  it('should render backend entity options in their menu groups', async () => {
+    const { fixture, compilado } = await crearPantalla();
+
+    for (const etiqueta of ['Inicio', 'Operación', 'Administración']) {
+      expect(compilado.textContent).toContain(etiqueta);
+    }
+
+    opcionDelMenu(compilado, 'Operación').click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    for (const etiqueta of [
+      'Empresas',
+      'Contactos',
+      'Direcciones',
+      'Mensajeros',
+      'Tarifas',
+      'Rutas',
+      'Envíos',
+      'Paquetes',
+      'Eventos de seguimiento',
+      'Comprobantes de entrega',
+      'Facturas',
+    ]) {
+      expect(compilado.textContent).toContain(etiqueta);
+    }
+
+    opcionDelMenu(compilado, 'Administración').click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    for (const etiqueta of [
+      'Usuarios',
+      'Roles',
+      'Recursos',
+      'Asignaciones de rol',
+      'Concesiones de recursos',
+      'Sesiones',
+    ]) {
+      expect(compilado.textContent).toContain(etiqueta);
+    }
+  });
+
+  it('should always show the menu button, not only on small screens', async () => {
+    const { compilado } = await crearPantalla();
+
+    // `lg:hidden` ocultaba el botón justo cuando el Aside ya era visible.
+    expect(botonMenu(compilado).classList.contains('lg:hidden')).toBe(false);
+  });
+
+  it('should change the title without navigating when an option is chosen', async () => {
+    const { fixture, compilado } = await crearPantalla();
+
+    opcionDelMenu(compilado, 'Operación').click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    opcionDelMenu(compilado, 'Empresas').click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(compilado.querySelector('main h1')?.textContent).toContain('Empresas');
+    // Sigue en la misma pantalla: no hay recarga ni petición HTTP.
+    expect(compilado.querySelector('app-construir, main')).toBeTruthy();
+  });
+
+  it('should open the mobile drawer when the header requests it', async () => {
+    const { fixture, compilado } = await crearPantalla();
+    const componente = fixture.componentInstance as unknown as {
+      mobileOpen: () => boolean;
+    };
+
+    expect(componente.mobileOpen()).toBe(false);
+
+    const botonMenu = compilado.querySelector(
+      'app-header button[aria-label="Mostrar u ocultar el menú"]',
+    ) as HTMLButtonElement;
+    expect(botonMenu).toBeTruthy();
+
+    botonMenu.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(componente.mobileOpen()).toBe(true);
+  });
+
+  it('should hide the fixed aside on desktop instead of opening the drawer', async () => {
+    const restaurar = stubDesktopMedia(true);
+
+    try {
+      const { fixture, compilado } = await crearPantalla();
+      expect(compilado.querySelector('aside app-aside')).toBeTruthy();
+
+      botonMenu(compilado).click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(fixture.componentInstance.sidebarCollapsed()).toBe(true);
+      expect(compilado.querySelector('aside')).toBeNull();
+      expect(fixture.componentInstance.mobileOpen()).toBe(false);
+    } finally {
+      restaurar();
+    }
+  });
+
+  it('should close the drawer after choosing an option', async () => {
+    const { fixture, compilado } = await crearPantalla();
+    const componente = fixture.componentInstance as unknown as {
+      mobileOpen: () => boolean;
+    };
+
+    const botonMenu = compilado.querySelector(
+      'app-header button[aria-label="Mostrar u ocultar el menú"]',
+    ) as HTMLButtonElement;
+    botonMenu.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(componente.mobileOpen()).toBe(true);
+
+    opcionDelMenu(compilado, 'Operación').click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(componente.mobileOpen()).toBe(true);
+
+    opcionDelMenu(compilado, 'Envíos').click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(componente.mobileOpen()).toBe(false);
+    expect(compilado.querySelector('main h1')?.textContent).toContain('Envíos');
+  });
+});
+```
+
+La prueba del Drawer lee el signal desde la instancia (mobileOpen()), no del DOM: el Drawer de PrimeNG se monta en un overlay y comprobar su visibilidad con selectores es frágil. Se verifica el estado, que es lo que el componente controla.
+
+La prueba de escritorio sustituye window.matchMedia antes de crear el componente, porque watchMediaQuery lee la media query al construirse. Así se comprueban las dos ramas del mismo botón: Drawer en móvil, Aside alternado en escritorio.
+
+### 1.5 App pasa a ser punto de entrada con router-outlet
+
+**Criterios de este sub-ítem**
+
+- [X] app.ts importa solo RouterOutlet
+- [X] app.html contiene únicamente <router-outlet />
+- [X] app.routes.ts usa loadComponent para construir
+- [X] '' y ** redirigen a construir
+
+Este es el momento de presentar RouterOutlet, no ISS-01: ahora existe una pantalla real que mostrar por URL. La idea en una frase: `<router-outlet />` es un ancla; el router inserta a su lado el componente de la ruta activa.
+
+`src/app/app.ts`
+
+```typescript
+import { Component } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+
+/**
+ * Componente principal (`<app-root>`).
+ *
+ * Desde ISS-01B es solo el punto de entrada: el router elige qué componente se
+ * dibuja dentro de `<router-outlet />` según la URL.
+ */
+@Component({
+  host: { class: 'block' },
+  selector: 'app-root',
+  imports: [RouterOutlet],
+  templateUrl: './app.html',
+  styleUrl: './app.css',
+})
+export class App {}
+```
+
+`src/app/app.html`
+
+```html
+<!-- El router dibuja aquí el componente de la ruta activa (app.routes.ts). -->
+<router-outlet />
+```
+
+`src/app/app.routes.ts`
+
+```typescript
+import { Routes } from '@angular/router';
+
+/**
+ * Rutas de la aplicación.
+ *
+ * ISS-01B presenta el router con una pantalla real. `loadComponent` descarga
+ * `Construir` solo cuando se visita su URL: el bundle inicial no lo incluye.
+ */
+export const routes: Routes = [
+  {
+    path: 'construir',
+    loadComponent: () =>
+      import('./features/construir/construir').then((m) => m.Construir),
+  },
+  { path: '', pathMatch: 'full', redirectTo: 'construir' },
+  { path: '**', redirectTo: 'construir' },
+];
+```
+
+El enlace a `/login` todavía no existe. La pantalla de login es ISS-08. Este ISS no importa RouterLink ni escribe `<a routerLink="/login">:` el prototipo no ofrece una ruta que llevaría a un 404. El texto de bienvenida lo anuncia («los formularios y la conexión con Express se incorporan después»).
+
+**Prueba del punto de entrada**
+
+`src/app/app.spec.ts`
+
+```typescript
+import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { App } from './app';
+
+describe('App', () => {
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [App],
+      // Sin rutas: esta prueba comprueba el punto de entrada, no las pantallas.
+      providers: [provideRouter([])],
+    }).compileComponents();
+  });
+
+  it('should create the app', () => {
+    const fixture = TestBed.createComponent(App);
+    expect(fixture.componentInstance).toBeTruthy();
+  });
+
+  it('should render the router outlet', async () => {
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    const compilado = fixture.nativeElement as HTMLElement;
+    expect(compilado.querySelector('router-outlet')).toBeTruthy();
+  });
+});
+```
+
+### 1.6 Comprobar antes de avanzar
+
+**Criterios de este sub-ítem**
+
+- [X] A 1280 px se ven las entidades agrupadas de Operación y Administración y no hay scroll horizontal
+- [X] A 1280 px el botón de menú se ve y al pulsarlo oculta el Aside (sin abrir el Drawer)
+- [X] A 390 px el Aside no se ve y el botón del Header abre el Drawer
+- [X] Elegir una opción cambia el título y cierra el Drawer
+- [X] La URL no cambia y Network no registra /api
+- [X] Con teclado se recorre el menú y se activa con Enter
+- [X] ng build termina con código 0
+
+```
+npm start
+```
+![alt text](image-3.png)
+

@@ -1,0 +1,86 @@
+@baseUrl = http://localhost:4000/api
+@token = PEGA_AQUI_TU_TOKEN_DE_ACCESO
+
+### SPARE-PARTS - solicitudes HTTP
+# Reemplaza el token y ajusta los cuerpos JSON al modelo de la entidad.
+
+### GET /spare-parts
+GET {{baseUrl}}/spare-parts
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###
+
+### GET /spare-parts/1
+GET {{baseUrl}}/spare-parts/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###
+
+### POST /spare-parts
+POST {{baseUrl}}/spare-parts
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "sku": "REP-DEMO-001",
+  "name": "Pantalla de repuesto",
+  "description": "Pantalla de prueba para reparación de equipos",
+  "compatibility": "Modelo X100",
+  "cost": "80000.00",
+  "price": "120000.00",
+  "currentStock": 10,
+  "minimumStock": 2
+}
+
+###
+
+### PUT /spare-parts/1
+PUT {{baseUrl}}/spare-parts/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "sku": "REP-DEMO-001",
+  "name": "Pantalla de repuesto",
+  "description": "Pantalla de prueba para reparación de equipos",
+  "compatibility": "Modelo X100",
+  "cost": "80000.00",
+  "price": "120000.00",
+  "currentStock": 10,
+  "minimumStock": 2
+}
+
+###
+
+### PATCH /spare-parts/1
+PATCH {{baseUrl}}/spare-parts/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "sku": "REP-DEMO-001",
+  "name": "Pantalla de repuesto",
+  "description": "Pantalla de prueba para reparación de equipos",
+  "compatibility": "Modelo X100",
+  "cost": "80000.00",
+  "price": "120000.00",
+  "currentStock": 10,
+  "minimumStock": 2
+}
+
+###
+
+### DELETE /spare-parts/1
+DELETE {{baseUrl}}/spare-parts/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###

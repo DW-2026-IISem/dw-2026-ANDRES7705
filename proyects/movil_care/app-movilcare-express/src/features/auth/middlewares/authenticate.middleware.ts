@@ -52,7 +52,13 @@ export function authenticate(
     };
 
     next();
-  } catch {
+  } catch (error: unknown) {
+    const reason =
+      error instanceof Error
+        ? `${error.name}: ${error.message}`
+        : "Error desconocido al verificar el token.";
+    console.warn(`Access token rechazado: ${reason}`);
+
     res.status(401).json({
       message: "El token es inválido o ha expirado.",
     });

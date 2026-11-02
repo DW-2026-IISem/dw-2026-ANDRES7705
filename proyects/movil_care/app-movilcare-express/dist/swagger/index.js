@@ -14,6 +14,7 @@ const sale_details_swagger_1 = require("../features/businesses/sale-details/sale
 const spare_part_consumptions_swagger_1 = require("../features/businesses/spare-part-consumptions/spare-part-consumptions.swagger");
 const extra_swagger_1 = require("./extra.swagger");
 const auth_swagger_1 = __importDefault(require("../features/auth/auth.swagger"));
+const users_swagger_1 = require("../features/auth/users/users.swagger");
 const featureSwaggerModules = [
     customers_swagger_1.customerSwagger,
     product_types_swagger_1.productTypeSwagger,
@@ -23,6 +24,7 @@ const featureSwaggerModules = [
     spare_part_consumptions_swagger_1.sparePartConsumptionsSwagger,
     extra_swagger_1.extraSwagger,
     auth_swagger_1.default,
+    users_swagger_1.usersSwagger,
 ];
 function buildOpenApiDocument() {
     const tags = [];
@@ -50,7 +52,16 @@ function buildOpenApiDocument() {
         ],
         tags,
         paths,
-        components: { schemas },
+        components: {
+            schemas,
+            securitySchemes: {
+                bearerAuth: {
+                    type: "http",
+                    scheme: "bearer",
+                    bearerFormat: "JWT",
+                },
+            },
+        },
     };
 }
 function setupSwagger(app) {

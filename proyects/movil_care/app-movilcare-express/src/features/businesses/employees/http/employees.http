@@ -1,0 +1,74 @@
+@baseUrl = http://localhost:4000/api
+@token = PEGA_AQUI_TU_TOKEN_DE_ACCESO
+
+### EMPLOYEES - solicitudes HTTP
+# Reemplaza el token y ajusta los cuerpos JSON al modelo de la entidad.
+
+### GET /employees
+GET {{baseUrl}}/employees
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###
+
+### GET /employees/1
+GET {{baseUrl}}/employees/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###
+
+### POST /employees
+POST {{baseUrl}}/employees
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "name": "Juan Técnico",
+  "document": "1000000002",
+  "role": "TECHNICIAN",
+  "email": "tecnico@example.com"
+}
+
+###
+
+### PUT /employees/1
+PUT {{baseUrl}}/employees/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "name": "Juan Técnico",
+  "document": "1000000002",
+  "role": "TECHNICIAN",
+  "email": "tecnico@example.com"
+}
+
+###
+
+### PATCH /employees/1
+PATCH {{baseUrl}}/employees/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "name": "Juan Técnico",
+  "document": "1000000002",
+  "role": "TECHNICIAN",
+  "email": "tecnico@example.com"
+}
+
+###
+
+### DELETE /employees/1
+DELETE {{baseUrl}}/employees/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###

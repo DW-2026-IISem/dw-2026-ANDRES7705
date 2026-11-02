@@ -1,0 +1,109 @@
+@baseUrl = http://localhost:4000/api
+@token = PEGA_AQUI_TU_TOKEN_DE_ACCESO
+
+### SALE-DETAILS - solicitudes HTTP
+# Reemplaza el token y ajusta los cuerpos JSON al modelo de la entidad.
+
+### GET /sale-details
+GET {{baseUrl}}/sale-details
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###
+
+### GET /sale-details/1
+GET {{baseUrl}}/sale-details/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###
+
+### POST /sale-details
+POST {{baseUrl}}/sale-details
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "saleId": 1,
+  "productId": 1,
+  "serializedUnitId": null,
+  "quantity": 2,
+  "unitPrice": "50000.00",
+  "discount": "0.00",
+  "taxPercentage": "19.00",
+  "total": "119000.00",
+  "notes": "Detalle de prueba"
+}
+
+###
+
+### PUT /sale-details/1
+PUT {{baseUrl}}/sale-details/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "saleId": 1,
+  "productId": 1,
+  "serializedUnitId": null,
+  "quantity": 2,
+  "unitPrice": "50000.00",
+  "discount": "0.00",
+  "taxPercentage": "19.00",
+  "total": "119000.00",
+  "notes": "Detalle de prueba"
+}
+
+###
+
+### PATCH /sale-details/1
+PATCH {{baseUrl}}/sale-details/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "saleId": 1,
+  "productId": 1,
+  "serializedUnitId": null,
+  "quantity": 2,
+  "unitPrice": "50000.00",
+  "discount": "0.00",
+  "taxPercentage": "19.00",
+  "total": "119000.00",
+  "notes": "Detalle de prueba"
+}
+
+###
+
+### PATCH /sale-details/1/deactivate
+PATCH {{baseUrl}}/sale-details/1/deactivate
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "saleId": 1,
+  "productId": 1,
+  "serializedUnitId": null,
+  "quantity": 2,
+  "unitPrice": "50000.00",
+  "discount": "0.00",
+  "taxPercentage": "19.00",
+  "total": "119000.00",
+  "notes": "Detalle de prueba"
+}
+
+###
+
+### DELETE /sale-details/1
+DELETE {{baseUrl}}/sale-details/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###

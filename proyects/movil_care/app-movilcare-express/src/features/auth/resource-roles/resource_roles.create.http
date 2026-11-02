@@ -1,0 +1,22 @@
+
+@baseUrl = http://localhost:4000
+
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "identifier": "andres.moscote",
+  "password": "1042245578"
+}
+
+###
+
+POST {{baseUrl}}/api/concesiones-rol
+Authorization: Bearer {{login.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "role_id": 7,
+  "resource_id": 23
+}

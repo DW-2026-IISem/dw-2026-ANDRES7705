@@ -1,0 +1,39 @@
+@baseUrl = http://localhost:4000/api
+@token = PEGA_AQUI_TU_TOKEN_DE_ACCESO
+
+### SERVICE-AUTHORIZATIONS - solicitudes HTTP
+# Reemplaza el token y ajusta los cuerpos JSON al modelo de la entidad.
+
+### GET /service-authorizations
+GET {{baseUrl}}/service-authorizations
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###
+
+### GET /service-authorizations/1
+GET {{baseUrl}}/service-authorizations/1
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+###
+
+### POST /service-authorizations
+POST {{baseUrl}}/service-authorizations
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "diagnosticId": 1,
+  "state": "PENDING",
+  "authorizedAmount": "80000.00",
+  "channel": "WHATSAPP",
+  "respondedAt": null,
+  "notes": "Autorización pendiente de confirmación del cliente",
+  "recordedBy": 1
+}
+
+###

@@ -1,15 +1,18 @@
+
 @baseUrl = http://localhost:4000/api
+@accessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwidXNlcm5hbWUiOiJhbmRyZXMubW9zY290ZSIsImlhdCI6MTc5MjAxMjY2OCwiZXhwIjoxNzkyMDEzNTY4LCJhdWQiOiJtb3ZpbGNhcmUtYXBpIiwiaXNzIjoibW92aWxjYXJlLWV4cHJlc3MifQ.TmdYxCqkmvP4YoPTMnVM6RzzryRrPNuqysvbcGfoiMo"
 @id = 1
 
 ### List products
 GET {{baseUrl}}/products
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
 
 ### Read one product
 GET {{baseUrl}}/products/{{id}}
-
-### Create product
-POST {{baseUrl}}/products
+Authorization: Bearer {{accessToken}}
 Content-Type: application/json
+
 
 {
   "sku": "DEMO-PRODUCT-001",
