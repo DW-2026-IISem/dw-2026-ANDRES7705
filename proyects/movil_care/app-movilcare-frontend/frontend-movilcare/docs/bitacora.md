@@ -1905,3 +1905,2185 @@ npm start
 ```
 ![alt text](image-3.png)
 
+## Fase I: Frontend — ISS-02 — Núcleo: environment, modelos, servicios y layout (MovilCare)
+
+**Objetivo:** dejar lista la capa de infraestructura del frontend para MovilCare antes de tocar las pantallas de negocio:
+
+1. environment con la URL del backend y el switch de autenticación.
+2. Interfaces TypeScript que reflejan el contrato REST del backend documentado en `RESUMEN_TECNICO.md`.
+3. Servicios HTTP que devuelven `Observable<T>` ya desenvuelto.
+4. Utilidades transversales (`toApiMessage`, `NotificationService`).
+5. Componentes de UI reutilizables y el layout `Shell` del sistema de ventas y servicios técnicos.
+
+**Bloqueado por:** ISS-01B.
+
+**Criterios de aceptación (ISS-02) — adaptados a MovilCare**
+
+- [X] 2.1 `environment.apiUrl === 'http://localhost:4000/api'`, sin slash final.
+- [X] 2.1 `environment.ts` y `environment.development.ts` existen y `angular.json` aplica `fileReplacements`.
+- [X] 2.2 Los modelos de negocio y RBAC reflejan los 20 contratos descritos en `RESUMEN_TECNICO.md`.
+- [X] 2.2 `Money` acepta `number | string` y `toNumber()` normaliza `DECIMAL`.
+- [X] 2.2 Se distinguen `is_active`, `status` de RBAC y los enums del dominio (`state`, `role`, `service_type`, etc.).
+- [X] 2.3 Cada servicio usa `this.base` construido desde `environment.apiUrl`.
+- [X] 2.3 `list()/get()/create()` devuelven la entidad real y no el envelope del JSON.
+- [X] 2.3 Cada servicio expone los endpoints reales del backend: clientes, empleados, ventas, pagos, garantías, órdenes, repuestos, usuarios y permisos.
+- [X] 2.4 `toApiMessage` distingue `status === 0` (backend caído) de un `403`.
+- [X] 2.4 `NotificationService` traduce a `MessageService` con duraciones por severidad.
+- [X] 2.5 `PageHeader`, `EmptyState` y `StatusTag` compilan como standalone y no añaden CSS.
+- [X] 2.5 `StatusTag` se repinta al cambiar el `input` gracias a `computed`.
+- [X] 2.6 `Shell` compone `Header` / `Aside` / `router-outlet` / `Footer` una sola vez; el botón del `Header` alterna el `Aside` en escritorio y abre el `Drawer` en móvil.
+- [X] 2.6 `app.routes.ts` carga `Shell` con `loadComponent` y conserva el prototipo de la aplicación.
+- [X] 2.7 `provideHttpClient()` está registrado y aún no hay interceptores de sesión.
+- [X] 2.8 `ng build` termina con código 0 y el shell aparece como chunk diferido.
+- [X] 2.8 Las pruebas pasan para la base del proyecto y los elementos del layout.
+
+> `demo/ejemplo` queda fuera. La introducción a Angular quedó en ISS-01; aquí no se incorporan rutas ni pantallas de negocio aún.
+
+### 2.1 environment: una sola URL para todo el frente
+
+**Criterios de este sub-ítem**
+
+- [X] apiUrl termina en /api, nunca en /
+- [X] Existen environment.ts (build) y environment.development.ts (ng serve)
+- [X] angular.json sustituye el archivo en la configuración development
+- [X] primeUiLicense está documentado en ambos archivos (clave Community PrimeUI; ISS-01 §1.4.1)
+
+```bash
+ng generate environments
+```
+
+Crea los dos archivos y registra el reemplazo. Si ya existen, edítalos sin repetir el generador.
+
+`src/environments/environment.ts` — lo usa ng build, es el base:
+
+```typescript
+ /**
+ * Entorno de producción (`ng build`).
+ *
+ * `apiUrl` termina en `/api` SIN slash final: con uno, las llamadas saldrían
+ * como `//companies` y Express las trataría como otra ruta.
+ *
+ * `requireAuth`: mitad frontal del interruptor de fases. Nadie lo lee hasta
+ * ISS-08 (Fase II). Se empareja con `AUTH_ENABLED` del backend: mover una sola
+ * mitad produce `401 Missing Bearer token` (ISS-11 §11.1).
+ *
+ * `primeUiLicense`: clave **Community** de PrimeUI (PrimeNG 22). Solicítala en
+ * https://primeui.dev · requisitos en https://primeui.dev/licenses. Déjala en `''`
+ * si aún no la tienes (aviso en consola; la app funciona). No subas claves
+ * comerciales al repo.
+ */
+export const environment = {
+  production: true,
+  appName: 'MovilCare Express',
+  apiUrl: 'http://localhost:4000/api',
+  requireAuth: true,
+  primeUiLicense: '',
+};
+```
+
+`src/environments/environment.development.ts` — lo usa ng serve y npm test:
+
+```typescript
+/**
+ * En el día a día del laboratorio es **este** archivo el que importa Angular
+ * (vía `fileReplacements`). Pega aquí la misma `primeUiLicense` que en producción.
+ */
+export const environment = {
+  production: false,
+  appName: 'MovilCare Express',
+  apiUrl: 'http://localhost:4000/api',
+  requireAuth: true,
+  primeUiLicense: '',
+};
+```
+
+### 2.1.1 Licencia PrimeUI (primeUiLicense)
+
+Tras ISS-01, `app.config.ts` registra PrimeNG así:
+
+```typescript
+providePrimeNG({
+  license: environment.primeUiLicense || undefined,
+  // ...
+});
+```
+
+Pasos:
+
+1. Solicita la Community License (gratuita para estudiantes) en https://primeui.dev.
+2. Copia la clave del correo (cadena larga, suele empezar por eyJ…).
+3. Pégala en primeUiLicense de environment.development.ts (para ng serve).
+4. Repite el mismo valor en environment.ts (para ng build / entrega).
+5. Reinicia ng serve y recarga el navegador: desaparecen [PrimeUI] No license key configured y la banda Invalid PrimeUI License.
+
+Si trabajas sin clave, mantén primeUiLicense: '' y documenta el aviso en la evidencia (ISS-01 §1.4.1).
+
+`angular.json` → `projects.<proyecto>.architect.build.configurations.development:`
+
+```json
+"development": {
+  "optimization": false,
+  "extractLicenses": false,
+  "sourceMap": true,
+  "fileReplacements": [
+    {
+      "replace": "src/environments/environment.ts",
+      "with": "src/environments/environment.development.ts"
+    }
+  ]
+}
+```
+
+### 2.2 Modelos: reflejar el backend, no inventarlo
+Criterios de este sub-ítem
+
+- [X] Cada entidad tiene su interfaz y su Payload de escritura
+- [X] Los modelos de lectura no exponen password
+- [X] Money cubre number | string; toNumber() normaliza
+- [X] Los campos son los del backend, en snake_case
+
+```bash
+ng generate interface core/models/api --type=model --defaults
+ng generate interface core/models/company --type=model --defaults
+ng generate interface core/models/contact --type=model --defaults
+ng generate interface core/models/address --type=model --defaults
+ng generate interface core/models/messenger --type=model --defaults
+ng generate interface core/models/rate --type=model --defaults
+ng generate interface core/models/route --type=model --defaults
+ng generate interface core/models/shipment --type=model --defaults
+ng generate interface core/models/package --type=model --defaults
+ng generate interface core/models/tracking-event --type=model --defaults
+ng generate interface core/models/delivery-proof --type=model --defaults
+ng generate interface core/models/invoice --type=model --defaults
+ng generate interface core/models/user --type=model --defaults
+ng generate interface core/models/role --type=model --defaults
+ng generate interface core/models/resource --type=model --defaults
+ng generate interface core/models/role-user --type=model --defaults
+ng generate interface core/models/resource-role --type=model --defaults
+ng generate interface core/models/auth --type=model --defaults
+```
+
+Cada comando crea un `*.model.ts` con una interfaz vacía. Se declaran 11 entidades de operación y 5 de usuarios/RBAC. `auth.model.ts` contiene los contratos de autenticación; las sesiones internas no exponen el hash del refresh token. El dashboard se deriva en ISS-07 de envíos, rutas, facturas y permisos disponibles; no se inventan estadísticas sin contrato.
+
+`api.model.ts`— los tipos que comparten todos
+
+```typescript
+/** Solo para entidades de usuarios/RBAC que usan el campo `status`. */
+export type Status = 'active' | 'inactive';
+export type Money = number | string;
+
+export interface ApiError {
+  error: string;
+  detail?: string;
+}
+
+/** Firma mínima de los objetos Sequelize que devuelve el backend. */
+export interface Timestamps {
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ActiveRecord extends Timestamps {
+  id: number;
+  is_active: boolean;
+}
+
+export function toNumber(value: Money | null | undefined): number {
+  const parsed = Number(value ?? 0);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+```
+
+**Por qué Money es una unión**. Sequelize define `valor_base`, `peso_total_kg`, `costo_calculado`, `subtotal` y `total` como DECIMAL. Según el motor y el driver, esos valores pueden llegar como number o string ("12.50"). `toNumber()` los normaliza antes de cálculos o formato; no sumes valores de respuesta sin convertirlos.
+
+
+### Las entidades
+
+`src/app/core/models/company.model.ts`, `contact.model.ts` y `address.model.ts`
+
+```typescript
+import { ActiveRecord, Money } from './api.model';
+
+/** Tabla `companies` — GET /api/companies devuelve { companies }. */
+export interface Company extends ActiveRecord {
+  nit: string;
+  razon_social: string;
+  contacto_principal_id: number | null;
+  direccion_facturacion_id: number | null;
+}
+
+export interface CompanyPayload {
+  nit: string;
+  razon_social: string;
+  contacto_principal_id?: number | null;
+  direccion_facturacion_id?: number | null;
+  is_active?: boolean;
+}
+
+export interface Contact extends ActiveRecord {
+  empresa_id: number;
+  nombre: string;
+  cargo: string | null;
+  telefono: string | null;
+  email: string | null;
+  is_principal: boolean;
+}
+
+export interface ContactPayload {
+  empresa_id: number;
+  nombre: string;
+  cargo?: string | null;
+  telefono?: string | null;
+  email?: string | null;
+  is_principal?: boolean;
+  is_active?: boolean;
+}
+
+export type AddressType = 'recogida' | 'entrega' | 'mixta';
+
+export interface Address extends ActiveRecord {
+  empresa_id: number;
+  alias: string;
+  linea1: string;
+  linea2: string | null;
+  ciudad: string;
+  departamento: string | null;
+  pais: string | null;
+  codigo_postal: string | null;
+  latitud: Money | null;
+  longitud: Money | null;
+  tipo: AddressType;
+}
+
+export interface AddressPayload {
+  empresa_id: number;
+  alias: string;
+  linea1: string;
+  linea2?: string | null;
+  ciudad: string;
+  departamento?: string | null;
+  pais?: string | null;
+  codigo_postal?: string | null;
+  latitud?: number | null;
+  longitud?: number | null;
+  tipo: AddressType;
+  is_active?: boolean;
+}
+```
+
+La relación es logística: un `Company` agrupa `Contact` y `Address`. Los campos opcionales del DTO se envían solo cuando se editan; las respuestas reflejan nullable del modelo.
+
+`messenger.model.ts`, `rate.model.ts`, `route.model.ts`, `package.model.ts` y `tracking-event.model.ts`
+
+```typescript
+import { ActiveRecord, Money } from './api.model';
+
+export type VehicleType = 'moto' | 'carro' | 'bicicleta' | 'a_pie';
+export interface Messenger extends ActiveRecord {
+  nombre: string;
+  documento_identidad: string;
+  telefono: string | null;
+  tipo_vehiculo: VehicleType;
+  placa_vehiculo: string | null;
+  zona_asignada: string | null;
+}
+export interface MessengerPayload {
+  nombre: string;
+  documento_identidad: string;
+  telefono?: string | null;
+  tipo_vehiculo: VehicleType;
+  placa_vehiculo?: string | null;
+  zona_asignada?: string | null;
+  is_active?: boolean;
+}
+
+export type CalculationRule = 'por_peso' | 'por_zona' | 'plana';
+export interface Rate extends ActiveRecord {
+  nombre: string;
+  zona: string;
+  regla_calculo: CalculationRule;
+  valor_base: Money;
+  valor_por_kg_adicional: Money | null;
+  recargo_urgente_pct: Money | null;
+  vigencia_desde: string;
+  vigencia_hasta: string | null;
+}
+export interface RatePayload {
+  nombre: string;
+  zona: string;
+  regla_calculo: CalculationRule;
+  valor_base: number;
+  valor_por_kg_adicional?: number | null;
+  recargo_urgente_pct?: number | null;
+  vigencia_desde: string;
+  vigencia_hasta?: string | null;
+  is_active?: boolean;
+}
+
+export type RouteStatus = 'planificada' | 'en_curso' | 'finalizada';
+export interface Route extends ActiveRecord {
+  nombre: string;
+  mensajero_id: number;
+  zona_cobertura: string | null;
+  fecha: string;
+  hora_inicio: string | null;
+  hora_fin: string | null;
+  estado: RouteStatus;
+}
+export interface RoutePayload {
+  nombre: string;
+  mensajero_id: number;
+  zona_cobertura?: string | null;
+  fecha: string;
+  hora_inicio?: string | null;
+  hora_fin?: string | null;
+  estado: RouteStatus;
+  is_active?: boolean;
+}
+
+export interface Package extends ActiveRecord {
+  envio_id: number;
+  descripcion_contenido: string | null;
+  peso_kg: Money;
+  alto_cm: Money | null;
+  ancho_cm: Money | null;
+  largo_cm: Money | null;
+  valor_declarado: Money | null;
+  es_fragil: boolean;
+}
+export interface PackagePayload {
+  envio_id: number;
+  descripcion_contenido?: string | null;
+  peso_kg: number;
+  alto_cm?: number | null;
+  ancho_cm?: number | null;
+  largo_cm?: number | null;
+  valor_declarado?: number | null;
+  es_fragil?: boolean;
+  is_active?: boolean;
+}
+
+export type TrackingEventType =
+  | 'recogido'
+  | 'en_transito'
+  | 'en_reparto'
+  | 'novedad'
+  | 'entregado'
+  | 'devuelto';
+export type TrackingEventStatus = 'informativo' | 'novedad_leve' | 'novedad_critica';
+export interface TrackingEvent extends ActiveRecord {
+  envio_id: number;
+  tipo: TrackingEventType;
+  fecha: string;
+  ubicacion: string | null;
+  observaciones: string | null;
+  estado: TrackingEventStatus;
+  registrado_por_id: number | null;
+}
+export interface TrackingEventPayload {
+  envio_id: number;
+  tipo: TrackingEventType;
+  fecha: string;
+  ubicacion?: string | null;
+  observaciones?: string | null;
+  estado: TrackingEventStatus;
+  registrado_por_id?: number | null;
+  is_active?: boolean;
+}
+```
+
+`shipment.model.ts`, `delivery-proof.model.ts` e `invoice.model.ts`
+
+```typescript
+import { ActiveRecord, Money } from './api.model';
+
+export type ShipmentPriority = 'normal' | 'urgente' | 'express';
+export type ShipmentStatus =
+  | 'creado'
+  | 'cotizado'
+  | 'asignado'
+  | 'en_ruta'
+  | 'entregado'
+  | 'con_novedad'
+  | 'cancelado';
+
+export interface Shipment extends ActiveRecord {
+  numero_guia: string;
+  empresa_id: number;
+  contacto_origen_id: number;
+  direccion_origen_id: number;
+  contacto_destino_id: number;
+  direccion_destino_id: number;
+  mensajero_id: number | null;
+  ruta_id: number | null;
+  tarifa_id: number;
+  factura_id: number | null;
+  prioridad: ShipmentPriority;
+  peso_total_kg: Money;
+  valor_declarado: Money | null;
+  costo_calculado: Money | null;
+  estado: ShipmentStatus;
+  fecha_solicitud: string;
+  fecha_entrega_estimada: string | null;
+  fecha_entrega_real: string | null;
+}
+export interface ShipmentPayload {
+  numero_guia: string;
+  empresa_id: number;
+  contacto_origen_id: number;
+  direccion_origen_id: number;
+  contacto_destino_id: number;
+  direccion_destino_id: number;
+  mensajero_id?: number | null;
+  ruta_id?: number | null;
+  tarifa_id: number;
+  factura_id?: number | null;
+  prioridad: ShipmentPriority;
+  peso_total_kg: number;
+  valor_declarado?: number | null;
+  costo_calculado?: number | null;
+  estado: ShipmentStatus;
+  fecha_solicitud: string;
+  fecha_entrega_estimada?: string | null;
+  fecha_entrega_real?: string | null;
+  is_active?: boolean;
+}
+
+export type DeliveryProofStatus = 'valida' | 'observada' | 'rechazada';
+export interface DeliveryProof extends ActiveRecord {
+  envio_id: number;
+  fecha_hora: string;
+  receptor_nombre: string;
+  receptor_documento: string | null;
+  firma_url: string | null;
+  foto_url: string | null;
+  geolocalizacion_lat: Money | null;
+  geolocalizacion_lng: Money | null;
+  observaciones: string | null;
+  estado: DeliveryProofStatus;
+}
+export interface DeliveryProofPayload {
+  envio_id: number;
+  fecha_hora: string;
+  receptor_nombre: string;
+  receptor_documento?: string | null;
+  firma_url?: string | null;
+  foto_url?: string | null;
+  geolocalizacion_lat?: number | null;
+  geolocalizacion_lng?: number | null;
+  observaciones?: string | null;
+  estado: DeliveryProofStatus;
+  is_active?: boolean;
+}
+
+export type InvoiceStatus = 'pendiente' | 'pagada' | 'vencida' | 'anulada';
+export interface Invoice extends ActiveRecord {
+  numero: string;
+  empresa_id: number;
+  periodo_desde: string;
+  periodo_hasta: string;
+  fecha: string;
+  subtotal: Money;
+  impuestos: Money | null;
+  total: Money;
+  estado: InvoiceStatus;
+  fecha_pago: string | null;
+}
+export interface InvoicePayload {
+  numero: string;
+  empresa_id: number;
+  periodo_desde: string;
+  periodo_hasta: string;
+  fecha: string;
+  subtotal: number;
+  impuestos?: number | null;
+  total: number;
+  estado: InvoiceStatus;
+  fecha_pago?: string | null;
+  is_active?: boolean;
+}
+```
+
+`Shipment`, `DeliveryProof` e `Invoice` son entidades distintas: los costos y estados siguen el ciclo logístico y de facturación del backend; no existe un flujo de carrito. Antes de fijar cada `Payload`, contrástalo con el DTO/controlador de esa ruta; `api-backend.md` resume campos de dominio, no sustituye los contratos de escritura.
+
+`user.model.ts, role.model.ts, resource.model.ts.`
+
+```typescript
+import { Status, Timestamps } from './api.model';
+
+/** Tabla `users` — /api/usuarios. Nunca incluye `password`. */
+export interface User extends Timestamps {
+  id: number;
+  username: string;
+  email: string;
+  avatar: string | null;
+  status: Status;
+}
+
+export interface CreateUserPayload {
+  username: string;
+  email: string;
+  password: string;
+  avatar?: string | null;
+  status?: Status;
+}
+
+export interface UpdateUserPayload {
+  username?: string;
+  email?: string;
+  avatar?: string | null;
+}
+
+export interface ChangePasswordPayload {
+  current_password: string;
+  new_password: string;
+}
+
+export interface Role extends Timestamps {
+  id: number;
+  name: string;          // el backend lo normaliza a MAYÚSCULAS
+  description: string | null;
+  status: Status;
+}
+
+export interface RolePayload {
+  name: string;
+  description?: string | null;
+  status?: Status;
+}
+
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+
+export const HTTP_METHODS: HttpMethod[] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+
+/** Tabla `resources` — /api/recursos (catálogo de 58 pares method+path). */
+export interface Resource extends Timestamps {
+  id: number;
+  path: string;
+  method: HttpMethod;
+  description: string | null;
+  status: Status;
+}
+
+export interface ResourcePayload {
+  path: string;
+  method: HttpMethod;
+  description?: string | null;
+  status?: Status;
+}
+```
+
+`role-user.model.ts` y `resource-role.model.ts` — los dos pivotes RBAC.
+
+```typescript
+import { Status, Timestamps } from './api.model';
+
+/** Pivote `role_users` — /api/asignaciones-rol */
+export interface RoleUser extends Timestamps {
+  id: number;
+  user_id: number;
+  role_id: number;
+  status: Status;
+}
+export type RoleUserPayload = Pick<RoleUser, 'user_id' | 'role_id'>;
+
+/** Pivote `resource_roles` — /api/concesiones-rol. Cada fila ES un permiso. */
+export interface ResourceRole extends Timestamps {
+  id: number;
+  resource_id: number;
+  role_id: number;
+  status: Status;
+}
+export type ResourceRolePayload = Pick<ResourceRole, 'role_id' | 'resource_id'>;
+```
+
+`auth.model.ts` — los tokens y permisos efectivos. No se modela el RefreshToken interno: `token_hash` nunca debe entrar al frontend.
+
+```typescript
+import { HttpMethod } from './resource.model';
+
+export interface SessionTokens {
+  access_token: string;
+  token_type: 'Bearer';
+  expires_in: number;
+  refresh_token: string;
+  refresh_expires_in: number;
+}
+
+export interface EffectivePermission {
+  resource_id: number;
+  method: HttpMethod;
+  path: string;
+  description: string | null;
+  role_id: number;
+  role_name: string;
+}
+
+/** Respuesta segura de /api/sesiones; el DTO excluye token_hash y añade is_expired. */
+export interface UserSession extends Timestamps {
+  id: number;
+  user_id: number;
+  family_id: string;
+  device_info: string | null;
+  expires_at: string;
+  status: Status;
+  is_expired: boolean;
+}
+```
+
+No se declara `DashboardData`: `api-backend.md` no documenta un endpoint de dashboard. ISS-07 deberá derivarlo de endpoints existentes y permisos disponibles o esperar un contrato agregado del backend.
+
+`is_active` es el indicador lógico de las entidades de operación y usa `PATCH /:id/deactivate`. `status` pertenece a usuarios/RBAC; `estado` representa el flujo de negocio de rutas, envíos, eventos, comprobantes y facturas. No intercambies esos tres campos ni asumas que comparten enum.
+
+### 2.3 Servicios HTTP por feature: desenvolver la respuesta
+Criterios de este sub-ítem
+
+- [X] Cada servicio es `@Injectable({ providedIn: 'root' })` y usa `inject(HttpClient)`
+- [X] base se construye una vez desde `environment.apiUrl`
+- [X] Los métodos devuelven `Observable<Entidad>`, no Observable<{ entidad }>
+- [X] Ninguna URL se escribe completa dentro de un método
+
+```bash
+ng generate service features/companies/company-api --skip-tests --defaults
+ng generate service features/contacts/contact-api --skip-tests --defaults
+ng generate service features/addresses/address-api --skip-tests --defaults
+ng generate service features/messengers/messenger-api --skip-tests --defaults
+ng generate service features/rates/rate-api --skip-tests --defaults
+ng generate service features/routes/route-api --skip-tests --defaults
+ng generate service features/shipments/shipment-api --skip-tests --defaults
+ng generate service features/packages/package-api --skip-tests --defaults
+ng generate service features/tracking-events/tracking-event-api --skip-tests --defaults
+ng generate service features/delivery-proofs/delivery-proof-api --skip-tests --defaults
+ng generate service features/invoices/invoice-api --skip-tests --defaults
+ng generate service features/admin/users/user-api --skip-tests --defaults
+ng generate service features/admin/roles/role-api --skip-tests --defaults
+ng generate service features/admin/resources/resource-api --skip-tests --defaults
+ng generate service features/admin/role-users/role-user-api --skip-tests --defaults
+ng generate service features/admin/resource-roles/resource-role-api --skip-tests --defaults
+ng generate service features/auth/session-api --skip-tests --defaults
+ng generate service core/services/notification --skip-tests --defaults
+```
+
+Los paths no se deducen del nombre español de la entidad. Se usan exactamente como están montados en Express:
+
+| Entidad | Recurso bajo `environment.apiUrl` |
+| --- | --- |
+| Company | `/companies` |
+| Contact | `/contacts` |
+| Address | `/address` |
+| Messenger | `/messengers` |
+| Rate | `/rates` |
+| Route | `/routes` |
+| Shipment | `/shipments` |
+| Package | `/packages` |
+| TrackingEvent | `/tracking_events` |
+| DeliveryProof | `/delivery_proofs` |
+| Invoice | `/invoices` |
+| User | `/usuarios` |
+| Role | `/roles` |
+| Resource | `/recursos` |
+| RoleUser | `/asignaciones-rol` |
+| ResourceRole | `/concesiones-rol` |
+| Sesiones propias | `/sesiones` |
+
+`SessionApi` cubre además `POST /sesion/login`, `POST /sesion/refresh`, `POST /sesion/logout`, `GET /sesion/perfil` y `GET /permisos`. No enviar `token_hash` al cliente. Salvo login/refresh, las rutas de negocio y RBAC requieren autenticación y permiso; se probarán con `HttpTestingController` hasta ISS-08.
+
+`--skip-tests` aquí sí es deliberado: los servicios se prueban con `HttpTestingController`, agrupados por contrato y dominio, no con stubs vacíos por archivo. Los endpoints de negocio y RBAC requieren token y permiso según `api-backend.md`; las pruebas los simulan y no necesitan el backend levantado.
+
+**El contrato real del backend**
+
+`company-api.ts — el patrón completo`
+
+```typescript
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { Observable, map } from 'rxjs';
+import { environment } from '../../../environments/environment';
+import { Company, CompanyPayload } from '../../core/models/company.model';
+
+/** Contrato de `features/business/companies` en Express. */
+@Injectable({ providedIn: 'root' })
+export class CompanyApi {
+  private readonly http = inject(HttpClient);
+  private readonly base = `${environment.apiUrl}/companies`;
+
+  list(): Observable<Company[]> {
+    return this.http
+      .get<{ companies: Company[] }>(this.base)
+      .pipe(map((response) => response.companies));
+  }
+
+  get(id: number): Observable<Company> {
+    return this.http
+      .get<{ companies: Company }>(`${this.base}/${id}`)
+      .pipe(map((response) => response.companies));
+  }
+
+  create(payload: CompanyPayload): Observable<Company> {
+    return this.http
+      .post<{ companies: Company }>(this.base, payload)
+      .pipe(map((response) => response.companies));
+  }
+
+  update(id: number, payload: Partial<CompanyPayload>): Observable<Company> {
+    return this.http
+      .patch<{ companies: Company }>(`${this.base}/${id}`, payload)
+      .pipe(map((response) => response.companies));
+  }
+
+  replace(id: number, payload: CompanyPayload): Observable<Company> {
+    return this.http
+      .put<{ companies: Company }>(`${this.base}/${id}`, payload)
+      .pipe(map((response) => response.companies));
+  }
+
+  deactivate(id: number): Observable<unknown> {
+    return this.http.patch(`${this.base}/${id}/deactivate`, {});
+  }
+
+  remove(id: number): Observable<unknown> {
+    return this.http.delete(`${this.base}/${id}`);
+  }
+}
+```
+
+Dónde se desenvuelve. En el `.pipe(map(...))` del servicio, no en el componente:
+
+```
+GET /api/companies
+  → Express responde  { "companies": [ {...}, {...} ] }
+  → CompanyApi.map     devuelve [ {...}, {...} ]        ← Observable<Company[]>
+  → el componente      recibe Company[] y lo pinta
+```
+
+`CompaniesController` usa `companies` también para get/create/update de un registro; el nombre plural es parte del contrato actual. No infieras las claves de respuesta desde el nombre del modelo: confirma cada una en su controlador. La UI recibe entidades ya desenvueltas; las envolturas pivote son `{ assignments }` y `{ grants }`.
+
+Los otros servicios, en una línea cada uno
+
+```typescript
+// address-api.ts — el recurso de Address es singular en la URL
+private readonly base = `${environment.apiUrl}/address`;
+list(): Observable<Address[]> {
+  return this.http.get<{ addresses: Address[] }>(this.base)
+    .pipe(map((response) => response.addresses));
+}
+
+// shipment-api.ts — las respuestas de detalle usan { shipment }
+private readonly base = `${environment.apiUrl}/shipments`;
+get(id: number): Observable<Shipment> {
+  return this.http.get<{ shipment: Shipment }>(`${this.base}/${id}`)
+    .pipe(map((response) => response.shipment));
+}
+
+// role-user-api.ts — envoltura { assignments }, no { role_users }
+list(): Observable<RoleUser[]> {
+  return this.http.get<{ assignments: RoleUser[] }>(this.base)
+    .pipe(map((r) => r.assignments));
+}
+
+// resource-role-api.ts — filtros por query y envoltura { grants }
+list(filters?: { role_id?: number; resource_id?: number }): Observable<ResourceRole[]> {
+  let params = new HttpParams();
+  if (filters?.role_id) { params = params.set('role_id', filters.role_id); }
+  if (filters?.resource_id) { params = params.set('resource_id', filters.resource_id); }
+  return this.http.get<{ grants: ResourceRole[] }>(this.base, { params })
+    .pipe(map((r) => r.grants));
+}
+```
+
+**Prueba del servicio con** `HttpTestingController`
+
+`src/app/features/companies/company-api.spec.ts`
+
+```typescript
+import { provideHttpClient } from '@angular/common/http';
+import {
+  HttpTestingController,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
+import { environment } from '../../../environments/environment';
+import { Company } from '../../core/models/company.model';
+import { CompanyApi } from './company-api';
+
+const BASE = `${environment.apiUrl}/companies`;
+const COMPANY: Company = {
+  id: 1,
+  nit: '900123456',
+  razon_social: 'Empresa de prueba',
+  contacto_principal_id: null,
+  direccion_facturacion_id: null,
+  is_active: true,
+};
+
+describe('CompanyApi', () => {
+  let api: CompanyApi;
+  let http: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+    api = TestBed.inject(CompanyApi);
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => http.verify());
+
+  it('should unwrap { companies } into Company[]', () => {
+    let resultado: Company[] | undefined;
+    api.list().subscribe((companies) => (resultado = companies));
+
+    const peticion = http.expectOne(BASE);
+    expect(peticion.request.method).toBe('GET');
+    peticion.flush({ companies: [COMPANY] });
+
+    expect(resultado).toEqual([COMPANY]);
+  });
+
+  it('should build URLs from environment.apiUrl (no trailing slash)', () => {
+    expect(environment.apiUrl.endsWith('/api')).toBe(true);
+    api.list().subscribe();
+    http.expectOne('http://localhost:4000/api/companies').flush({ companies: [] });
+  });
+});
+```
+
+`HttpTestingController` no necesita el backend levantado: simula la respuesta y permite afirmar dos cosas: la URL construida y que la envoltura desaparece. `http.verify()` falla si quedó una petición sin responder, así que también detecta llamadas de más.
+
+### 2.4 Utilidades transversales: toApiMessage y NotificationService
+Criterios de este sub-ítem
+
+- [X] Un único lugar traduce el error HTTP a texto legible
+- [X] status === 0 se explica como backend caído
+- [X] NotificationService fija la duración por severidad
+
+`src/app/core/utils/api-error.ts`
+
+```typescript
+import { HttpErrorResponse } from '@angular/common/http';
+
+/**
+ * Traduce el error HTTP del backend a un texto para el usuario.
+ * Express responde `{ error, detail? }`; los 403 de RBAC son opacos a propósito.
+ */
+export function toApiMessage(error: unknown): string {
+  if (error instanceof HttpErrorResponse) {
+    const body = error.error as { error?: string; detail?: string } | string | null;
+
+    if (error.status === 0) {
+      return 'No se pudo conectar con el backend. Verifica que esté en http://localhost:4000.';
+    }
+    if (typeof body === 'string' && body.trim()) {
+      return body;
+    }
+    if (body && typeof body === 'object' && body.error) {
+      return body.detail ? `${body.error} — ${body.detail}` : body.error;
+    }
+    return error.message;
+  }
+  return error instanceof Error ? error.message : 'Error inesperado';
+}
+```
+
+**Los cuatro casos que importan:**
+
+|Situación|	status	|Mensaje|
+|----------|-------|-------|
+|Backend apagado o CORS rechazado|	0|	«No se pudo conectar con el backend…»|
+|Error JSON de Express|	4xx/5xx|	Mostrar `error` y, si existe, `detail` del endpoint real|
+|Token ausente o inválido	|401	|Error de autenticación del backend|
+|Permiso denegado por RBAC	|403	|No revelar detalles del permiso requerido|
+|Cuerpo de texto plano|	cualquiera	|El texto tal cual|
+
+
+`src/app/core/services/notification.ts`
+
+```typescript
+import { Injectable, inject } from '@angular/core';
+import { MessageService } from 'primeng/api';
+
+/** Azúcar sintáctica sobre MessageService para no repetir `severity/life`. */
+@Injectable({ providedIn: 'root' })
+export class NotificationService {
+  private readonly messages = inject(MessageService);
+
+  success(summary: string, detail?: string): void {
+    this.messages.add({ severity: 'success', summary, detail, life: 3000 });
+  }
+
+  info(summary: string, detail?: string): void {
+    this.messages.add({ severity: 'info', summary, detail, life: 3500 });
+  }
+
+  warn(summary: string, detail?: string): void {
+    this.messages.add({ severity: 'warn', summary, detail, life: 4500 });
+  }
+
+  error(summary: string, detail?: string): void {
+    this.messages.add({ severity: 'error', summary, detail, life: 6000 });
+  }
+}
+```
+
+`NotificationService` no reemplaza a `MessageService:` lo envuelve. La diferencia es que la duración deja de ser una decisión repetida en cada componente —un error debe leerse más tiempo que un «guardado»— y queda en un solo archivo.
+
+### 2.5 Componentes compartidos: PageHeader, EmptyState, StatusTag
+
+**Criterios de este sub-ítem**
+
+- [X] Los tres son standalone y usan input() con valor por defecto o input.required
+- [X] PageHeader y EmptyState proyectan contenido con <ng-content />
+- [X] StatusTag deriva texto y color con computed
+- [X] Los tres .css quedan vacíos
+
+```bash
+ng generate component shared/ui/page-header --skip-tests --defaults
+ng generate component shared/ui/empty-state --skip-tests --defaults
+ng generate component shared/ui/status-tag --skip-tests --defaults
+```
+
+`src/app/shared/ui/page-header/page-header.ts`
+
+```typescript
+import { Component, input } from '@angular/core';
+
+@Component({
+  host: { class: 'block' },
+  selector: 'app-page-header',
+  templateUrl: './page-header.html',
+  styleUrl: './page-header.css',
+})
+export class PageHeader {
+  readonly title = input.required<string>();
+  readonly subtitle = input<string>('');
+}
+```
+
+```html
+<header class="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+  <div>
+    <h1 class="text-2xl font-semibold tracking-tight text-slate-900">{{ title() }}</h1>
+    @if (subtitle()) {
+      <p class="mt-1 max-w-2xl text-sm text-slate-500">{{ subtitle() }}</p>
+    }
+  </div>
+  <div class="flex flex-wrap items-center gap-2">
+    <ng-content />
+  </div>
+</header>
+```
+
+**Uso desde una pantalla de negocio:**
+
+```html
+<app-page-header title="Envíos" subtitle="Creación, seguimiento y gestión logística.">
+  <button pButton label="Nuevo"></button>
+</app-page-header>
+```
+
+> `input.required` es la decisión importante: una pantalla sin título no se puede identificar, así que el compilador debe impedirla. subtitle sí es opcional, y el @if evita dejar un `<p>` vacío con margen.
+
+`src/app/shared/ui/empty-state/empty-state.ts`
+
+```typescript
+@Component({
+  host: { class: 'block' },
+  selector: 'app-empty-state',
+  templateUrl: './empty-state.html',
+  styleUrl: './empty-state.css',
+})
+export class EmptyState {
+  readonly icon = input<string>('pi pi-inbox');
+  readonly title = input<string>('Sin registros');
+  readonly message = input<string>('Todavía no hay datos para mostrar.');
+}
+```
+
+```html
+<div class="flex flex-col items-center justify-center gap-2 px-6 py-12 text-center">
+  <div class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+    <i [class]="icon()" class="text-xl"></i>
+  </div>
+  <p class="mt-2 text-sm font-semibold text-slate-700">{{ title() }}</p>
+  <p class="max-w-sm text-sm text-slate-500">{{ message() }}</p>
+  <div class="mt-3"><ng-content /></div>
+</div>
+```
+
+src/app/shared/ui/status-tag/status-tag.ts
+
+```typescript
+import { Component, computed, input } from '@angular/core';
+import { TagModule } from 'primeng/tag';
+
+@Component({
+  host: { class: 'inline-block' },
+  selector: 'app-status-tag',
+  imports: [TagModule],
+  templateUrl: './status-tag.html',
+  styleUrl: './status-tag.css',
+})
+export class StatusTag {
+  readonly isActive = input.required<boolean>();
+
+  readonly label = computed(() => (this.isActive() ? 'Activo' : 'Inactivo'));
+  readonly severity = computed<'success' | 'danger'>(() =>
+    this.isActive() ? 'success' : 'danger',
+  );
+}
+```
+
+```html
+<p-tag [value]="label()" [severity]="severity()" [rounded]="true" />
+```
+
+Por qué `computed` y no un método. Un método se reevaluaría en cada ciclo de detección; un `computed` guarda el resultado y solo se recalcula cuando `isActive()` cambia. Este tag representa `is_active`; no debe reutilizarse para `estado` de envíos ni para el `status` de RBAC.
+
+`src/app/shared/ui/status-tag/status-tag.spec.ts`
+
+```typescript
+it('should react when is_active changes to false', async () => {
+  const fixture = TestBed.createComponent(StatusTag);
+  fixture.componentRef.setInput('isActive', true);
+  await fixture.whenStable();
+
+  fixture.componentRef.setInput('isActive', false);
+  await fixture.whenStable();
+
+  expect(fixture.componentInstance.label()).toBe('Inactivo');
+  expect(fixture.componentInstance.severity()).toBe('danger');
+});
+```
+
+### 2.6 Shell: conservar el esqueleto al navegar
+
+**Criterios de este sub-ítem**
+
+- [X] Shell monta Header, Aside, router-outlet y Footer
+- [X] Solo el contenido central cambia al navegar
+- [X] El Drawer móvil reutiliza el mismo Aside y la misma lista items
+- [X] El botón de menú está siempre visible y alterna el Aside en escritorio (misma lógica que ISS-01B)
+- [X] <p-toast /> y <p-confirmdialog /> viven en el Shell, una sola vez
+- [X] En Fase I no inyecta AuthService ni SessionStore
+
+```
+ ng generate component layout/shell --skip-tests --defaults
+```
+
+`src/app/layout/shell/shell.ts`
+
+```typescript
+import { Component, signal } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+import { MenuItem } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DrawerModule } from 'primeng/drawer';
+import { ToastModule } from 'primeng/toast';
+import { watchMediaQuery } from '../../core/utils/media-query';
+import { Aside } from '../aside/aside';
+import { Footer } from '../footer/footer';
+import { Header } from '../header/header';
+
+/**
+ * Layout persistente de la aplicación.
+ *
+ * El Header, el Aside y el Footer se montan **una sola vez**; solo la región
+ * central cambia con `<router-outlet />`. Reutilizar el layout evita
+ * remontar el menú (y perder el scroll o el foco) al navegar.
+ *
+ * Fase I: sin `AuthService` ni `SessionStore`. Las rutas de negocio se agregan
+ * como hijas de `Shell` desde ISS-03; la sesión, en ISS-08.
+ */
+@Component({
+  host: { class: 'block' },
+  selector: 'app-shell',
+  imports: [RouterOutlet, Header, Aside, Footer, ConfirmDialogModule, DrawerModule, ToastModule],
+  templateUrl: './shell.html',
+  styleUrl: './shell.css',
+})
+export class Shell {
+  /** `lg` de Tailwind: desde aquí el Aside es fijo y el botón lo alterna. */
+  private readonly isDesktop = watchMediaQuery('(min-width: 1024px)');
+
+  /** Escritorio: Aside fijo visible u oculto. */
+  readonly sidebarCollapsed = signal(false);
+
+  /** Móvil: Drawer abierto. */
+  readonly mobileOpen = signal(false);
+
+  /** En ISS-02 solo se enlaza la pantalla logística disponible; ISS-03 agrega las demás rutas de negocio. */
+  readonly items: MenuItem[] = [
+    { label: 'Envíos', icon: 'pi pi-send', routerLink: '/envios' },
+    { label: 'Prototipo', icon: 'pi pi-desktop', routerLink: '/construir' },
+  ];
+
+  /**
+   * Un solo botón, dos disposiciones: en escritorio alterna el Aside fijo; por
+   * debajo de `lg` abre el Drawer.
+   */
+  protected onMenuToggle(): void {
+    if (this.isDesktop()) {
+      this.sidebarCollapsed.update((collapsed) => !collapsed);
+      return;
+    }
+    this.mobileOpen.set(true);
+  }
+}
+```
+
+`src/app/layout/shell/shell.html`
+
+```html
+<div class="flex min-h-screen flex-col bg-slate-100">
+  <app-header (menuRequested)="onMenuToggle()" />
+
+  <div class="flex flex-1">
+    <!--
+      Escritorio: Aside fijo que el botón del Header puede ocultar.
+      Por debajo de lg no se pinta: el menú vive en el Drawer.
+    -->
+    @if (!sidebarCollapsed()) {
+      <aside class="hidden w-72 shrink-0 lg:block">
+        <app-aside [items]="items" (navigated)="mobileOpen.set(false)" />
+      </aside>
+    }
+
+    <main id="contenido" class="min-w-0 flex-1 p-4 sm:p-6">
+      <div class="mx-auto w-full max-w-7xl">
+        <router-outlet />
+      </div>
+    </main>
+  </div>
+
+  <app-footer />
+</div>
+
+<!-- Móvil: el mismo Aside, otra disposición. -->
+<p-drawer [(visible)]="mobileOpen" header="Menú" position="left" styleClass="w-72">
+  <app-aside [items]="items" (navigated)="mobileOpen.set(false)" />
+</p-drawer>
+
+<!-- Anfitriones de las notificaciones y confirmaciones del CRUD (ISS-03). -->
+<p-toast position="top-right" />
+<p-confirmdialog />
+```
+
+**Rutas**
+
+`src/app/app.routes.ts`
+
+```typescript
+import { Routes } from '@angular/router';
+
+export const routes: Routes = [
+  {
+    path: 'construir',
+    loadComponent: () =>
+      import('./features/construir/construir').then((m) => m.Construir),
+  },
+  {
+    path: '',
+    loadComponent: () => import('./layout/shell/shell').then((m) => m.Shell),
+    children: [
+      // La primera pantalla de negocio es la redirección por defecto.
+      // ISS-07 añadirá aquí un resumen logístico derivado de datos permitidos.
+      { path: '', pathMatch: 'full', redirectTo: 'envios' },
+      {
+        path: 'envios',
+        title: 'Envíos · EnlaceExpress',
+        loadComponent: () =>
+          import('./features/shipments/shipment-list/shipment-list').then((m) => m.ShipmentList),
+      },
+    ],
+  },
+  { path: '**', redirectTo: 'construir' },
+];
+```
+
+`src/app/layout/shell/shell.spec.ts`
+
+```typescript
+it('should compose header, aside, main, footer and the router outlet', async () => {
+  const { compilado } = await crearShell();
+
+  expect(compilado.querySelector('app-header')).toBeTruthy();
+  expect(compilado.querySelector('aside app-aside')).toBeTruthy();
+  expect(compilado.querySelector('main#contenido router-outlet')).toBeTruthy();
+  expect(compilado.querySelector('app-footer')).toBeTruthy();
+});
+
+it('should open the mobile drawer from the header button', async () => {
+  const { fixture, compilado } = await crearShell();
+
+  const boton = compilado.querySelector(
+    'app-header button[aria-label="Mostrar u ocultar el menú"]',
+  ) as HTMLButtonElement;
+  boton.click();
+  fixture.detectChanges();
+  await fixture.whenStable();
+
+  expect(fixture.componentInstance.mobileOpen()).toBe(true);
+});
+```
+
+La prueba necesita `provideRouter([])` (`por <router-outlet />`) y los proveedores de PrimeNG (`MessageService`, `ConfirmationService`) que consumen `<p-toast />` y `<p-confirmdialog />`. Como `jsdom` no implementa `matchMedia`, `watchMediaQuery` devuelve false y la prueba ejercita la rama móvil; la rama de escritorio se cubre en `construir.spec.ts` sustituyendo `window.matchMedia`.
+
+### 2.7 Registrar HttpClient sin interceptores de sesión
+ 
+**Criterios de este sub-ítem**
+
+- [X] provideHttpClient() está en app.config.ts
+- [X] No hay withInterceptors(...) todavía
+- [X] MessageService y ConfirmationService siguen registrados (los usan los hosts del Shell)
+
+`src/app/app.config.ts` — debajo de los imports y antes de MessageService:
+
+```typescript
+import { provideHttpClient } from '@angular/common/http';
+
+// ...
+
+    // Habilita la inyección de HttpClient en los servicios `*Api`.
+    // Sin interceptores de sesión: el authInterceptor llega en ISS-08.
+    provideHttpClient(),
+
+    MessageService,
+    ConfirmationService,
+```
+
+`provideHttpClient()` habilita la inyección de HttpClient; no configura autenticación. El authInterceptor (adjuntar el Bearer, refrescar el token en 401) es ISS-08. Añadirlo ahora significaría escribir un interceptor que lee un SessionStore que aún no existe.
+
+### 2.8 Comprobar antes de avanzar
+
+**Criterios de este sub-ítem**
+
+- [X] ng build termina con código 0 y sin ✘ [ERROR]
+- [X] shell aparece como chunk diferido
+- [X] npm test pasa completo
+- [X] / redirige a /envios; /construir sigue disponible como prototipo local
+- [X] Network no registra llamadas /api en ninguna pantalla
+
+```bash
+ng build
+npm test -- --watch=false
+npm start
+```
+
+## Verificación del ISS
+
+```bash
+# 1. Compila y separa los chunks diferidos
+ng build
+
+# 2. La URL del backend existe una sola vez
+grep -n "apiUrl" src/environments/environment.ts src/environments/environment.development.ts
+
+# 3. Los modelos existen y coinciden con el backend
+ls src/app/core/models/*.model.ts
+
+# 4. Los servicios desenvuelven con map
+grep -rn "\.pipe(map" src/app/features src/app/core | wc -l
+
+# 5. HttpClient registrado, sin interceptores
+grep -n "provideHttpClient" src/app/app.config.ts
+grep -rn "withInterceptors" src/app/app.config.ts || echo "sin interceptores: correcto"
+
+# 6. Las envolturas especiales están bien escritas
+grep -n "assignments\|grants" src/app/features/admin/*/*-api.ts
+
+# 7. Los CSS compartidos no tienen reglas
+for f in src/app/shared/ui/*/*.css src/app/layout/shell/shell.css; do
+  grep -q '[{}]' "$f" && echo "REGLAS EN $f"
+done
+
+# 8. Pruebas
+npm test -- --watch=false
+```
+
+![alt text](<img-angular/verificar iss-02.png>)
+
+
+## ISS-03 · CRUD de Companies con Signals
+
+**Fase: I · Bloqueado por: ISS-02 · Habilita: ISS-07 (dashboard) y Fase II (ISS-08 sesión, ISS-09 protección)**
+
+**Dos decisiones propias de EnlaceExpress**, ausentes en la guía de ejemplo y necesarias aquí:
+
+1. **Fechas con inputs nativos** (`type="date"`, `"time"`, `"datetime-local"`) en lugar de `p-datepicker`: entregan un `string` que el backend ya espera y evitan los desfases de zona horaria de `Date`. Las conversiones viven en `core/utils/form-values.ts` (3.2).
+
+2. **Selects dependientes de la empresa.** El backend relaciona contactos y direcciones con una empresa, así que el formulario de Empresa ofrece solo *sus* contactos/direcciones y el de Envío filtra el origen por la empresa elegida.
+
+### 3.1 Verificar el contrato del backend
+
+`api-backend.md` fija rutas y campos, pero no el nombre de la clave con la que Express envuelve cada respuesta (`{ companies }`, `{ shipment }`…). La bitácora (ISS-02) confirma `companies` para empresas, `addresses` en la lista de direcciones y `shipment` en el detalle de envíos; el resto sigue la misma convención y **hay que confirmarlo**. Con el backend corriendo:
+
+```bash
+for r in companies contacts address messengers rates routes shipments packages tracking_events delivery_proofs invoices; do
+  echo -n "/api/$r → "
+  curl -s "http://localhost:4000/api/$r" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{console.log(Object.keys(JSON.parse(s)).join(', '))}catch{console.log('respuesta no JSON')}})"
+done
+```
+
+Compara cada línea con esta tabla. Si alguna clave difiere, **solo cambia el nombre en el servicio de esa entidad** (`list()`, `get()`, `create()`…): ningún componente conoce la envoltura, esa es la razón de desenvolver en el `.pipe(map(...))`.
+
+| Recurso | Clave de la lista (`list()`) | Clave de un registro (`get/create/update`) |
+|---|---|---|
+| `/companies` | `companies` ✔ (bitácora) | `companies` ✔ (bitácora) |
+| `/contacts` | `contacts` | `contact` |
+| `/address` | `addresses` ✔ (bitácora) | `address` |
+| `/messengers` | `messengers` | `messenger` |
+| `/rates` | `rates` | `rate` |
+| `/routes` | `routes` | `route` |
+| `/shipments` | `shipments` | `shipment` ✔ (bitácora) |
+| `/packages` | `packages` | `package` |
+| `/tracking_events` | `tracking_events` | `tracking_event` |
+| `/delivery_proofs` | `delivery_proofs` | `delivery_proof` |
+| `/invoices` | `invoices` | `invoice` |
+
+### 3.2 Utilidades compartidas (se crean una sola vez)
+
+Tres archivos en `src/app/core/utils/`, junto a `api-error.ts` y `media-query.ts`. Son funciones puras: se prueban sin montar nada.
+
+`src/app/core/utils/filter-rows.ts` — idéntico al de la guía de ejemplo (PrimeNG 22 eliminó `globalFilter`):
+
+```typescript
+/**
+ * Filtro local reutilizable para tablas PrimeNG 22.
+ *
+ * PrimeNG 22 eliminó el input `globalFilter` de `p-table`, así que filtramos el
+ * arreglo **antes** de entregarlo a `[value]`. Es una función pura: no depende
+ * del DOM, de la tabla ni de Angular, y por eso se prueba sin montar nada.
+ */
+export function filterRows<T>(
+  rows: readonly T[],
+  query: string,
+  pick: (row: T) => Array<string | number | null | undefined>,
+): T[] {
+  const term = query.trim().toLowerCase();
+
+  // Sin término se devuelve una copia: el llamador puede mutar el resultado sin
+  // tocar el arreglo original que vive en el signal.
+  if (!term) {
+    return [...rows];
+  }
+
+  return rows.filter((row) =>
+    pick(row).some((value) => (value ?? '').toString().toLowerCase().includes(term)),
+  );
+}
+```
+
+`src/app/core/utils/form-values.ts` — puente entre el modelo (DECIMAL como `number | string`, fechas como `string`) y los controles del formulario:
+
+```typescript
+import { Money } from '../models/api.model';
+
+/** DECIMAL llega como `number` o `string`; `p-inputnumber` necesita `number | null`. */
+export function toNumberOrNull(value: Money | null | undefined): number | null {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+/** `2026-10-31` o `2026-10-31T00:00:00Z` → `2026-10-31` (valor de `<input type="date">`). */
+export function toDateInput(value: string | null | undefined): string {
+  return value ? value.slice(0, 10) : '';
+}
+
+/** `08:30:00` → `08:30` (valor de `<input type="time">`). */
+export function toTimeInput(value: string | null | undefined): string {
+  return value ? value.slice(0, 5) : '';
+}
+
+/** ISO → `2026-10-31T15:30` en hora local (valor de `<input type="datetime-local">`). */
+export function toDateTimeInput(value: string | null | undefined): string {
+  if (!value) {
+    return '';
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+  const pad = (n: number): string => String(n).padStart(2, '0');
+  return (
+    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
+    `T${pad(date.getHours())}:${pad(date.getMinutes())}`
+  );
+}
+
+/** Hora local del input → ISO UTC para el backend. Vacío → `null`. */
+export function fromDateTimeInput(value: string): string | null {
+  if (!value) {
+    return null;
+  }
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+```
+
+`src/app/core/utils/labels.ts` — los enums del backend llegan como `en_ruta`, `con_novedad`…; la UI los muestra legibles:
+
+```typescript
+/** `con_novedad` → `Con novedad`. */
+export function humanize(value: string | null | undefined): string {
+  const text = (value ?? '').replaceAll('_', ' ');
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+```
+
+Pruebas de las dos primeras:
+
+`src/app/core/utils/filter-rows.spec.ts`
+
+```typescript
+import { filterRows } from './filter-rows';
+
+interface Row {
+  name: string;
+  note: string | null;
+}
+const ROWS: Row[] = [
+  { name: 'Alfa', note: 'Primera' },
+  { name: 'Beta', note: null },
+];
+const pick = (row: Row) => [row.name, row.note];
+
+describe('filterRows', () => {
+  it('should return a copy when there is no term', () => {
+    const result = filterRows(ROWS, '   ', pick);
+    expect(result).toEqual(ROWS);
+    expect(result).not.toBe(ROWS);
+  });
+
+  it('should match ignoring case', () => {
+    expect(filterRows(ROWS, 'ALFA', pick)).toEqual([ROWS[0]]);
+  });
+
+  it('should tolerate null values', () => {
+    expect(filterRows(ROWS, 'prim', pick)).toEqual([ROWS[0]]);
+  });
+
+  it('should return an empty array when nothing matches', () => {
+    expect(filterRows(ROWS, 'zzz', pick)).toEqual([]);
+  });
+
+  it('should trim the term', () => {
+    expect(filterRows(ROWS, '  beta ', pick)).toEqual([ROWS[1]]);
+  });
+});
+```
+
+`src/app/core/utils/form-values.spec.ts`
+
+```typescript
+import {
+  fromDateTimeInput,
+  toDateInput,
+  toDateTimeInput,
+  toNumberOrNull,
+  toTimeInput,
+} from './form-values';
+
+describe('form-values', () => {
+  it('should normalize DECIMAL strings and nulls', () => {
+    expect(toNumberOrNull('12.50')).toBe(12.5);
+    expect(toNumberOrNull(7)).toBe(7);
+    expect(toNumberOrNull(null)).toBeNull();
+    expect(toNumberOrNull('')).toBeNull();
+  });
+
+  it('should cut dates and times for native inputs', () => {
+    expect(toDateInput('2026-10-31T00:00:00.000Z')).toBe('2026-10-31');
+    expect(toDateInput(null)).toBe('');
+    expect(toTimeInput('08:30:00')).toBe('08:30');
+  });
+
+  it('should round-trip a date-time through the local input', () => {
+    const iso = '2026-10-31T15:30:00.000Z';
+    expect(fromDateTimeInput(toDateTimeInput(iso))).toBe(iso);
+    expect(fromDateTimeInput('')).toBeNull();
+  });
+});
+```
+
+### 3.3 El patrón, una vez
+
+Cada entidad se compone de **cinco archivos** (más el `.css` vacío de cada componente), con la misma responsabilidad que en la guía de ejemplo:
+
+```
+features/<recurso>/
+├── <recurso>-api.ts          # contrato HTTP: desenvuelve la respuesta
+├── <recurso>-form/
+│   ├── <recurso>-form.ts     # Reactive Forms; NO llama a la API; emite `saved`
+│   ├── <recurso>-form.html
+│   └── <recurso>-form.css    # sin reglas
+└── <recurso>-list/
+    ├── <recurso>-list.ts     # estado en signals + llamadas a la API
+    ├── <recurso>-list.html   # p-table + p-dialog con el formulario
+    └── <recurso>-list.css    # sin reglas
+```
+
+### 3.4 Empresas — `/api/companies`
+
+**Es la entidad de referencia.** Léela completa: el resto repite la misma estructura. Todo lo que se explica aquí vale para las diez siguientes.
+
+**Particularidades**
+
+- `contacto_principal_id` y `direccion_facturacion_id` apuntan a `Contact` y `Address`, que a su vez necesitan una empresa. Por eso esos dos selects **solo se habilitan al editar** (la empresa ya existe) y solo ofrecen contactos/direcciones de *esa* empresa (`contactOptions`, `addressOptions`). Al crear se deshabilitan y no viajan en el payload.
+- El orden natural de trabajo es: crear la empresa → crear su contacto y su dirección → volver a editar la empresa para fijar el principal y la facturación.
+- `is_active` se elige solo al crear. En edición el control queda deshabilitado: el cambio de estado se hace con la baja lógica.
+
+**Archivos de esta pantalla**
+
+```bash
+ng generate component features/companies/company-list --skip-tests --defaults
+ng generate component features/companies/company-form --skip-tests --defaults
+```
+
+El CLI crea además `company-list.spec.ts` y `company-form.spec.ts` si no usas `--skip-tests`; las pruebas se tratan en 3.17.
+
+`src/app/features/companies/company-api.ts`
+
+```typescript
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { Observable, map } from 'rxjs';
+import { environment } from '../../../environments/environment';
+import { Company, CompanyPayload } from '../../core/models/company.model';
+
+/** /companies — la lista llega en `{ companies }` y el detalle en `{ companies }`. */
+@Injectable({ providedIn: 'root' })
+export class CompanyApi {
+  private readonly http = inject(HttpClient);
+  private readonly base = `${environment.apiUrl}/companies`;
+
+  list(): Observable<Company[]> {
+    return this.http
+      .get<{ companies: Company[] }>(this.base)
+      .pipe(map((response) => response.companies));
+  }
+
+  get(id: number): Observable<Company> {
+    return this.http
+      .get<{ companies: Company }>(`${this.base}/${id}`)
+      .pipe(map((response) => response.companies));
+  }
+
+  create(payload: CompanyPayload): Observable<Company> {
+    return this.http
+      .post<{ companies: Company }>(this.base, payload)
+      .pipe(map((response) => response.companies));
+  }
+
+  update(id: number, payload: Partial<CompanyPayload>): Observable<Company> {
+    return this.http
+      .patch<{ companies: Company }>(`${this.base}/${id}`, payload)
+      .pipe(map((response) => response.companies));
+  }
+
+  replace(id: number, payload: CompanyPayload): Observable<Company> {
+    return this.http
+      .put<{ companies: Company }>(`${this.base}/${id}`, payload)
+      .pipe(map((response) => response.companies));
+  }
+
+  deactivate(id: number): Observable<unknown> {
+    return this.http.patch(`${this.base}/${id}/deactivate`, {});
+  }
+
+  remove(id: number): Observable<unknown> {
+    return this.http.delete(`${this.base}/${id}`);
+  }
+}
+```
+
+`src/app/features/companies/company-form/company-form.ts`
+
+```typescript
+import { Component, computed, effect, inject, input, output } from '@angular/core';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+import { MessageModule } from 'primeng/message';
+import { SelectModule } from 'primeng/select';
+import { Company, CompanyPayload } from '../../../core/models/company.model';
+import { Contact } from '../../../core/models/contact.model';
+import { Address } from '../../../core/models/address.model';
+
+/**
+ * Formulario de empresa, reutilizado para crear y editar.
+ *
+ * No llama a la API: recibe `company` (o `null` para crear) y emite el payload con
+ * `saved`. El padre decide entre `POST` y `PATCH` y controla el diálogo.
+ */
+@Component({
+  host: { class: 'block' },
+  selector: 'app-company-form',
+  imports: [MessageModule, ReactiveFormsModule, ButtonModule, InputTextModule, SelectModule],
+  templateUrl: './company-form.html',
+  styleUrl: './company-form.css',
+})
+export class CompanyForm {
+  /** Registro a editar. `null` deja el formulario en modo creación. */
+  readonly company = input<Company | null>(null);
+
+  readonly contacts = input<Contact[]>([]);
+  readonly addresses = input<Address[]>([]);
+
+  /** Cambia cada vez que el padre abre el diálogo: reinicia el formulario. */
+  readonly resetKey = input(0);
+
+  /** Petición en curso: deshabilita el botón y muestra su spinner. */
+  readonly saving = input(false);
+
+  readonly saved = output<CompanyPayload>();
+  readonly cancelled = output<void>();
+
+  private readonly fb = inject(NonNullableFormBuilder);
+
+  readonly activeOptions = [
+    { label: 'Activo', value: true },
+    { label: 'Inactivo', value: false },
+  ];
+
+  readonly form = this.fb.group({
+    nit: ['', [Validators.required, Validators.maxLength(30)]],
+    razon_social: ['', [Validators.required, Validators.maxLength(150)]],
+    contacto_principal_id: [null as number | null],
+    direccion_facturacion_id: [null as number | null],
+    is_active: [true],
+  });
+
+  /** Contactos de ESTA empresa: el backend exige que el principal le pertenezca. */
+  readonly contactOptions = computed(() => {
+    const current = this.company();
+    return current ? this.contacts().filter((contact) => contact.empresa_id === current.id) : [];
+  });
+
+  /** Direcciones de ESTA empresa, para la dirección de facturación. */
+  readonly addressOptions = computed(() => {
+    const current = this.company();
+    return current ? this.addresses().filter((address) => address.empresa_id === current.id) : [];
+  });
+
+  constructor() {
+    effect(() => {
+      const current = this.company();
+      // `resetKey` se lee a propósito: abrir de nuevo el diálogo debe vaciar el formulario.
+      this.resetKey();
+
+      this.form.reset({
+        nit: current?.nit ?? '',
+        razon_social: current?.razon_social ?? '',
+        contacto_principal_id: current?.contacto_principal_id ?? null,
+        direccion_facturacion_id: current?.direccion_facturacion_id ?? null,
+        is_active: current?.is_active ?? true,
+      });
+
+      // `is_active` solo cambia con PATCH /deactivate: al editar no se ofrece.
+      if (current) {
+        this.form.controls.is_active.disable();
+        this.form.controls.contacto_principal_id.enable();
+        this.form.controls.direccion_facturacion_id.enable();
+      } else {
+        this.form.controls.is_active.enable();
+        this.form.controls.contacto_principal_id.disable();
+        this.form.controls.direccion_facturacion_id.disable();
+      }
+    });
+  }
+
+  submit(): void {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+
+    const value = this.form.getRawValue();
+    const payload: CompanyPayload = {
+      nit: value.nit.trim(),
+      razon_social: value.razon_social.trim(),
+    };
+
+    // `is_active` solo se envía al crear: en edición lo gobierna /deactivate.
+    const current = this.company();
+    this.saved.emit(
+      current
+        ? { ...payload, contacto_principal_id: value.contacto_principal_id, direccion_facturacion_id: value.direccion_facturacion_id }
+        : { ...payload, is_active: value.is_active },
+    );
+  }
+}
+```
+
+`src/app/features/companies/company-form/company-form.html`
+
+```html
+<form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4">
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div>
+      <label for="company-nit" class="mb-1 block text-sm font-medium text-slate-700">
+        NIT <span class="text-red-500">*</span>
+      </label>
+      <input
+        id="company-nit"
+        pInputText
+        formControlName="nit"
+        placeholder="900123456-7"
+        class="w-full"
+      />
+      @if (form.controls.nit.touched && form.controls.nit.invalid) {
+        <p-message severity="error" size="small" variant="simple" styleClass="mt-1">
+          Este campo es obligatorio (máximo 30 caracteres).
+        </p-message>
+      }
+    </div>
+
+    <div>
+      <label for="company-razon-social" class="mb-1 block text-sm font-medium text-slate-700">
+        Razón social <span class="text-red-500">*</span>
+      </label>
+      <input
+        id="company-razon-social"
+        pInputText
+        formControlName="razon_social"
+        placeholder="Distribuidora La Costa S.A.S."
+        class="w-full"
+      />
+      @if (form.controls.razon_social.touched && form.controls.razon_social.invalid) {
+        <p-message severity="error" size="small" variant="simple" styleClass="mt-1">
+          Este campo es obligatorio (máximo 150 caracteres).
+        </p-message>
+      }
+    </div>
+
+    <div>
+      <label for="company-contacto-principal-id" class="mb-1 block text-sm font-medium text-slate-700">
+        Contacto principal
+      </label>
+      <p-select
+        [fluid]="true"
+        inputId="company-contacto-principal-id"
+        formControlName="contacto_principal_id"
+        [options]="contactOptions()"
+        optionLabel="nombre"
+        optionValue="id"
+        placeholder="Sin asignar"
+        [filter]="true"
+        [showClear]="true"
+      />
+      <p class="mt-1 text-xs text-slate-500">Solo al editar: el contacto debe pertenecer a esta empresa.</p>
+    </div>
+
+    <div>
+      <label for="company-direccion-facturacion-id" class="mb-1 block text-sm font-medium text-slate-700">
+        Dirección de facturación
+      </label>
+      <p-select
+        [fluid]="true"
+        inputId="company-direccion-facturacion-id"
+        formControlName="direccion_facturacion_id"
+        [options]="addressOptions()"
+        optionLabel="alias"
+        optionValue="id"
+        placeholder="Sin asignar"
+        [filter]="true"
+        [showClear]="true"
+      />
+      <p class="mt-1 text-xs text-slate-500">Solo al editar: la dirección debe pertenecer a esta empresa.</p>
+    </div>
+
+    <div class="sm:col-span-2">
+      <label for="company-is-active" class="mb-1 block text-sm font-medium text-slate-700">
+        Estado
+      </label>
+      <p-select
+        [fluid]="true"
+        inputId="company-is-active"
+        formControlName="is_active"
+        [options]="activeOptions"
+        optionLabel="label"
+        optionValue="value"
+      />
+      @if (company()) {
+        <p class="mt-1 text-xs text-slate-500">
+          El estado de un registro existente solo cambia con la baja lógica.
+        </p>
+      }
+    </div>
+  </div>
+
+  <div class="flex justify-end gap-2 border-t border-slate-100 pt-4">
+    <button pButton type="button" severity="secondary" outlined (click)="cancelled.emit()">
+      <span pButtonLabel>Cancelar</span>
+    </button>
+    <button pButton type="submit" [loading]="saving()">
+      <i pButtonIcon class="pi pi-check"></i>
+      <span pButtonLabel>Guardar</span>
+    </button>
+  </div>
+</form>
+```
+
+`src/app/features/companies/company-list/company-list.ts`
+
+```typescript
+import { Component, computed, inject, signal } from '@angular/core';
+import { ConfirmationService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
+import { InputTextModule } from 'primeng/inputtext';
+import { MessageModule } from 'primeng/message';
+import { TableModule } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
+import { TooltipModule } from 'primeng/tooltip';
+import { forkJoin } from 'rxjs';
+import { Company, CompanyPayload } from '../../../core/models/company.model';
+import { Contact } from '../../../core/models/contact.model';
+import { Address } from '../../../core/models/address.model';
+import { NotificationService } from '../../../core/services/notification';
+import { toApiMessage } from '../../../core/utils/api-error';
+import { filterRows } from '../../../core/utils/filter-rows';
+import { EmptyState } from '../../../shared/ui/empty-state/empty-state';
+import { PageHeader } from '../../../shared/ui/page-header/page-header';
+import { StatusTag } from '../../../shared/ui/status-tag/status-tag';
+import { ContactApi } from '../../contacts/contact-api';
+import { AddressApi } from '../../addresses/address-api';
+import { CompanyApi } from '../company-api';
+import { CompanyForm } from '../company-form/company-form';
+
+/**
+ * Lista de empresas con todas las operaciones del CRUD.
+ *
+ * Todo el estado vive en signals: la tabla y los contadores se repintan solos y
+ * `visibleRows` se recalcula solo cuando cambian `rows()` o `filter()`.
+ */
+@Component({
+  host: { class: 'block' },
+  selector: 'app-company-list',
+  imports: [ButtonModule, CompanyForm, DialogModule, EmptyState, InputTextModule, MessageModule, PageHeader, StatusTag, TableModule, TagModule, TooltipModule],
+  templateUrl: './company-list.html',
+  styleUrl: './company-list.css',
+})
+export class CompanyList {
+  private readonly api = inject(CompanyApi);
+  private readonly contactApi = inject(ContactApi);
+  private readonly addressApi = inject(AddressApi);
+  private readonly notify = inject(NotificationService);
+  private readonly confirmation = inject(ConfirmationService);
+
+  /** Datos del backend (`GET /api/companies`). */
+  readonly rows = signal<Company[]>([]);
+  readonly contacts = signal<Contact[]>([]);
+  readonly addresses = signal<Address[]>([]);
+  readonly loading = signal(true);
+  readonly saving = signal(false);
+  readonly error = signal<string | null>(null);
+  readonly filter = signal('');
+
+  /** Resultado de aplicar el buscador; `computed` lo memoriza. */
+  readonly visibleRows = computed(() =>
+    filterRows(this.rows(), this.filter(), (row) => [
+      row.nit,
+      row.razon_social,
+      this.contactName()(row.contacto_principal_id),
+      this.addressName()(row.direccion_facturacion_id),
+    ]),
+  );
+
+  /** `id → nombre` para mostrar el nombre en la tabla sin buscar en el arreglo por cada fila. */
+  readonly contactName = computed(() => {
+    const names = new Map<number, string>(this.contacts().map((item) => [item.id, String(item.nombre)]));
+    return (id: number | null | undefined) => (id == null ? '—' : (names.get(id) ?? `#${id}`));
+  });
+
+  /** `id → alias` para mostrar el nombre en la tabla sin buscar en el arreglo por cada fila. */
+  readonly addressName = computed(() => {
+    const names = new Map<number, string>(this.addresses().map((item) => [item.id, String(item.alias)]));
+    return (id: number | null | undefined) => (id == null ? '—' : (names.get(id) ?? `#${id}`));
+  });
+
+  readonly dialogVisible = signal(false);
+  readonly editing = signal<Company | null>(null);
+  readonly resetKey = signal(0);
+
+  readonly title = computed(() => (this.editing() ? 'Editar empresa' : 'Nueva empresa'));
+
+  constructor() {
+    this.load();
+  }
+
+  /** `GET /api/companies`: recarga la tabla y limpia el error anterior. */
+  load(): void {
+    this.loading.set(true);
+    this.error.set(null);
+
+    forkJoin({
+      rows: this.api.list(),
+      contacts: this.contactApi.list(),
+      addresses: this.addressApi.list(),
+    }).subscribe({
+      next: ({ rows, contacts, addresses }) => {
+        this.rows.set(rows);
+        this.contacts.set(contacts);
+        this.addresses.set(addresses);
+        this.loading.set(false);
+      },
+      error: (error: unknown) => {
+        this.rows.set([]);
+        this.error.set(toApiMessage(error));
+        this.loading.set(false);
+      },
+    });
+  }
+
+  openCreate(): void {
+    this.editing.set(null);
+    this.resetKey.update((key) => key + 1);
+    this.dialogVisible.set(true);
+  }
+
+  openEdit(row: Company): void {
+    this.editing.set(row);
+    this.resetKey.update((key) => key + 1);
+    this.dialogVisible.set(true);
+  }
+
+  /**
+   * El mismo manejador para crear y editar: `editing()` decide el verbo.
+   * Tras el éxito se cierra el diálogo y se recarga (el backend es la verdad).
+   */
+  save(payload: CompanyPayload): void {
+    const current = this.editing();
+    this.saving.set(true);
+
+    const request = current ? this.api.update(current.id, payload) : this.api.create(payload);
+
+    request.subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.dialogVisible.set(false);
+        this.notify.success(current ? 'Empresa actualizada' : 'Empresa creada');
+        this.load();
+      },
+      error: (error: unknown) => {
+        this.saving.set(false);
+        this.notify.error('No se pudo guardar', toApiMessage(error));
+      },
+    });
+  }
+
+  /** Baja lógica: `PATCH /:id/deactivate`. */
+  deactivate(row: Company): void {
+    this.confirmation.confirm({
+      header: 'Baja lógica',
+      message: `¿Desactivar ${row.razon_social}? Su estado pasará a inactivo.`,
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Desactivar',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-warning',
+      accept: () => {
+        this.api.deactivate(row.id).subscribe({
+          next: () => {
+            this.notify.warn('Empresa desactivada');
+            this.load();
+          },
+          error: (error: unknown) => {
+            this.notify.error('No se pudo desactivar', toApiMessage(error));
+          },
+        });
+      },
+    });
+  }
+
+  /** Baja física: `DELETE /:id`. No se puede deshacer. */
+  remove(row: Company): void {
+    this.confirmation.confirm({
+      header: 'Eliminar definitivamente',
+      message: `Se borrará ${row.razon_social} de la base de datos. Esta acción no se puede deshacer.`,
+      icon: 'pi pi-trash',
+      acceptLabel: 'Eliminar',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.api.remove(row.id).subscribe({
+          next: () => {
+            this.notify.success('Empresa eliminada');
+            this.load();
+          },
+          error: (error: unknown) => {
+            this.notify.error('No se pudo eliminar', toApiMessage(error));
+          },
+        });
+      },
+    });
+  }
+}
+```
+
+`src/app/features/companies/company-list/company-list.html`
+
+```html
+<app-page-header
+  title="Empresas"
+  subtitle="Clientes de la operación logística: NIT, razón social, contacto principal y dirección de facturación."
+>
+  <p-tag [value]="rows().length + ' registros'" severity="info" [rounded]="true" />
+  <button pButton type="button" (click)="openCreate()">
+    <i pButtonIcon class="pi pi-plus"></i>
+    <span pButtonLabel>Nueva empresa</span>
+  </button>
+</app-page-header>
+
+@if (error()) {
+  <p-message severity="error" styleClass="mb-4 w-full">
+    {{ error() }}
+  </p-message>
+}
+
+<div class="rounded-xl border border-slate-200 bg-white">
+  <p-table
+    [value]="visibleRows()"
+    [loading]="loading()"
+    [paginator]="visibleRows().length > 10"
+    [rows]="10"
+    dataKey="id"
+    tableStyleClass="min-w-3xl"
+  >
+    <ng-template #caption>
+      <div class="flex items-center gap-2">
+        <i class="pi pi-search text-slate-400"></i>
+        <input
+          pInputText
+          type="search"
+          aria-label="Buscar empresas"
+          placeholder="Buscar por razón social, NIT o contacto…"
+          [value]="filter()"
+          (input)="filter.set($any($event.target).value)"
+          class="w-full"
+        />
+      </div>
+      @if (filter()) {
+        <p class="mt-2 text-xs text-slate-500">
+          {{ visibleRows().length }} de {{ rows().length }} coinciden con «{{ filter() }}».
+        </p>
+      }
+    </ng-template>
+
+    <ng-template #header>
+      <tr>
+        <th pSortableColumn="razon_social">
+          <div class="flex items-center gap-1">Razón social <p-sort-icon field="razon_social" /></div>
+        </th>
+        <th>Contacto principal</th>
+        <th>Dirección de facturación</th>
+        <th>Estado</th>
+        <th class="w-40 text-right">Acciones</th>
+      </tr>
+    </ng-template>
+
+    <ng-template #body let-row>
+      <tr>
+        <td>
+          <p class="font-medium text-slate-800">{{ row.razon_social }}</p>
+          <p class="text-xs text-slate-400">#{{ row.id }} · NIT {{ row.nit }}</p>
+        </td>
+        <td>
+          <span class="text-sm text-slate-600">{{ contactName()(row.contacto_principal_id) }}</span>
+        </td>
+        <td>
+          <span class="text-sm text-slate-600">{{ addressName()(row.direccion_facturacion_id) }}</span>
+        </td>
+        <td>
+          <app-status-tag [isActive]="row.is_active" />
+        </td>
+        <td>
+          <div class="flex justify-end gap-1">
+            <button
+              pButton
+              type="button"
+              text
+              rounded
+              severity="secondary"
+              icon="pi pi-pencil"
+              aria-label="Editar empresa"
+              pTooltip="Editar"
+              (click)="openEdit(row)"
+            ></button>
+            <button
+              pButton
+              type="button"
+              text
+              rounded
+              severity="warn"
+              icon="pi pi-ban"
+              aria-label="Dar de baja"
+              pTooltip="Baja lógica"
+              (click)="deactivate(row)"
+            ></button>
+            <button
+              pButton
+              type="button"
+              text
+              rounded
+              severity="danger"
+              icon="pi pi-trash"
+              aria-label="Eliminar empresa"
+              pTooltip="Eliminar"
+              (click)="remove(row)"
+            ></button>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template #emptymessage>
+      <tr>
+        <td colspan="5">
+          @if (filter()) {
+            <app-empty-state
+              icon="pi pi-search"
+              title="Sin coincidencias"
+              message="Ningún registro coincide con la búsqueda. Borra el filtro para ver todos."
+            />
+          } @else {
+            <app-empty-state
+              icon="pi pi-building"
+              title="Sin registros"
+              message="Crea el primero con el botón «Nueva empresa» o ejecuta el seeder del backend."
+            />
+          }
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>
+
+<p-dialog
+  [visible]="dialogVisible()"
+  (visibleChange)="dialogVisible.set($event)"
+  [header]="title()"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [dismissableMask]="true"
+  styleClass="w-full max-w-2xl mx-4"
+>
+  <app-company-form
+    [company]="editing()"
+    [contacts]="contacts()"
+    [addresses]="addresses()"
+    [saving]="saving()"
+    [resetKey]="resetKey()"
+    (saved)="save($event)"
+    (cancelled)="dialogVisible.set(false)"
+  />
+</p-dialog>
+```
+
+Los dos `.css` (`company-form.css`, `company-list.css`) quedan sin reglas, como los de `layout/` y `shared/ui/`.
+
+![alt text](img-express/crud_companies.png)
