@@ -154,7 +154,7 @@ export const appConfig: ApplicationConfig = {
 EOF
 ```
 
-En ISS-02 se añade `provideHttpClient()`. Los interceptores se generan e incorporan en ISS-08, cuando sus servicios ya existen.
+En ISS-02 se añade `provideHttpClient()`. Los interceptores se incorporarán en el issue posterior de autenticación, cuando sus servicios ya existen.
 
 ### 1.4.1 Licencia de PrimeNG 22 (obligatoria para la entrega limpia)
 
@@ -889,7 +889,7 @@ import { Component } from '@angular/core';
  * Menú lateral de la aplicación.
  *
  * ISS-01A: solo el contenedor. En ISS-01B recibe `items` por `input()` y pinta
- * `p-panelmenu`. No conoce rutas ni permisos: eso llega en ISS-02/ISS-08.
+ * `p-panelmenu`. No conoce rutas ni permisos: eso llega en ISS-02 y en el issue posterior de autenticación.
  */
 @Component({
   host: { class: 'block h-full' },
@@ -1172,7 +1172,7 @@ export class Aside {
   /** Opciones del menú, en el formato `MenuItem` de PrimeNG. */
   readonly items = input<MenuItem[]>([]);
 
-  /** Datos de sesión con valores por defecto: ISS-08 los completa. */
+  /** Datos de sesión con valores por defecto: se completan en el issue posterior de autenticación. */
   readonly showSession = input(false);
   readonly username = input('');
   readonly roleLabel = input('Sin rol');
@@ -1244,7 +1244,7 @@ Criterios de este sub-ítem
 
 - [X] El botón de menú lleva `aria-label="Mostrar u ocultar el menú"` y no lleva `lg:hidden`
 - [X] Al pulsarlo emite menuRequested; el Header no abre nada ni consulta el ancho
-- [X] showSession sigue en false: no hay datos de sesión hasta ISS-08
+- [X] showSession sigue en false: no hay datos de sesión hasta implementar autenticación
 - [X] header.css no contiene reglas
 
 `src/app/layout/header/header.ts`
@@ -1274,7 +1274,7 @@ export class Header {
   /** Nombre visible de la aplicación. */
   readonly appName = input('EnlaceExpress');
 
-  /** Datos de sesión con valores por defecto: ISS-08 los completa. */
+  /** Datos de sesión con valores por defecto: se completan en el issue posterior de autenticación. */
   readonly username = input('');
   readonly initials = input('IN');
   readonly roleLabel = input('Sin rol');
@@ -1354,7 +1354,7 @@ Esa es la diferencia entre un componente reutilizable y uno acoplado.
 
 > **PARCHE** — `<class="lg:hidden">` era un error de diseño. La primera versión ocultaba el botón con `lg:hidden`, así que desaparecía justo desde 1024 px, que es donde el Aside fijo ya se ve. Resultado: en escritorio el menú no se podía ocultar y en pantallas anchas el usuario no encontraba el botón. El botón debe estar siempre; lo que cambia es qué hace según el ancho. El Header no consulta el ancho (sigue siendo presentación pura): quien decide es el padre, con `onMenuToggle()`.
 
-`sticky top-0 z-30` mantiene la barra visible al hacer scroll y por encima del contenido. El `@if (showSession())` deja el bloque de usuario fuera del DOM hasta ISS-08: no se pinta un avatar vacío que luego haya que ocultar.
+`sticky top-0 z-30` mantiene la barra visible al hacer scroll y por encima del contenido. El `@if (showSession())` deja el bloque de usuario fuera del DOM hasta implementar autenticación: no se pinta un avatar vacío que luego haya que ocultar.
 
 ### 1.4 features/construir: estado local y Drawer móvil
 Criterios de este sub-ítem
@@ -1854,7 +1854,7 @@ export const routes: Routes = [
 ];
 ```
 
-El enlace a `/login` todavía no existe. La pantalla de login es ISS-08. Este ISS no importa RouterLink ni escribe `<a routerLink="/login">:` el prototipo no ofrece una ruta que llevaría a un 404. El texto de bienvenida lo anuncia («los formularios y la conexión con Express se incorporan después»).
+El enlace a `/login` todavía no existe. La pantalla de login pertenece a un issue posterior de autenticación. Este ISS no importa RouterLink ni escribe `<a routerLink="/login">`: el prototipo no ofrece una ruta que llevaría a un 404. El texto de bienvenida lo anuncia («los formularios y la conexión con Express se incorporan después»).
 
 **Prueba del punto de entrada**
 
@@ -1964,7 +1964,7 @@ Crea los dos archivos y registra el reemplazo. Si ya existen, edítalos sin repe
  * como `//companies` y Express las trataría como otra ruta.
  *
  * `requireAuth`: mitad frontal del interruptor de fases. Nadie lo lee hasta
- * ISS-08 (Fase II). Se empareja con `AUTH_ENABLED` del backend: mover una sola
+ * El issue posterior de autenticación (Fase II). Se empareja con `AUTH_ENABLED` del backend: mover una sola
  * mitad produce `401 Missing Bearer token` (ISS-11 §11.1).
  *
  * `primeUiLicense`: clave **Community** de PrimeUI (PrimeNG 22). Solicítala en
@@ -2047,7 +2047,6 @@ ng generate interface core/models/api --type=model --defaults
 ng generate interface core/models/company --type=model --defaults
 ng generate interface core/models/contact --type=model --defaults
 ng generate interface core/models/address --type=model --defaults
-ng generate interface core/models/messenger --type=model --defaults
 ng generate interface core/models/rate --type=model --defaults
 ng generate interface core/models/route --type=model --defaults
 ng generate interface core/models/shipment --type=model --defaults
@@ -2063,7 +2062,7 @@ ng generate interface core/models/resource-role --type=model --defaults
 ng generate interface core/models/auth --type=model --defaults
 ```
 
-Cada comando crea un `*.model.ts` con una interfaz vacía. Se declaran 11 entidades de operación y 5 de usuarios/RBAC. `auth.model.ts` contiene los contratos de autenticación; las sesiones internas no exponen el hash del refresh token. El dashboard de ISS-07 presenta datos de órdenes de servicio, ventas e inventario solo desde endpoints MovilCare existentes y autorizados; no se inventan estadísticas ni contratos agregados.
+Cada comando crea un `*.model.ts` con una interfaz vacía. Se declaran 14 entidades de negocio y 6 de autenticación/autorización. `auth.model.ts` contiene los contratos de autenticación; las sesiones internas no exponen el hash del refresh token.
 
 `api.model.ts`— los tipos que comparten todos
 
@@ -2173,29 +2172,10 @@ export interface AddressPayload {
 
 La relación es logística: un `Company` agrupa `Contact` y `Address`. Los campos opcionales del DTO se envían solo cuando se editan; las respuestas reflejan nullable del modelo.
 
-`messenger.model.ts`, `rate.model.ts`, `route.model.ts`, `package.model.ts` y `tracking-event.model.ts`
+`rate.model.ts`, `route.model.ts`, `package.model.ts` y `tracking-event.model.ts`
 
 ```typescript
 import { ActiveRecord, Money } from './api.model';
-
-export type VehicleType = 'moto' | 'carro' | 'bicicleta' | 'a_pie';
-export interface Messenger extends ActiveRecord {
-  nombre: string;
-  documento_identidad: string;
-  telefono: string | null;
-  tipo_vehiculo: VehicleType;
-  placa_vehiculo: string | null;
-  zona_asignada: string | null;
-}
-export interface MessengerPayload {
-  nombre: string;
-  documento_identidad: string;
-  telefono?: string | null;
-  tipo_vehiculo: VehicleType;
-  placa_vehiculo?: string | null;
-  zona_asignada?: string | null;
-  is_active?: boolean;
-}
 
 export type CalculationRule = 'por_peso' | 'por_zona' | 'plana';
 export interface Rate extends ActiveRecord {
@@ -2531,7 +2511,7 @@ export interface UserSession extends Timestamps {
 }
 ```
 
-No se declara un `DashboardData` ni un endpoint agregado: `RESUMEN_TECNICO.md` no documenta una API de dashboard. ISS-07 debe usar consultas MovilCare existentes, acotadas y permitidas, o esperar un contrato agregado del backend.
+No se declara un `DashboardData` ni un endpoint agregado: `RESUMEN_TECNICO.md` no documenta una API de dashboard. Si se planifica un dashboard en otro issue, deberá usar consultas MovilCare existentes, acotadas y permitidas, o esperar un contrato agregado del backend.
 
 `is_active` es el indicador lógico de las entidades de operación y usa `PATCH /:id/deactivate`. `status` pertenece a usuarios/RBAC; `estado` representa el flujo de negocio de rutas, envíos, eventos, comprobantes y facturas. No intercambies esos tres campos ni asumas que comparten enum.
 
@@ -2547,7 +2527,6 @@ Criterios de este sub-ítem
 ng generate service features/companies/company-api --skip-tests --defaults
 ng generate service features/contacts/contact-api --skip-tests --defaults
 ng generate service features/addresses/address-api --skip-tests --defaults
-ng generate service features/messengers/messenger-api --skip-tests --defaults
 ng generate service features/rates/rate-api --skip-tests --defaults
 ng generate service features/routes/route-api --skip-tests --defaults
 ng generate service features/shipments/shipment-api --skip-tests --defaults
@@ -2571,7 +2550,6 @@ Los paths no se deducen del nombre español de la entidad. Se usan exactamente c
 | Company | `/companies` |
 | Contact | `/contacts` |
 | Address | `/address` |
-| Messenger | `/messengers` |
 | Rate | `/rates` |
 | Route | `/routes` |
 | Shipment | `/shipments` |
@@ -2586,7 +2564,7 @@ Los paths no se deducen del nombre español de la entidad. Se usan exactamente c
 | ResourceRole | `/concesiones-rol` |
 | Sesiones propias | `/sesiones` |
 
-`SessionApi` cubre además `POST /sesion/login`, `POST /sesion/refresh`, `POST /sesion/logout`, `GET /sesion/perfil` y `GET /permisos`. No enviar `token_hash` al cliente. Salvo login/refresh, las rutas de negocio y RBAC requieren autenticación y permiso; se probarán con `HttpTestingController` hasta ISS-08.
+`SessionApi` cubre además `POST /sesion/login`, `POST /sesion/refresh`, `POST /sesion/logout`, `GET /sesion/perfil` y `GET /permisos`. No enviar `token_hash` al cliente. Salvo login/refresh, las rutas de negocio y RBAC requieren autenticación y permiso; se probarán con `HttpTestingController` hasta implementar el issue posterior de autenticación.
 
 `--skip-tests` aquí sí es deliberado: los servicios se prueban con `HttpTestingController`, agrupados por contrato y dominio, no con stubs vacíos por archivo. Los endpoints de negocio y RBAC requieren token y permiso según `api-backend.md`; las pruebas los simulan y no necesitan el backend levantado.
 
@@ -2993,7 +2971,7 @@ import { Header } from '../header/header';
  * remontar el menú (y perder el scroll o el foco) al navegar.
  *
  * Fase I: sin `AuthService` ni `SessionStore`. Las rutas de negocio se agregan
- * como hijas de `Shell` desde ISS-03; la sesión, en ISS-08.
+ * como hijas de `Shell` desde ISS-03; la sesión, en un issue posterior.
  */
 @Component({
   host: { class: 'block' },
@@ -3087,7 +3065,7 @@ export const routes: Routes = [
     loadComponent: () => import('./layout/shell/shell').then((m) => m.Shell),
     children: [
       // La primera pantalla de negocio es la redirección por defecto.
-      // ISS-07 añade aquí el dashboard de MovilCare con datos de negocio permitidos.
+      // ISS-07 añade aquí la pantalla de productos del catálogo MovilCare.
       { path: '', pathMatch: 'full', redirectTo: 'envios' },
       {
         path: 'envios',
@@ -3145,14 +3123,14 @@ import { provideHttpClient } from '@angular/common/http';
 // ...
 
     // Habilita la inyección de HttpClient en los servicios `*Api`.
-    // Sin interceptores de sesión: el authInterceptor llega en ISS-08.
+    // Sin interceptores de sesión: el authInterceptor llega con el issue posterior de autenticación.
     provideHttpClient(),
 
     MessageService,
     ConfirmationService,
 ```
 
-`provideHttpClient()` habilita la inyección de HttpClient; no configura autenticación. El authInterceptor (adjuntar el Bearer, refrescar el token en 401) es ISS-08. Añadirlo ahora significaría escribir un interceptor que lee un SessionStore que aún no existe.
+`provideHttpClient()` habilita la inyección de HttpClient; no configura autenticación. El authInterceptor (adjuntar el Bearer, refrescar el token en 401) pertenece al issue posterior de autenticación. Añadirlo ahora significaría escribir un interceptor que lee un SessionStore que aún no existe.
 
 ### 2.8 Comprobar antes de avanzar
 
@@ -3206,7 +3184,7 @@ npm test -- --watch=false
 
 ## ISS-03 · CRUD de las entidades de negocio con Signals (MovilCare)
 
-**Fase: I · Depende de ISS-02 · Habilita ISS-07 (dashboard).** La integración en vivo con los endpoints protegidos depende de ISS-08 (sesión), pero esta entrega no implementa autenticación.
+**Fase: I · Depende de ISS-02 · Habilita ISS-04 a ISS-08 (CRUD de entidades de negocio).** La integración en vivo con los endpoints protegidos depende del issue posterior de sesión, pero esta entrega no implementa autenticación.
 
 ### Objetivo y alcance
 
@@ -3220,7 +3198,7 @@ La fuente de verdad para el dominio es [RESUMEN_TECNICO.md](./RESUMEN_TECNICO.md
 
 ### 3.1 Contrato común de consumo
 
-Todas las rutas de negocio se montan bajo `/api` y pasan por autenticación y autorización RBAC en el backend. No se debe desactivar ni eludir esa protección para avanzar la interfaz: hasta ISS-08, probar los servicios con `HttpTestingController` y datos de prueba. Una llamada real sin token puede responder `401`/`403`.
+Todas las rutas de negocio se montan bajo `/api` y pasan por autenticación y autorización RBAC en el backend. No se debe desactivar ni eludir esa protección para avanzar la interfaz: hasta implementar el issue posterior de sesión, probar los servicios con `HttpTestingController` y datos de prueba. Una llamada real sin token puede responder `401`/`403`.
 
 Los controladores CRUD compartidos reciben `limit` y `offset` (por defecto `20` y `0`; `limit` de `1` a `100`) y responden la lista como `{ items, total, limit, offset }`. El detalle y la creación suelen responder el registro directamente, no una envoltura `{ entidad }`. Los controladores especializados y las acciones de dominio pueden tener respuestas distintas; cada servicio debe tipar y desenvolver lo que devuelve **su** controlador, sin asumir una envoltura común.
 
@@ -3295,7 +3273,7 @@ Relaciones importantes: tipo de producto → producto → unidad serializada; cl
 - [ ] No se calculan ni sobrescriben desde la UI los importes de venta/consumo que valida o calcula el backend.
 - [ ] Cada pantalla distingue carga, vacío, error y guardado; las acciones destructivas solicitan confirmación y los errores se muestran al usuario.
 - [ ] Las pruebas cubren contratos de servicios (URL, verbo, query/body, respuesta y error) y validaciones/reglas de cada formulario, sin depender de un backend activo.
-- [ ] `ng build` y las pruebas focalizadas pasan. La prueba de integración con bearer token queda pendiente de ISS-08; no se reemplaza por una desactivación de seguridad del backend.
+- [ ] `ng build` y las pruebas focalizadas pasan. La prueba de integración con bearer token queda pendiente del issue posterior de sesión; no se reemplaza por una desactivación de seguridad del backend.
 
 ## ISS-04 · CRUD de clientes y relación con ventas (MovilCare)
 
@@ -3312,7 +3290,7 @@ Implementar la pantalla de clientes como el primer CRUD concreto del dominio Mov
 - En el formulario de venta, únicamente clientes activos pueden seleccionarse: el backend rechaza crear o reasignar una venta a un cliente inactivo.
 - El campo `companyName` es un dato opcional del cliente, **no** una relación con otra tabla.
 - No mostrar conteo, historial ni listado de ventas dentro de la pantalla de clientes: aunque existe la relación `Customer.hasMany(Sale)`, el endpoint de clientes no incluye ventas ni hay una ruta documentada de ventas por cliente. No inventar endpoints ni datos derivados.
-- No incluir autenticación, login, guards, interceptores ni pantallas RBAC. Las llamadas protegidas se prueban con `HttpTestingController` hasta ISS-08.
+- No incluir autenticación, login, guards, interceptores ni pantallas RBAC. Las llamadas protegidas se prueban con `HttpTestingController` hasta implementar el issue posterior de sesión.
 
 ### 4.2 Contrato de la API
 
@@ -3329,7 +3307,7 @@ Recurso: `/customers`, bajo `environment.apiUrl`.
 
 No existe `PATCH /customers/:id/deactivate`. Para la acción de baja lógica, llamar a `DELETE`; no implementar una URL supuesta. La edición normal debe usar `PATCH` para no restablecer campos opcionales que no se modificaron. Las respuestas no usan una envoltura `{ customer }`.
 
-El backend aplica autenticación y permisos RBAC a estas rutas. Una respuesta `401`/`403` antes de ISS-08 no se debe ocultar ni resolver desactivando la seguridad del servidor.
+El backend aplica autenticación y permisos RBAC a estas rutas. Una respuesta `401`/`403` antes de implementar el issue posterior de sesión no se debe ocultar ni resolver desactivando la seguridad del servidor.
 
 ### 4.3 Modelo y formulario
 
@@ -3400,7 +3378,7 @@ Implementar el CRUD administrativo de empleados con la misma estructura de ISS-0
 - Listar empleados activos e inactivos; la lista estándar no filtra por estado.
 - Crear, consultar por ID, reemplazar, editar parcialmente y dar de baja según las rutas reales.
 - `role` describe el perfil de negocio del empleado (`SELLER`, `TECHNICIAN`, `ADMIN`); no es un rol RBAC ni concede permisos para iniciar sesión.
-- No se incluyen usuarios, credenciales, asignación de permisos, autenticación ni operaciones RBAC. La autorización de la API queda protegida y se probará con `HttpTestingController` hasta ISS-08.
+- No se incluyen usuarios, credenciales, asignación de permisos, autenticación ni operaciones RBAC. La autorización de la API queda protegida y se probará con `HttpTestingController` hasta implementar el issue posterior de sesión.
 - El empleado puede aparecer como vendedor en ventas (`sellerId`) o técnico en órdenes/diagnósticos (`technicianId`). La entidad no incluye un historial de ventas/servicios ni se debe inventar un endpoint asociado.
 
 ### 5.2 Contrato de la API
@@ -3466,3 +3444,508 @@ La tabla muestra nombre, documento, correo, rol y estado. El formulario comparti
 - [ ] Los selectores de venta/servicio envían `sellerId`/`technicianId` y respetan las restricciones de obligatoriedad y empleado activo descritas en 5.4.
 - [ ] No se inventan endpoints de historial, filtros de catálogo, autenticación o RBAC.
 - [ ] Las pruebas unitarias no requieren un backend activo; `ng build` y las pruebas focalizadas pasan.
+
+## ISS-06 · CRUD de tipos de producto y relación con inventario (MovilCare)
+
+**Fase: I · Depende de ISS-02 e ISS-03 · Habilita: gestión de productos y unidades serializadas.**
+
+Se adapta a **Tipo de producto (`ProductType`)**, entidad del catálogo que clasifica productos mediante `Product.productTypeId`.
+
+### 6.1 Alcance
+
+Implementar el mantenimiento de tipos de producto: listado paginado, consulta individual desde el servicio, alta, edición y las dos operaciones de cierre distintas que soporta el backend:
+
+- **Desactivar:** `PATCH /product-types/:id/deactivate`; conserva el registro y cambia `status` a `inactive`.
+- **Eliminar:** `DELETE /product-types/:id`; eliminación física. Puede fallar si un producto tiene asignado ese tipo por la restricción de clave foránea.
+
+La lista regular devuelve solo tipos `active`. Los inactivos no aparecen en ella, pero pueden consultarse por ID. Las acciones de producto deben usar tipos activos; no ofrecer inactivos para asignaciones nuevas. No incluir autenticación/RBAC: probar las solicitudes protegidas con `HttpTestingController` hasta implementar el issue posterior de sesión.
+
+### 6.2 Contrato de la API
+
+Recurso: `/product-types`, bajo `environment.apiUrl`.
+
+| Operación | Ruta | Respuesta / uso |
+|---|---|---|
+| Listar | `GET /product-types?limit=20&offset=0` | `{ items, total, limit, offset }`; lista ordenada por ID y filtrada a `status: active`. `limit`: 1–100. |
+| Consultar | `GET /product-types/:id` | Objeto `ProductType` directamente, esté activo o inactivo. |
+| Crear | `POST /product-types` | Objeto creado directamente; `name` obligatorio. Si se omite `status`, el controlador lo establece en `active` (aunque el default del modelo sea `inactive`). |
+| Reemplazar | `PUT /product-types/:id` | Objeto actualizado; requiere `name`. |
+| Editar | `PATCH /product-types/:id` | Objeto actualizado; admite `name`, `description` y/o `status`. |
+| Desactivar | `PATCH /product-types/:id/deactivate` | Respuesta `{ message, product_type }`; cambia el estado a `inactive`. |
+| Eliminar | `DELETE /product-types/:id` | Eliminación física; respuesta `{ message, id }`. Puede rechazarse si hay productos asociados. |
+
+Detalle, alta y edición no están envueltos en `{ product_type }`; no copiar envolturas de otros servicios. La lista filtra inactivos, por lo que `DELETE` no debe confundirse con desactivar y tampoco se debe ocultar un error de integridad como si hubiera sido exitoso.
+
+### 6.3 Modelo y formulario
+
+El contrato de esta entidad usa `camelCase` y los campos siguientes:
+
+| Campo | Tipo y validación de interfaz |
+|---|---|
+| `name` | Obligatorio, texto no vacío de máximo 100 caracteres. |
+| `description` | Opcional o `null`, máximo 255 caracteres. |
+| `status` | `active` o `inactive`; entidad de catálogo, no estado RBAC. |
+
+**Importante:** el valor por defecto de `status` en el backend es `inactive`, mientras que el `GET` de colección solo muestra tipos activos. Por ello, el formulario de alta debe iniciar `status` en `active` (o requerir que se elija explícitamente) para que un nuevo tipo aparezca en el catálogo. Enviar el estado en la creación. En edición se puede cambiar el campo por `PATCH`; la acción dedicada de desactivación debe usar su endpoint.
+
+Presentar errores 409 por nombre duplicado, errores 400 de validación y conflictos de clave foránea de la eliminación física con mensajes claros. No permitir nombre vacío ni enviar valores de estado fuera del enum.
+
+### 6.4 Relación con productos
+
+`Product.productTypeId` es obligatorio y referencia un tipo de producto; la clave foránea impide eliminar un tipo todavía utilizado.
+
+- El formulario de productos consume los tipos activos de `GET /product-types` y envía el identificador como `productTypeId`.
+- El mantenimiento del tipo no administra productos ni unidades serializadas dentro de la misma pantalla.
+- Antes de eliminación física, pedir confirmación y explicar que el tipo solo se puede borrar si no está asignado a productos; si el backend devuelve conflicto, mantener el diálogo/lista consistente y mostrar el error.
+- Desactivar no reasigna ni borra productos existentes. Las pantallas deben distinguir el tipo inactivo usado por un producto histórico de las opciones válidas para crear/editar producto.
+- La lista se pagina en el servidor; manejar `items`/`total` y no asumir que el primer resultado contiene todos los tipos activos.
+
+### 6.5 Estructura sugerida y comportamiento
+
+```text
+src/app/features/product-types/
+├── product-type-api.ts
+├── product-type-list/
+│   ├── product-type-list.ts
+│   ├── product-type-list.html
+│   └── product-type-list.css
+└── product-type-form/
+    ├── product-type-form.ts
+    ├── product-type-form.html
+    └── product-type-form.css
+```
+
+La tabla presenta nombre, descripción, estado y acciones de editar, desactivar y eliminar. Desactivar y eliminar son acciones separadas, cada una con su confirmación. El formulario es reutilizable y emite un payload; `ProductTypeApi` concentra URLs, query, verbos y tipos de respuesta. Después de crear, editar o desactivar se recarga la página activa desde el backend. Si el tipo editado deja de estar activo, puede desaparecer de la lista por el filtro del endpoint; presentar una notificación en vez de tratarlo como fallo.
+
+### 6.6 Pruebas y criterios de aceptación
+
+- [ ] `ProductTypeApi` prueba query de paginación, respuesta `{ items, total, limit, offset }`, objeto directo para detalle/escritura y envolturas reales de desactivar/eliminar.
+- [ ] Alta valida nombre y descripción, y crea `status: active` de forma explícita para que el registro aparezca en la lista normal.
+- [ ] Edición valida `status` (`active`/`inactive`); la baja lógica invoca `PATCH /:id/deactivate`, no `DELETE`.
+- [ ] La eliminación física invoca `DELETE`, pide confirmación y muestra errores por productos asociados sin simular éxito.
+- [ ] Se conserva la paginación y se muestra claramente que el endpoint de colección lista solo tipos activos.
+- [ ] Productos consumen tipos existentes por `productTypeId`; no se inventan filtros ni endpoints.
+- [ ] No se implementan autenticación ni RBAC. Las pruebas unitarias no requieren backend activo; build y pruebas focalizadas pasan.
+
+## ISS-07 · CRUD de productos y relación con inventario (MovilCare)
+
+**Fase: I · Depende de ISS-02, ISS-03 e ISS-06 · Habilita: unidades serializadas y ventas.**
+
+Implementar el mantenimiento de **Producto (`Product`)**, elemento central del catálogo de equipos y accesorios de MovilCare Express.
+
+### 7.1 Alcance
+
+Implementar el mantenimiento del catálogo de productos con lista paginada, consulta individual, creación, edición, desactivación lógica y eliminación física explícita. Usar la tabla, formulario reactivo, Signals, confirmaciones, mensajes y servicios tipados establecidos en ISS-03/ISS-04.
+
+- La lista `GET /products` devuelve únicamente productos activos y pagina en el servidor.
+- Crear y editar productos requieren un tipo de producto activo. La relación se representa mediante `productTypeId`; los endpoints de listado y detalle incluyen la asociación como `productType` (las escrituras responden el registro directamente).
+- En productos serializados, la existencia se administra en **Unidades serializadas**, no en `stockQuantity`.
+- La pantalla de productos no registra ventas, detalles, garantías ni unidades seriales; estas operaciones pertenecen a los flujos correspondientes.
+- No incluir autenticación/RBAC. Las rutas están protegidas; hasta implementar el issue posterior de sesión, probarlas con `HttpTestingController`, sin debilitar la seguridad del backend.
+
+### 7.2 Contrato de la API
+
+Recurso: `/products`, bajo `environment.apiUrl`.
+
+| Operación | Ruta | Respuesta / uso |
+|---|---|---|
+| Listar | `GET /products?limit=20&offset=0` | `{ items, total, limit, offset }`; solo productos activos, ordenados por ID ascendente. `limit`: 1–100. Incluye la asociación `productType`. |
+| Consultar | `GET /products/:id` | Objeto `Product` directamente, con `productType`; puede consultarse por ID aunque esté inactivo. |
+| Crear | `POST /products` | Objeto creado directamente; `sku`, `name`, `type`, `productTypeId` y `price` son obligatorios. El tipo debe estar activo. |
+| Reemplazar | `PUT /products/:id` | Objeto actualizado; requiere el conjunto de campos obligatorios de creación y un tipo activo. |
+| Editar | `PATCH /products/:id` | Objeto actualizado; permite cambios parciales; si se envía `productTypeId`, debe apuntar a un tipo activo. |
+| Desactivar | `PATCH /products/:id/deactivate` | `{ message, product }`; establece `isActive: false`. |
+| Baja lógica alternativa | `DELETE /products/:id` | El controlador compartido también cambia `isActive` a `false` y responde el producto. No presentar esto como eliminación física. |
+| Eliminar físicamente | `DELETE /products/:id/permanent` | `{ message, id }`; devuelve 409 si hay referencias a otras filas. |
+
+Detalle, alta y edición no están envueltos en `{ product }`; la ruta de desactivación sí devuelve `{ message, product }`. No confundir las dos rutas `DELETE` ni inferir la semántica por el verbo solamente. Para una interfaz clara, ofrecer una sola acción de baja lógica (`PATCH /:id/deactivate`) y reservar la eliminación física (`DELETE /:id/permanent`) para una acción separada, claramente destructiva y confirmada.
+
+### 7.3 Modelo y formulario
+
+Los nombres del contrato HTTP son `camelCase`. Las columnas MySQL pueden ser `snake_case` por `underscored: true`, pero los payloads del frontend deben usar el contrato TypeScript del API.
+
+| Campo | Tipo y validación de interfaz |
+|---|---|
+| `sku` | Obligatorio, máximo 40 caracteres, único. |
+| `name` | Obligatorio, máximo 150 caracteres. |
+| `description` | Opcional, texto libre. |
+| `type` | Obligatorio; clasificación heredada `EQUIPMENT` o `ACCESSORY`. No reemplaza `productTypeId`. |
+| `productTypeId` | Obligatorio; ID de un `ProductType` activo. |
+| `stockQuantity` | Entero no negativo; valor inicial 0. Si `requiresSerial` es `true`, debe ser 0. |
+| `brand` / `model` | Opcionales, máximo 80 caracteres cada uno. |
+| `requiresSerial` | Booleano; controla si el inventario se lleva por unidad serializada. |
+| `cost` | Opcional o `null`, monto no negativo. |
+| `price` | Obligatorio, monto no negativo. |
+| `taxPercentage` | Porcentaje numérico no negativo; valor inicial 0. |
+| `defaultWarrantyMonths` | Entero no negativo; valor inicial 0. |
+| `isActive` | Booleano; el modelo lo inicia en `true`; la baja lógica lo pone en `false`. |
+
+Los campos de dinero (`cost`, `price`, `taxPercentage`) pueden llegar como `number | string` por ser `DECIMAL`; al cargar el formulario, normalizarlos con `toNumberOrNull`. Los controles de monto deben permitir valores decimales no negativos. No presentar `isActive` como un campo editable en el formulario de edición: se modifica por la acción de desactivar. El formulario de creación puede omitirlo para conservar el default `true`.
+
+Validar la regla serial de manera reactiva: al activar `requiresSerial`, fijar `stockQuantity` en 0 y deshabilitar su control (o explicar que el stock se captura creando unidades serializadas); antes de enviar, mantener 0. Al desactivarlo, habilitar nuevamente `stockQuantity`. El servidor valida esta misma invariante y rechaza el producto serializado con `stockQuantity !== 0`.
+
+### 7.4 Relación con tipos, unidades y ventas
+
+- **Tipo de producto:** el formulario carga `/product-types` y solo ofrece opciones activas. La colección está paginada con límite máximo de 100; no asumir que la primera página contiene todos los tipos. Enviar el ID numérico como `productTypeId`. Si el tipo deja de estar activo entre carga y guardado, mostrar el error del backend y conservar los datos ingresados.
+- **Unidades serializadas:** cuando `requiresSerial` es `true`, cada unidad se registra en `/serialized-units` asociada por `productId`; la cantidad agregada permanece en cero. No crear seriales ni alterar el estado de unidades desde el formulario del producto.
+- **Productos no serializados:** su existencia se maneja mediante `stockQuantity`; no tratar ese número como conteo de unidades seriales.
+- **Ventas y detalles:** seleccionan productos existentes; el backend aplica precio/impuestos y controla stock/seriales al registrar la venta. No calcular totales de venta ni rebajar stock desde la pantalla de catálogo.
+- **Baja y referencias:** las ventas/detalles y unidades serializadas pueden mantener referencias al producto. La baja lógica preserva esas referencias; la eliminación física puede fallar con 409. No ofrecer la eliminación física como acción principal ni ocultar la respuesta de conflicto.
+- La lista administrativa normal solo trae productos activos. Una pantalla aparte o consulta directa por ID puede ser necesaria para revisar registros inactivos; no afirmar que la lista contiene ambos estados.
+
+### 7.5 Estructura sugerida y comportamiento
+
+```text
+src/app/features/products/
+├── product-api.ts
+├── product-list/
+│   ├── product-list.ts
+│   ├── product-list.html
+│   └── product-list.css
+└── product-form/
+    ├── product-form.ts
+    ├── product-form.html
+    └── product-form.css
+```
+
+`ProductApi` centraliza el query paginado, las rutas de detalle/escritura y las tres operaciones distintas de baja. La tabla muestra SKU, nombre, categoría, tipo heredado, precio, cantidad/indicador de serialización y estado; los valores monetarios se formatean como COP sin convertir o alterar el valor de origen. El producto relacionado se lee de `productType` si el controlador lo incluyó y el ID se conserva en `productTypeId`.
+
+El formulario compartido para crear/editar recibe el producto actual, los tipos activos, `resetKey` y `saving`; emite el payload y no invoca la API. Al guardar, usar `POST` o `PATCH` según corresponda, cerrar y recargar la página actual desde el backend. La baja lógica y la eliminación física piden confirmaciones diferenciadas. La tabla debe separar carga, página vacía, filtro sin coincidencias y errores HTTP.
+
+Registrar la pantalla bajo la navegación de **Inventario → Productos**, con ruta Angular coherente (por ejemplo, `/productos`) y título localizados para MovilCare. No conservar rutas, etiquetas, iconos o textos de tarifas/envíos.
+
+### 7.6 Pruebas y criterios de aceptación
+
+- [ ] `ProductApi` prueba URL, query `limit`/`offset`, verbos, bodies y los contratos reales: lista paginada con `productType`, objetos directos y envolturas de acciones especiales.
+- [ ] El listado respeta `items`, `total`, `limit` y `offset`, y explica que el endpoint solo incluye productos activos.
+- [ ] El formulario valida requeridos, unicidad reportada por el backend, enums, longitudes y montos no negativos; `productTypeId` solo acepta tipos activos.
+- [ ] Al activar `requiresSerial`, el payload conserva `stockQuantity: 0`; al desactivarlo se puede administrar stock no serializado.
+- [ ] Crear/editar envía `camelCase`; edición usa `PATCH`; no se envían campos de servidor ni un estado arbitrario.
+- [ ] La baja lógica invoca `PATCH /:id/deactivate`; la eliminación permanente usa `DELETE /:id/permanent`, confirmación aparte y presenta 409 por referencias.
+- [ ] La pantalla de producto no muta existencias serializadas ni calcula/actualiza inventario de ventas.
+- [ ] No se implementan funcionalidades de autenticación/RBAC.
+- [ ] Las pruebas unitarias usan `HttpTestingController`, no requieren API activa y cubren errores. `ng build` y las pruebas focalizadas pasan.
+
+## ISS-08 · Gestión de unidades serializadas (MovilCare)
+
+**Fase: I · Depende de ISS-02, ISS-03 e ISS-07 · Habilita: registro de ventas, garantías y órdenes de servicio.**
+
+El issue de referencia implementaba rutas logísticas asignadas a mensajeros. MovilCare no tiene `Route` ni `Messenger` en este flujo: se adapta a **Unidad serializada (`SerializedUnit`)**, que representa una unidad física de un producto y se relaciona con `Product` mediante `productId`.
+
+### 8.1 Alcance
+
+Implementar la pantalla de inventario serializado con listado paginado y filtrable, consulta por ID, alta, edición de datos seriales, cambio de estado por las acciones específicas del backend y baja lógica.
+
+- No crear rutas, zonas, horarios ni asignaciones de mensajeros.
+- Para dar de alta una unidad, seleccionar un producto serializado (`requiresSerial: true`) y registrar sus seriales. El formulario puede ofrecer solo productos activos que requieran serial; el controlador de unidades valida la clave foránea, pero no comprueba por sí mismo `requiresSerial`.
+- Una unidad puede relacionarse con un detalle de venta, una garantía y una orden de servicio. No inventar listados anidados ni modificar esas entidades desde esta pantalla.
+- No tratar `isActive` como estado de inventario: `isActive` indica si el registro está activo; `state` describe el ciclo de vida físico/comercial de la unidad.
+- No incluir autenticación, login, guards, interceptores ni RBAC. Las rutas están protegidas; hasta implementar el issue posterior de sesión, probarlas con `HttpTestingController`, sin debilitar la seguridad del backend.
+
+### 8.2 Contrato de la API
+
+Recurso: `/serialized-units`, bajo `environment.apiUrl`. Las respuestas de detalle, alta, edición y acciones son el objeto `SerializedUnit` directamente; la lista sí usa la envoltura paginada común.
+
+| Operación | Ruta | Respuesta / uso |
+|---|---|---|
+| Listar | `GET /serialized-units?limit=20&offset=0` | `{ items, total, limit, offset }`, orden descendente por ID. Acepta filtros opcionales `productId` y `state`. `limit`: 1–100; `offset`: entero no negativo. Incluye activos e inactivos. |
+| Consultar | `GET /serialized-units/:id` | Objeto directamente; no filtra por `isActive`. |
+| Crear | `POST /serialized-units` | Objeto creado directamente. Requiere `productId`, `serial` y `state`; `secondarySerial`, `receivedAt` e `isActive` son opcionales. |
+| Reemplazar | `PUT /serialized-units/:id` | Objeto actualizado; requiere `productId`, `serial` y `state`. Los campos opcionales omitidos se restablecen: `secondarySerial` y `receivedAt` a `null`, `isActive` a `true`. |
+| Editar | `PATCH /serialized-units/:id` | Objeto actualizado; admite cambios parciales en los campos editables, pero no acepta `state` ni un body vacío. |
+| Vender | `PATCH /serialized-units/:id/sell` | Objeto actualizado; solo transiciona `IN_STOCK` a `SOLD`. No requiere body. |
+| Entrar/salir de servicio | `PATCH /serialized-units/:id/in-service` | Objeto actualizado; alterna entre `IN_STOCK` e `IN_SERVICE`. No requiere body. |
+| Dar de baja | `DELETE /serialized-units/:id` | Baja lógica: cambia `isActive` a `false` y devuelve el objeto. No borra físicamente la unidad. |
+
+El `PATCH` general no puede cambiar `state`: para ello se deben usar las acciones de venta o servicio. Si el estado actual no permite la transición solicitada, la API responde `409` con `currentState`; no ocultar el conflicto ni intentar forzar otro estado desde la interfaz. `RETIRED` es un valor válido y debe poder mostrarse, pero el backend no ofrece una acción dedicada para entrar o salir de ese estado. No inventar una.
+
+La API devuelve `400` para query/body inválidos, `404` para IDs inexistentes y `409` para seriales duplicados o transiciones no permitidas. Las listas no incluyen la asociación `product`; para mostrar el nombre del producto, resolverlo desde el catálogo y conservar un fallback visible como `Producto #<productId>` si no está disponible.
+
+### 8.3 Modelo y formulario
+
+Los nombres HTTP son `camelCase`; `underscored: true` solo afecta los nombres de columnas de base de datos.
+
+| Campo | Tipo y validación de interfaz |
+|---|---|
+| `productId` | Entero positivo obligatorio; seleccionar un producto activo que requiera serialización. |
+| `serial` | Texto obligatorio, máximo 80 caracteres y único. Recortar espacios antes de enviar. |
+| `secondarySerial` | Texto opcional o `null`, máximo 80 caracteres y único cuando se informa. |
+| `state` | Enum `IN_STOCK`, `SOLD`, `IN_SERVICE`, `RETIRED`. El endpoint de creación lo exige aunque el modelo declare default `IN_STOCK`; iniciar el formulario en `IN_STOCK`. No ofrecerlo como campo editable después del alta. |
+| `receivedAt` | Fecha opcional o `null`. |
+| `isActive` | Booleano, default `true`. No editarlo en el formulario; la baja lógica se realiza mediante `DELETE`. |
+
+La API valida la unicidad de `serial` y `secondarySerial`; un duplicado puede responder `409`. No mostrar el error como éxito ni borrar los valores ingresados cuando falle el guardado. Para editar campos seriales usar `PATCH`: `PUT` es un reemplazo y puede limpiar campos opcionales o reactivar la unidad si se omiten.
+
+### 8.4 Pantalla y comportamiento
+
+```text
+src/app/features/serialized-units/
+├── serialized-unit-api.ts
+├── serialized-unit-list/
+│   ├── serialized-unit-list.ts
+│   ├── serialized-unit-list.html
+│   └── serialized-unit-list.css
+└── serialized-unit-form/
+    ├── serialized-unit-form.ts
+    ├── serialized-unit-form.html
+    └── serialized-unit-form.css
+```
+
+`SerializedUnitApi` centraliza paginación, filtros, consulta, escritura y acciones especializadas. La tabla muestra producto, serial principal/secundario, fecha de recepción, `state` y `isActive`; debe distinguir ambos estados con etiquetas separadas. Los filtros remotos disponibles son producto y estado; cualquier búsqueda por texto es local a la página cargada.
+
+El formulario compartido emite un payload y no llama al API. El componente de lista decide entre `POST` y `PATCH`, controla `loading`/`saving`/`error`, notifica y recarga desde el backend. Confirmar venta, entrada/salida de servicio y baja lógica antes de ejecutar sus acciones. Mostrar los errores HTTP, especialmente `409` por serial duplicado o transición inválida. Registrar la pantalla en **Inventario → Unidades serializadas**, con una ruta como `/unidades-serializadas`; no conservar textos o iconos de rutas y mensajeros.
+
+### 8.5 Pruebas y criterios de aceptación
+
+- [ ] `SerializedUnitApi` prueba URL, query, filtros, verbos, cuerpos y respuestas reales, incluyendo la envoltura de la lista y los objetos directos.
+- [ ] La tabla respeta `items`, `total`, `limit` y `offset`, soporta filtros por `productId`/`state` y muestra tanto unidades activas como inactivas.
+- [ ] El formulario valida producto, seriales, longitudes y enum; envía nombres `camelCase` y establece `state: IN_STOCK` al crear.
+- [ ] La edición parcial usa `PATCH`; nunca envía `state` por esa ruta ni usa `PUT` para cambios parciales.
+- [ ] La acción de venta solo se ofrece para `IN_STOCK`; la acción de servicio alterna entre `IN_STOCK` e `IN_SERVICE`. Se manejan estados incompatibles con respuesta 409 y no se inventa una operación para `RETIRED`.
+- [ ] La baja lógica confirma la acción, llama a `DELETE /:id` y conserva el registro como inactivo en la lista.
+- [ ] Se distinguen carga, error, lista vacía y página sin coincidencias; los errores no se presentan como guardados exitosos.
+- [ ] Las pruebas usan `HttpTestingController`, no requieren API activa y cubren casos exitosos y errores. `ng build` y las pruebas focalizadas pasan.
+
+## ISS-09 · Gestión de ventas y registro de productos vendidos (MovilCare)
+
+**Fase: I · Depende de ISS-02, ISS-03, ISS-04, ISS-05, ISS-07 e ISS-08 · Habilita: pagos y garantías.**
+
+El issue de referencia implementaba facturas emitidas a empresas por periodo. MovilCare no tiene entidades `Invoice` ni `Company`: el documento transaccional equivalente es **Venta (`Sale`)**, asociada a un cliente y a un empleado vendedor opcional. No crear facturas, empresas, periodos ni estados heredados. La venta incluye sus conceptos como `SaleDetail` y el backend calcula importes y administra el inventario.
+
+### 9.1 Alcance
+
+Implementar el listado, consulta, creación, edición limitada, confirmación, cancelación y eliminación permitidos para ventas.
+
+- La creación de una venta envía sus productos en `items`; el backend crea la venta y sus detalles en una sola transacción y responde ambos.
+- Mostrar los `saleDetails` que devuelve el backend. La gestión independiente de detalles de venta sigue el contrato de esa entidad en ISS-03; no duplicar ni inventar endpoints anidados.
+- Se puede editar la cabecera solamente mientras la venta está en `DRAFT`. Los productos/precios/totales/estado no se editan en el formulario de cabecera.
+- Confirmar una venta afecta inventario: descuenta existencias de productos no serializados y marca unidades serializadas como `SOLD`. Cancelar una venta confirmada revierte esos cambios. Ambas acciones requieren confirmación explícita.
+- No crear ni administrar pagos desde esta pantalla. `Payment` es una entidad y flujo aparte.
+- No incluir autenticación ni RBAC; probar las solicitudes protegidas con `HttpTestingController` hasta implementar el issue posterior de sesión, sin debilitar la protección del backend.
+
+### 9.2 Contrato de la API
+
+Recurso: `/sales`, bajo `environment.apiUrl`. La lista y el detalle incluyen la asociación `saleDetails` (solo detalles activos), pero no incluyen asociaciones `customer` o `seller`; resolver esos nombres desde sus catálogos y mostrar un fallback con el ID si no se cargan.
+
+| Operación | Ruta | Respuesta / uso |
+|---|---|---|
+| Listar | `GET /sales?limit=20&offset=0` | `{ items, total, limit, offset }`, orden descendente por ID; cada venta incluye `saleDetails` activos. `limit`: 1–100; `offset`: entero no negativo. |
+| Consultar | `GET /sales/:id` | Objeto de venta directamente, con `saleDetails` activos. |
+| Crear | `POST /sales` | Requiere `customerId` y un arreglo `items` no vacío; responde `{ sale, saleDetails }`. `number`, `sellerId` y `soldAt` son opcionales. La nueva venta queda en `DRAFT`. |
+| Reemplazar cabecera | `PUT /sales/:id` | Objeto `Sale` directamente. Solo se permite editar una venta `DRAFT`; requiere `customerId` y `soldAt`. No reemplaza ni modifica sus detalles. |
+| Editar cabecera | `PATCH /sales/:id` | Objeto `Sale` directamente. Solo admite `customerId`, `sellerId` y `soldAt`, y solo en estado `DRAFT`. |
+| Confirmar | `POST /sales/:id/confirm` | `{ message, sale }`; también existe `PATCH /sales/:id/confirm`. Solo acepta ventas `DRAFT` con al menos un detalle y referencias/inventario válidos. |
+| Cancelar | `PATCH /sales/:id/cancel` | `{ message, id }`; acepta ventas `DRAFT` o `CONFIRMED`. Si estaba confirmada, restaura inventario. |
+| Eliminar | `DELETE /sales/:id` | `{ message, id }`; eliminación física. El backend rechaza con `409` ventas `CONFIRMED` o `PAID`; cancelar primero. |
+
+El alta acepta este formato por cada elemento de `items`: `{ productId, quantity, serializedUnitId?, discount?, notes? }`. `productId` y `quantity` son enteros positivos; `serializedUnitId` es opcional, `discount` debe ser no negativo y `notes` puede ser texto o `null`. No se envían `unitPrice`, impuestos, `subtotal`, `taxes`, `total`, `state` ni `SaleDetail` IDs: el backend obtiene el precio y los impuestos del producto, calcula los importes, crea los detalles y genera `number` si se omite.
+
+El controlador puede responder `400` ante payload inválido, referencias inactivas, descuento superior al subtotal, inventario insuficiente o una transición no permitida; `404` ante registros o referencias inexistentes; y `409` al intentar eliminar ventas `CONFIRMED`/`PAID` o si no se puede restaurar inventario al cancelar. Presentar los errores devueltos; no simular confirmación local.
+
+### 9.3 Modelo y formulario
+
+Los nombres del contrato HTTP son `camelCase`; `underscored: true` solo afecta los nombres de las columnas.
+
+| Campo | Tipo y uso en interfaz |
+|---|---|
+| `number` | Texto opcional al crear, máximo 20 caracteres. Si se omite, lo genera el backend. Único; no editable como cabecera una vez creada. |
+| `customerId` | ID entero positivo obligatorio; elegir un cliente activo. |
+| `sellerId` | ID entero positivo opcional o `null`; elegir un empleado activo si se asigna. |
+| `soldAt` | Fecha/hora válida; opcional al crear (el backend usa la fecha actual), requerida en `PUT` y editable en estado `DRAFT`. |
+| `items` | Al menos una línea al crear; cada una incluye producto, cantidad y, cuando aplique, unidad serializada, descuento y notas. |
+| `subtotal`, `discount`, `taxes`, `total` | DECIMAL calculados por el servidor; solo lectura en la vista. El total debe corresponder a subtotal menos descuento más impuestos. |
+| `state` | `DRAFT`, `CONFIRMED`, `PAID` o `CANCELLED`. Solo lectura; se cambia mediante acciones de dominio, nunca desde un select genérico. |
+| `saleDetails` | Detalles activos incluidos por los endpoints de listado/detalle; no forman parte del formulario de edición de cabecera. |
+
+Para productos serializados, enviar `quantity: 1` y `serializedUnitId` de una unidad activa en estado `IN_STOCK` que pertenezca al producto. Para productos no serializados, omitir `serializedUnitId` y no exceder el stock disponible. Una misma unidad serializada no puede repetirse en la venta. No inferir disponibilidad solo de `Product.stockQuantity` para artículos serializados.
+
+### 9.4 Pantalla y comportamiento
+
+```text
+src/app/features/sales/
+├── sale-api.ts
+├── sale-list/
+│   ├── sale-list.ts
+│   ├── sale-list.html
+│   └── sale-list.css
+└── sale-form/
+    ├── sale-form.ts
+    ├── sale-form.html
+    └── sale-form.css
+```
+
+`SaleApi` centraliza paginación, consulta, alta, edición de cabecera y acciones de confirmación/cancelación/eliminación. La tabla muestra número, cliente, vendedor, fecha, total y estado; los valores `DECIMAL` pueden recibirse como `number | string`, por lo que se normalizan al presentarlos sin alterar los importes.
+
+El formulario compartido emite la cabecera y las líneas iniciales; el padre controla las llamadas. Los selects cargan clientes activos, empleados activos, productos activos y, solo para productos serializados, unidades disponibles filtradas por `productId` y `state=IN_STOCK`. Si cambia el producto de una línea, limpiar una unidad serial que ya no corresponda. En creación, enviar un solo `POST /sales` con todas las líneas; no crear además las mismas líneas por `/sale-details`.
+
+Tras crear, editar o ejecutar una acción, recargar la venta desde el backend. La confirmación advierte que actualizará existencias/seriales; la cancelación advierte que revertirá inventario cuando corresponda; la eliminación informa que será permanente y solo se ofrece para estados que el servidor admite. Registrar la pantalla en **Ventas**, con una ruta coherente como `/ventas`; no conservar textos, campos ni estados de facturación por periodo.
+
+### 9.5 Pruebas y criterios de aceptación
+
+- [ ] `SaleApi` prueba URL, query, verbos, payload de venta con `items` y respuestas reales: lista paginada, objeto de detalle, `{ sale, saleDetails }` al crear y envolturas de confirmación/cancelación.
+- [ ] La tabla respeta `items`, `total`, `limit` y `offset`, muestra `saleDetails` y resuelve cliente/vendedor sin suponer asociaciones incluidas.
+- [ ] El formulario requiere cliente activo y al menos una línea; valida cantidades, descuentos, asignación de serial y existencia disponible según el tipo de producto.
+- [ ] El payload usa `camelCase` y no envía totales, impuestos, precios unitarios ni estado calculados o controlados por el backend.
+- [ ] Crear registra venta y detalles con una sola solicitud; la cabecera solo se edita en `DRAFT` y usa únicamente los campos permitidos.
+- [ ] Confirmar/cancelar llaman a las acciones específicas, solicitan confirmación y recargan los datos; se muestran errores de stock, referencias, conflictos y estados sin presentarlos como éxito.
+- [ ] La eliminación física solicita confirmación y no se ofrece para ventas `CONFIRMED`/`PAID`; se informa el conflicto `409`.
+- [ ] Se distinguen carga, error, lista vacía y guardado; las pruebas usan `HttpTestingController` y no requieren una API activa. `ng build` y las pruebas focalizadas pasan.
+
+## ISS-10 · Gestión de pagos de ventas y órdenes de servicio (MovilCare)
+
+**Fase: I · Depende de ISS-02, ISS-03 e ISS-09 · Complementa: registro financiero de ventas y servicios.**
+
+El issue de referencia implementaba envíos de paquetes y dependía de empresas, contactos, direcciones, mensajeros, rutas, tarifas y facturas. Esos recursos logísticos no pertenecen a MovilCare. Se adapta a **Pago (`Payment`)**, que registra un abono asociado a una venta o a una orden de servicio. No crear envíos, guías, tarifas ni relaciones logísticas para conservar el ejemplo.
+
+### 10.1 Alcance
+
+Implementar el listado paginado, consulta, creación, edición y eliminación que expone `/payments`.
+
+- `Payment.referenceType` determina si `referenceId` identifica una `Sale` o una `ServiceOrder`. Es una referencia polimórfica; no es una clave foránea ni una relación navegable única. El selector debe permitir elegir primero el tipo y luego cargar registros del recurso correspondiente.
+- El backend comprueba al crear que la venta u orden referenciada exista. No valida que esté activa, confirmada, pendiente de pago ni que el importe sea igual al saldo. No inventar reglas de conciliación o saldos en el frontend.
+- El backend no ofrece un endpoint de cambio de estado separado ni actualiza automáticamente el estado de la venta u orden al registrar un pago. Si se permite editar `status`, hacerlo mediante el `PATCH` genérico y limitar opciones a los valores del enum, sin presentar ese cambio como una operación especializada de cobro.
+- Eliminar un pago es una eliminación física. Solicitar confirmación y comunicar que la acción no se puede deshacer.
+- No crear asociaciones ni historiales de pagos dentro de las pantallas de ventas u órdenes; estas pueden enlazar a la gestión de pagos, pero la entidad mantiene su propio formulario y servicio.
+- No incluir autenticación ni RBAC. Las rutas están protegidas; probar solicitudes con `HttpTestingController` hasta implementar el issue posterior de sesión, sin debilitar la seguridad del backend.
+
+### 10.2 Contrato de la API
+
+Recurso: `/payments`, bajo `environment.apiUrl`. La API no devuelve una relación expandida a la venta u orden de servicio.
+
+| Operación | Ruta | Respuesta / uso |
+|---|---|---|
+| Listar | `GET /payments?limit=20&offset=0` | `{ items, total, limit, offset }`; `limit`: 1–100 y `offset`: entero no negativo. |
+| Consultar | `GET /payments/:id` | Objeto `Payment` directamente. |
+| Crear | `POST /payments` | Objeto creado directamente; requiere `referenceType`, `referenceId`, `method` y `amount`. `date` y `status` pueden omitirse para usar sus defaults. |
+| Reemplazar | `PUT /payments/:id` | Objeto actualizado directamente; requiere los cuatro campos obligatorios. Los campos opcionales omitidos se reemplazan por los defaults del modelo (o `null`); no usar como sustituto de una edición parcial. |
+| Editar | `PATCH /payments/:id` | Objeto actualizado directamente; admite uno o más campos editables (`referenceType`, `referenceId`, `method`, `amount`, `date`, `status`). |
+| Eliminar | `DELETE /payments/:id` | Eliminación física; el controlador compartido responde el registro eliminado directamente. |
+
+El alta verifica que `referenceType` sea `SALE` o `SERVICE_ORDER`, que `referenceId` sea un entero positivo y que la entidad correspondiente exista. El modelo no declara FK para el par polimórfico; la asociación no queda protegida por integridad referencial en base de datos. Una referencia inválida responde `400`; los IDs inválidos responden `400`, los pagos inexistentes `404`, y los errores de validación del modelo `400`. No asumir que toda edición vuelve a validar la existencia de una referencia: esa comprobación especializada ocurre en el controlador de creación.
+
+### 10.3 Modelo y formulario
+
+Los nombres HTTP usan `camelCase`; `underscored: true` solo afecta los nombres de las columnas.
+
+| Campo | Tipo y validación de interfaz |
+|---|---|
+| `referenceType` | Obligatorio al crear; enum `SALE` o `SERVICE_ORDER`. |
+| `referenceId` | ID entero positivo obligatorio; se selecciona después de elegir el tipo de referencia. |
+| `method` | Obligatorio; enum `CASH`, `CARD`, `TRANSFER` o `OTHER`. |
+| `amount` | Obligatorio; monto decimal mayor o igual a `0.01`. Puede llegar como `number | string` por ser `DECIMAL`. |
+| `date` | Fecha/hora válida; opcional al crear, default actual en el backend. |
+| `status` | Enum `PENDING`, `COMPLETED` o `CANCELLED`; default `COMPLETED` al crear. No asumir que el backend inferirá `PENDING` para todo nuevo registro. |
+
+Al cambiar `referenceType`, limpiar `referenceId` y las opciones de la lista anterior. Para `SALE`, cargar registros de `/sales`; para `SERVICE_ORDER`, cargar `/service-orders`. Como ambos listados pueden estar paginados, el selector debe permitir buscar/navegar registros y no asumir que la primera página contiene todos. Mostrar suficientes datos para distinguir registros (por ejemplo, número, ID y fecha/estado disponibles); el valor enviado sigue siendo el ID numérico. Si el recurso correspondiente falla al cargar, mostrar el error y no sustituirlo por una lista vacía que parezca válida.
+
+### 10.4 Pantalla y comportamiento
+
+```text
+src/app/features/payments/
+├── payment-api.ts
+├── payment-list/
+│   ├── payment-list.ts
+│   ├── payment-list.html
+│   └── payment-list.css
+└── payment-form/
+    ├── payment-form.ts
+    ├── payment-form.html
+    └── payment-form.css
+```
+
+`PaymentApi` centraliza paginación, consulta, alta, edición y eliminación. La tabla muestra tipo e ID de la referencia, método, importe, fecha y estado. No rotular `referenceId` como si siempre fuera un ID de venta; para distinguirlo, resolver el registro usando el recurso indicado por `referenceType` o mostrar de forma explícita el tipo junto al ID.
+
+El formulario compartido emite un payload y no llama directamente a la API; el componente de lista controla solicitudes, señales `loading`/`saving`/`error`, notificaciones y recarga. Usar `PATCH` para editar parcialmente y conservar valores no modificados. Antes de eliminar, pedir confirmación. Registrar la vista bajo **Ventas → Pagos** o una sección financiera equivalente, con una ruta como `/pagos`; no conservar textos, campos ni referencias de envíos.
+
+### 10.5 Pruebas y criterios de aceptación
+
+- [ ] `PaymentApi` prueba URL, query, verbos, cuerpos y respuestas reales: lista paginada y objetos directos para consulta/escritura.
+- [ ] La lista respeta `items`, `total`, `limit` y `offset`; presenta claramente tipo de referencia e ID, además de método, monto, fecha y estado.
+- [ ] El formulario valida los enums, el ID positivo y el monto mínimo de `0.01`; maneja correctamente `number | string` para DECIMAL.
+- [ ] Cambiar `referenceType` limpia la selección anterior y carga registros del recurso correcto; el payload envía `referenceType` y `referenceId`, no una asociación inventada.
+- [ ] La interfaz no promete conciliación, saldo pendiente, actualización del estado de venta/orden ni persistencia FK que el backend no implementa.
+- [ ] La edición parcial usa `PATCH`; la eliminación es física, se confirma y sus errores se muestran explícitamente.
+- [ ] Se distinguen carga, error, lista vacía y guardado; las pruebas usan `HttpTestingController`, no requieren API activa y cubren errores. `ng build` y las pruebas focalizadas pasan.
+
+## ISS-11 · Gestión de garantías de productos vendidos (MovilCare)
+
+**Fase: I · Depende de ISS-02, ISS-03, ISS-07, ISS-08 e ISS-09 · Habilita: registro de órdenes de servicio bajo garantía.**
+
+El issue de referencia implementaba paquetes ligados a envíos. MovilCare no tiene `Package` ni `Shipment`; se adapta a **Garantía (`Warranty`)**, asociada obligatoriamente a un detalle de venta y, cuando dicho detalle tenga unidad serializada, a esa misma unidad. No crear paquetes, dimensiones, contenido frágil ni relaciones con envíos.
+
+### 11.1 Alcance y reglas de negocio
+
+Implementar el listado paginado y filtrable, consulta, creación, edición y baja lógica de garantías.
+
+- Solo se puede crear una garantía para un `SaleDetail` cuya venta esté en estado `CONFIRMED` o `PAID`. El backend verifica esta condición durante el alta y responde `409` si no se cumple.
+- `serializedUnitId` no se elige libremente: el controlador lo toma del detalle de venta seleccionado. Si el cliente lo envía, debe coincidir con la unidad serializada del detalle; no asociar una unidad distinta.
+- `endDate` debe ser igual o posterior a `startDate`. El modelo rechaza el rango invertido con error de validación.
+- `isActive` representa la baja lógica del registro; `state` representa el estado de la cobertura. Mostrar ambos por separado y no ofrecer `isActive` como un campo ordinario de edición.
+- El listado permite filtros por `customerId`, `serial` (coincidencia exacta con serial principal o secundario) y `state`. Los filtros no incluyen `isActive`; por lo tanto, no afirmar que la lista oculta garantías inactivas.
+- Una garantía puede ser referenciada por órdenes de servicio. No borrar físicamente, crear órdenes ni registrar reclamos desde esta pantalla.
+- No incluir autenticación/RBAC. Las rutas están protegidas; probar solicitudes con `HttpTestingController` hasta el issue de sesión, sin debilitar la seguridad del backend.
+
+### 11.2 Contrato de la API
+
+Recurso: `/warranties`, bajo `environment.apiUrl`. La lista incluye asociaciones `saleDetail.sale.customer` y `serializedUnit`; detalle y escrituras responden el registro directamente según las rutas/controladores.
+
+| Operación | Ruta | Respuesta / uso |
+|---|---|---|
+| Listar | `GET /warranties?limit=20&offset=0` | `{ items, total, limit, offset }`, orden descendente por ID. |
+| Filtrar por cliente | `GET /warranties?customerId=:id` | Acepta ID positivo y filtra por el cliente de la venta asociada. |
+| Filtrar por serial | `GET /warranties?serial=:serial` | Busca coincidencia exacta en `serializedUnit.serial` o `secondarySerial`; máximo 80 caracteres. |
+| Filtrar por estado | `GET /warranties?state=VALID` | Enum `VALID`, `EXPIRED`, `CANCELLED` o `CONSUMED`. Los filtros se pueden combinar con paginación. |
+| Consultar | `GET /warranties/:id` | Objeto `Warranty` directamente. |
+| Crear | `POST /warranties` | Objeto creado directamente; requiere `saleDetailId`, `type`, `startDate` y `endDate`. |
+| Reemplazar | `PUT /warranties/:id` | Objeto actualizado directamente; requiere los campos obligatorios. Los demás campos editables omitidos se reemplazan por los defaults del modelo o `null`; no usar para cambios parciales. |
+| Editar | `PATCH /warranties/:id` | Objeto actualizado directamente; admite cambios parciales en los campos editables. |
+| Dar de baja | `DELETE /warranties/:id` | Baja lógica: cambia `isActive` a `false` y devuelve el registro; no lo elimina físicamente. |
+
+Query params permitidos: `limit` de 1 a 100, `offset` no negativo, `customerId` positivo, `serial` no vacío de hasta 80 caracteres y `state` válido. Una consulta inválida responde `400`. Crear con detalle inexistente responde `404`; venta no confirmada/no pagada responde `409`; claves foráneas inválidas y validaciones del modelo responden `400`. `DELETE` usa el controlador CRUD compartido y es baja lógica.
+
+### 11.3 Modelo y formulario
+
+Los nombres HTTP son `camelCase`; `underscored: true` solo afecta columnas de base de datos.
+
+| Campo | Tipo y validación de interfaz |
+|---|---|
+| `saleDetailId` | ID positivo obligatorio. Seleccionar un detalle activo de una venta en estado `CONFIRMED` o `PAID`. |
+| `serializedUnitId` | Opcional o `null` en el contrato de escritura, pero para creación el servidor lo deriva del detalle. Si se envía, debe ser exactamente la unidad vinculada a ese detalle. |
+| `type` | Obligatorio; enum `COMMERCIAL`, `EXTENDED` o `SUPPLIER`. |
+| `coverageDescription` | Texto opcional o `null`; no asumir un límite de caracteres que el modelo no define. |
+| `startDate` | Fecha/hora válida y obligatoria. |
+| `endDate` | Fecha/hora válida y obligatoria; debe ser igual o posterior a `startDate`. |
+| `state` | Enum `VALID`, `EXPIRED`, `CANCELLED` o `CONSUMED`; default `VALID` al crear. |
+| `isActive` | Booleano; default `true`. Se cambia a `false` mediante la baja lógica, no desde el formulario de edición. |
+
+Para poblar el selector de detalle, usar las ventas y sus `saleDetails` activos y presentar solo las que pertenezcan a ventas `CONFIRMED` o `PAID`; no inventar un filtro en `/sale-details` que el backend no ofrece. Al cambiar de detalle, actualizar/limpiar la unidad derivada. El payload de alta debe incluir solo campos permitidos y mantener `serializedUnitId` igual al que informa el detalle, o dejar que el servidor lo derive. Al editar, usar `PATCH` y conservar lo no modificado.
+
+### 11.4 Pantalla y comportamiento
+
+```text
+src/app/features/warranties/
+├── warranty-api.ts
+├── warranty-list/
+│   ├── warranty-list.ts
+│   ├── warranty-list.html
+│   └── warranty-list.css
+└── warranty-form/
+    ├── warranty-form.ts
+    ├── warranty-form.html
+    └── warranty-form.css
+```
+
+`WarrantyApi` centraliza consulta, paginación, filtros, alta, edición y baja lógica. La tabla muestra tipo, detalle/venta de origen, cliente, unidad serializada cuando exista, vigencia, estado de cobertura y estado activo/inactivo. El `GET /warranties` ya incluye esas asociaciones; para consultas por ID, que no las incluyen, mostrar un fallback explícito con el ID o cargar la información por separado.
+
+La pantalla controla `loading`/`saving`/`error`, notificaciones, confirmación de baja y recarga desde el backend. La baja no borra físicamente la garantía ni elimina referencias. Presentar claramente los conflictos al intentar crear desde una venta no confirmada y los errores de rango de fechas. Registrar la vista en **Ventas → Garantías** (o **Servicio técnico → Garantías**) con una ruta como `/garantias`; no conservar textos o iconos de paquetes/envíos.
+
+### 11.5 Pruebas y criterios de aceptación
+
+- [ ] `WarrantyApi` prueba URL, query params combinados, verbos y respuestas reales: envoltura paginada en lista y objetos directos en detalle/escritura.
+- [ ] Los filtros de cliente, serial y estado usan los nombres y semánticas reales; la tabla respeta `items`, `total`, `limit` y `offset`.
+- [ ] El formulario solo permite seleccionar detalles activos de ventas `CONFIRMED`/`PAID`, valida enums y fechas, y no permite `endDate` anterior a `startDate`.
+- [ ] La unidad serializada se deriva del `SaleDetail` y no se puede asociar una unidad distinta; los errores del backend se muestran.
+- [ ] Crear envía `camelCase`, no incluye campos de paquetes/envíos y presenta `409` para venta no confirmada/pagada.
+- [ ] La edición parcial utiliza `PATCH`; `isActive` no se modifica como campo editable.
+- [ ] La baja lógica confirma la acción, llama a `DELETE /:id` y conserva la fila como inactiva; no se comunica como eliminación física.
+- [ ] Se distinguen carga, error, lista vacía y guardado; las pruebas usan `HttpTestingController` y no requieren una API activa. `ng build` y las pruebas focalizadas pasan.
