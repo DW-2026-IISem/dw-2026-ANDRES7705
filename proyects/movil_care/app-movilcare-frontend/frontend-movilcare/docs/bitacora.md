@@ -2396,12 +2396,14 @@ export interface User extends Timestamps {
   email: string;
   avatar: string | null;
   status: Status;
+  roles: Pick<Role, 'id' | 'name' | 'description'>[];
 }
 
 export interface CreateUserPayload {
   username: string;
   email: string;
   password: string;
+  roleIds: number[];
   avatar?: string | null;
   status?: Status;
 }
@@ -2409,12 +2411,10 @@ export interface CreateUserPayload {
 export interface UpdateUserPayload {
   username?: string;
   email?: string;
+  password?: string;
   avatar?: string | null;
-}
-
-export interface ChangePasswordPayload {
-  current_password: string;
-  new_password: string;
+  status?: Status;
+  roleIds?: number[];
 }
 
 export interface Role extends Timestamps {
@@ -2434,7 +2434,7 @@ export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 export const HTTP_METHODS: HttpMethod[] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 
-/** Catálogo interno RBAC; no hay una ruta HTTP de recursos montada actualmente. */
+/** Modelo del catálogo RBAC en backend; no existe endpoint HTTP de recursos. */
 export interface Resource extends Timestamps {
   id: number;
   path: string;
@@ -2465,7 +2465,7 @@ export interface RoleUser extends Timestamps {
 }
 export type RoleUserPayload = Pick<RoleUser, 'user_id' | 'role_id'>;
 
-/** Pivote interno `resource_roles`; la API solo expone POST /api/concesiones-rol. */
+/** Modelo pivote RBAC; frontend no puede listar concesiones, solo POST /api/concesiones-rol. */
 export interface ResourceRole extends Timestamps {
   id: number;
   resource_id: number;
@@ -4342,3 +4342,108 @@ Si la pantalla ya dispone del método y ruta de la operación rechazada, puede p
 - [ ] No se incluyen pantallas administrativas de permisos, rutas de catálogo de recursos inexistentes ni acciones de escritura ocultas por una matriz ficticia.
 - [ ] Los tests cubren guards con `RouterTestingHarness` o `TestBed`, `UrlTree` y destinos; `HttpTestingController` verifica `401`/`403` y que `403` no dispare refresh ni borre sesión.
 - [ ] `git diff --check`, build Angular y pruebas focalizadas pasan cuando se implemente el issue.
+
+## ISS-16 · Administración disponible de usuarios y roles (MovilCare)
+
+**Fase: II · Depende de ISS-14 e ISS-15 y de una configuración RBAC del backend que conceda acceso a las rutas administrativas.**
+
+El ISS-16 de referencia propone cinco CRUDs de autenticación/RBAC (usuarios, roles, recursos, asignaciones usuario–rol y concesiones rol–recurso), pero sus rutas, envelopes y operaciones no corresponden a MovilCare. En el backend actual solo están montadas las rutas de usuarios, roles y una operación para conceder recursos a roles; no hay API de lectura del catálogo de recursos, de asignaciones o de concesiones. Adaptar el issue como **administración parcial y segura**: implementar únicamente las operaciones que el servidor ofrece, no presentar como CRUD los módulos incompletos y no modificar `refresh_tokens`.
+
+### 16.1 Alcance y dependencias
+
+- Implementar consulta/creación/edición/baja lógica de usuarios según el contrato de `/users`.
+- Implementar consulta y alta de roles según `/roles`; el backend no tiene edición, baja ni eliminación de roles.
+- Permitir asignar o reemplazar roles de un usuario mediante `roleIds` en alta/actualización de usuario. No crear un CRUD independiente de `RoleUser`.
+- Documentar el endpoint `POST /concesiones-rol`, pero no ofrecer todavía una pantalla completa de concesiones: no hay endpoints para cargar recursos o consultar concesiones existentes, ni para revocarlas.
+- No crear pantalla CRUD para `Resource` ni para tokens de renovación.
+- Las rutas están detrás de `authenticate` y `authorizeResource`. Antes de habilitar pantallas administrativas, el entorno debe tener concesiones RBAC que permitan los métodos requeridos. El script de inicialización no registra recursos `/roles` ni `/concesiones-rol`; no asumir que un usuario `ADMIN` tiene acceso por su nombre.
+- La UI, sus guards y el menú no calculan permisos por usuario (ISS-15). Manejar la respuesta real `401`/`403`; no ocultar seguridad desactivando middlewares ni inventando una lista de permisos.
+
+### 16.2 Rutas y respuestas reales
+
+Las rutas siguientes se montan bajo `/api`; no usan prefijos heredados `/usuarios`, `/recursos`, `/asignaciones-rol` ni envelopes `{ users }`, `{ roles }` o `{ grants }`.
+
+| Dominio | Método y ruta | Respuesta / límite |
+|---|---|---|
+| Usuarios | `GET /users?limit=20&offset=0` | `{ items, total, limit, offset }`; `limit` entre 1 y 100. Las filas excluyen contraseña e incluyen roles activos asociados. |
+| Usuario | `GET /users/:id` | Objeto de usuario directamente, con roles activos; no es `/users/me` ni un endpoint de perfil público. |
+| Usuarios | `POST /users` | `201`, objeto directamente. Requiere `username`, `email`, `password`, `roleIds`; acepta opcionalmente `avatar`, `status`. |
+| Usuario | `PATCH /users/:id` | Objeto directamente. Actualiza campos admitidos, opcionalmente `roleIds` (reemplaza el conjunto de asignaciones). |
+| Usuario | `DELETE /users/:id` | Desactiva al usuario (`status: inactive`), no lo elimina físicamente. |
+| Roles | `GET /roles` | Arreglo de roles directamente; sin envelope ni paginación. |
+| Rol | `GET /roles/:id` | Objeto `Role` directamente. |
+| Roles | `POST /roles` | `201`, objeto `Role` directamente. Acepta `name` y opcionalmente `description` y `status`. |
+| Concesión rol–recurso | `POST /concesiones-rol` | Body `role_id`, `resource_id`; crea la concesión (`201`) o reactiva una existente inactiva (`200`). Una concesión ya activa devuelve `409`. |
+
+No están implementadas rutas `PUT /roles/:id`, `PATCH /roles/:id`, `DELETE /roles/:id`, `/resources`, `/role-users` ni `GET /concesiones-rol`. El router de concesiones no ofrece revocar/desactivar ni listar. No diseñar servicios frontend ni botones que asuman esas operaciones.
+
+### 16.3 Usuarios
+
+Ubicar la lista/formulario en una sección de administración standalone, siguiendo el estilo vigente del proyecto: PrimeNG Aura para controles, Tailwind para layout y componentes compartidos cuando ya existan. Al integrarla, conservar la ruta de inicio actual y registrar la nueva ruta solo junto con el flujo de navegación real; no reutilizar `/dashboard` de la referencia.
+
+**Contrato y validación**
+
+- `username`: texto de 3–80 caracteres; backend lo normaliza a minúsculas.
+- `email`: correo válido, máximo 150; backend lo normaliza a minúsculas.
+- `password`: obligatorio en alta, mínimo 8 caracteres; el modelo lo almacena hasheado y la respuesta nunca lo devuelve. En `PATCH` es opcional y el modelo también lo hashea.
+- `avatar`: opcional, texto de máximo 500 o `null`.
+- `status`: `active | inactive`, opcional tanto en alta como en actualización; alta default `active`. La ruta de baja lógica es `DELETE /users/:id`.
+- `roleIds`: obligatorio en creación; arreglo no vacío de IDs enteros positivos, únicos y correspondientes a roles activos. En actualización es opcional y reemplaza el conjunto completo de roles. El backend actual no permite guardar un usuario sin al menos un rol mediante estos flujos.
+- Alta responde `400` ante body/campos/roles inválidos y `409` si username/email están duplicados. Edición puede responder `404`, `400` o `409`; baja responde `404` para usuario inexistente. Listado/detail eliminan `password` de la serialización.
+
+En la edición, permitir contraseña y estado porque el controlador MovilCare sí incluye `password` y `status` entre los campos aceptados por `PATCH /users/:id`; no copiar la restricción del issue de referencia. El formulario debe dejar claro que cambiar password desde administración es una operación privilegiada y no solicitar ni registrar la contraseña actual (el backend actual no implementa un endpoint de autoservicio que la verifique). Nunca mostrar contraseñas ya guardadas.
+
+La tabla de usuarios es paginada; respetar `items`, `total`, `limit` y `offset`, sin cargar toda la colección ni elevar `limit` sobre 100. Mostrar roles desde la propiedad `roles` de la respuesta en vez de pedir un endpoint de asignaciones. Si se edita `roleIds`, precargarlo desde esos roles y enviar el arreglo completo seleccionado; cambios en asignaciones son transaccionales con la actualización del usuario.
+
+**Protección ante bloqueo accidental**
+
+Desactivar la propia cuenta o reemplazar sus roles puede cortar la sesión o quitar el acceso administrativo. Advertir y solicitar confirmación antes de estas acciones, especialmente al editar el usuario activo. Esto es una protección de UX, no una garantía de autorización ni una prohibición impuesta por el backend. No afirmar que existe endpoint para comprobar los permisos efectivos del usuario.
+
+### 16.4 Roles
+
+Implementar lectura de `GET /roles` y creación con `POST /roles`. Mostrar `id`, `name`, `description` y `status`; no incluir botones de editar, desactivar o eliminar porque no hay rutas para esas operaciones.
+
+- `name`: texto obligatorio no vacío, máximo 80 caracteres, único; el backend recorta y normaliza a mayúsculas.
+- `description`: texto opcional o `null`, máximo 255 caracteres.
+- `status`: opcional, `active | inactive`; la ruta de alta usa `active` como default. Crear inactivo no lo habilita para `roleIds`, que solo acepta roles activos.
+- Duplicado: `409`; body/modelo inválido: `400`; error inesperado: `500`.
+
+No asumir que `ADMIN`, `SELLER` u otro nombre concede acceso. Los permisos efectivos dependen de las asignaciones activas `role_users` → `roles` → `resource_roles` → `resources` comprobadas en cada solicitud por el servidor.
+
+### 16.5 Asignaciones usuario–rol y concesiones rol–recurso
+
+**Asignación de roles a usuario:** realizarla solamente como parte de `POST /users` (`roleIds` requerido) o `PATCH /users/:id` (`roleIds` opcional). El servicio backend reemplaza activaciones anteriores según la lista completa, todo en transacción. No hay `RoleUserApi`, endpoint de lista ni endpoint independiente para reactivar/desactivar asignaciones; no generar la pantalla/tablero de asignaciones del issue original.
+
+**Concesión de recurso a rol:** existe únicamente `POST /concesiones-rol`, con body de nombres `snake_case`:
+
+```json
+{ "role_id": 2, "resource_id": 15 }
+```
+
+Respuestas: `201` para una concesión nueva, `200` al reactivar una fila existente inactiva, `400` si alguno de los IDs no es entero positivo, `409` si ya está activa y `500` ante error inesperado. El controlador no expone un `GET`, no da al frontend el catálogo de recursos ni implementa revocación. Por tanto, no es posible construir de manera fiable un selector, listado/filtro o botón de retirar concesiones. No pedir al administrador que ingrese IDs a ciegas ni inventar `ResourceApi` o `ResourceRoleApi.list()`.
+
+### 16.6 Navegación y manejo de errores
+
+La app actual contiene el prototipo `Construir` y aún no registra pantallas RBAC conectadas a servicios. Añadir menús/rutas administrativas cuando las pantallas funcionales estén integradas; proteger navegación con `authGuard` del ISS-15, sin un guard que prometa distinguir permisos no expuestos al cliente. No añadir enlaces de recursos, asignaciones independientes ni concesiones completas.
+
+Mostrar por separado estados de carga, error, lista vacía, guardado y confirmación de baja. Conservar los mensajes API pertinentes:
+
+- `401`: sesión no válida; usar el refresh/login del ISS-14.
+- `403`: sesión válida pero operación no autorizada; conservar sesión, no reintentar refresh.
+- `400`: datos o roles inválidos; indicar campos si el backend proporciona `details`.
+- `409`: username/email duplicado, nombre de rol duplicado o concesión ya activa, según la operación.
+- `404`: usuario o rol no encontrado.
+- `500`/red: mostrar un error claro y permitir reintentar sin declarar éxito.
+
+### 16.7 Pruebas y criterios de aceptación
+
+- [ ] `UserApi` usa `/users`, simula paginación `items/total/limit/offset`, detalle directo, creación `201`, `PATCH` y baja lógica `DELETE`; no usa envelopes heredados.
+- [ ] El alta exige username, email, password y al menos un `roleId`; valida tamaños y tipos, y no expone password en vistas/respuestas.
+- [ ] `PATCH /users/:id` puede actualizar los campos permitidos, incluyendo `password`, `status` y `roleIds`; al enviar `roleIds`, se manda el conjunto completo escogido.
+- [ ] La lista y detalle muestran los `roles` incluidos por el backend, sin inventar endpoint de asignaciones o permisos efectivos.
+- [ ] `RoleApi` solo ofrece listar, consultar y crear. La lista se trata como un arreglo directo; el alta acepta nombre/descripción/estado y maneja conflictos `409`.
+- [ ] La interfaz no ofrece edición/baja de roles, CRUD de recursos, CRUD de asignaciones usuario–rol ni listado/revocación de concesiones rol–recurso.
+- [ ] Si se documenta o prueba `POST /concesiones-rol`, usa `role_id`/`resource_id` y contempla creación, reactivación, duplicado activo `409` y validación `400`; no asume que se puede seleccionar o listar recursos.
+- [ ] Confirmaciones explican el riesgo de desactivar la cuenta propia o reemplazar sus roles, sin contradecir el contrato del backend.
+- [ ] `401`, `403`, `400`, `404`, `409` y fallos de red se distinguen; nunca se presenta un guardado fallido como exitoso.
+- [ ] Pruebas con `HttpTestingController` cubren contratos exactos y errores; build Angular y pruebas focalizadas pasan cuando se implemente el issue.
