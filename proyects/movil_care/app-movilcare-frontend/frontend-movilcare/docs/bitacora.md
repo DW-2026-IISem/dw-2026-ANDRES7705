@@ -2063,7 +2063,7 @@ ng generate interface core/models/resource-role --type=model --defaults
 ng generate interface core/models/auth --type=model --defaults
 ```
 
-Cada comando crea un `*.model.ts` con una interfaz vacía. Se declaran 11 entidades de operación y 5 de usuarios/RBAC. `auth.model.ts` contiene los contratos de autenticación; las sesiones internas no exponen el hash del refresh token. El dashboard se deriva en ISS-07 de envíos, rutas, facturas y permisos disponibles; no se inventan estadísticas sin contrato.
+Cada comando crea un `*.model.ts` con una interfaz vacía. Se declaran 11 entidades de operación y 5 de usuarios/RBAC. `auth.model.ts` contiene los contratos de autenticación; las sesiones internas no exponen el hash del refresh token. El dashboard de ISS-07 presenta datos de órdenes de servicio, ventas e inventario solo desde endpoints MovilCare existentes y autorizados; no se inventan estadísticas ni contratos agregados.
 
 `api.model.ts`— los tipos que comparten todos
 
@@ -2531,7 +2531,7 @@ export interface UserSession extends Timestamps {
 }
 ```
 
-No se declara `DashboardData`: `api-backend.md` no documenta un endpoint de dashboard. ISS-07 deberá derivarlo de endpoints existentes y permisos disponibles o esperar un contrato agregado del backend.
+No se declara un `DashboardData` ni un endpoint agregado: `RESUMEN_TECNICO.md` no documenta una API de dashboard. ISS-07 debe usar consultas MovilCare existentes, acotadas y permitidas, o esperar un contrato agregado del backend.
 
 `is_active` es el indicador lógico de las entidades de operación y usa `PATCH /:id/deactivate`. `status` pertenece a usuarios/RBAC; `estado` representa el flujo de negocio de rutas, envíos, eventos, comprobantes y facturas. No intercambies esos tres campos ni asumas que comparten enum.
 
@@ -3087,7 +3087,7 @@ export const routes: Routes = [
     loadComponent: () => import('./layout/shell/shell').then((m) => m.Shell),
     children: [
       // La primera pantalla de negocio es la redirección por defecto.
-      // ISS-07 añadirá aquí un resumen logístico derivado de datos permitidos.
+      // ISS-07 añade aquí el dashboard de MovilCare con datos de negocio permitidos.
       { path: '', pathMatch: 'full', redirectTo: 'envios' },
       {
         path: 'envios',
@@ -3201,114 +3201,98 @@ done
 npm test -- --watch=false
 ```
 
-![alt text](<img-angular/verificar iss-02.png>)
+![alt text](image-4.png)
 
 
-## ISS-03 · CRUD de clientes con Signals (MovilCare)
+## ISS-03 · CRUD de las entidades de negocio con Signals (MovilCare)
 
-**Fase: I · Bloqueado por: ISS-02 · Habilita: los módulos de negocio siguientes y el dashboard (ISS-07).**
+**Fase: I · Depende de ISS-02 · Habilita ISS-07 (dashboard).** La integración en vivo con los endpoints protegidos depende de ISS-08 (sesión), pero esta entrega no implementa autenticación.
 
-**Objetivo:** incorporar al frontend la gestión de clientes del negocio de venta y reparación de equipos móviles. La pantalla debe consultar y mantener clientes mediante la API de MovilCare, con estado reactivo basado en Signals y formularios reactivos.
+### Objetivo y alcance
 
-### Alcance funcional
+Construir las pantallas administrativas para las **14 entidades de negocio** de MovilCare Express usando los contratos de la API existente. Cada pantalla consume exclusivamente sus endpoints reales y respeta las operaciones permitidas por el backend; no se debe forzar un CRUD completo donde el servidor no lo ofrece.
 
-- Listar y buscar clientes por documento, nombre, teléfono o correo.
-- Crear y editar clientes en un formulario validado.
-- Mostrar si el cliente está activo. Permitir la baja lógica únicamente si el backend ofrece la operación correspondiente.
-- Presentar estados de carga, lista vacía, errores de API y confirmación de las operaciones.
-- Enlazar la pantalla desde la navegación de MovilCare sin eliminar ni alterar el prototipo existente de `construir`.
+**Incluye:** clientes, empleados, tipos de producto, productos, unidades serializadas, ventas, detalles de venta, pagos, garantías, órdenes de servicio, diagnósticos, autorizaciones de servicio, repuestos y consumos de repuestos.
 
-Este ISS no implementa empresas, contactos, direcciones logísticas, envíos ni tarifas. Tampoco crea un flujo de fechas: el modelo de cliente no define campos de fecha de negocio.
+**No incluye:** usuarios, roles, recursos, asignaciones usuario–rol, asignaciones rol–recurso, refresh tokens, login, renovación/cierre de sesión, guards ni interceptores. Son las entidades y flujos de autenticación/autorización; se abordarán después.
 
-### 3.1 Confirmar el contrato antes de conectar la pantalla
+La fuente de verdad para el dominio es [RESUMEN_TECNICO.md](./RESUMEN_TECNICO.md); para los verbos, cuerpos y respuestas prevalecen las rutas y controladores actuales de `app-movilcare-express/src/features/businesses`. Los nombres de la API son los atributos TypeScript en `camelCase` (por ejemplo, `documentType`, `productId`); `underscored: true` describe los nombres de columnas MySQL, no una razón para enviar `snake_case` desde el navegador.
 
-La entidad del backend es `Customer` y el recurso documentado es `/api/customers` ([RESUMEN_TECNICO.md](./RESUMEN_TECNICO.md), secciones 3 y 6). Antes de fijar el formulario o el servicio, verificar en `/api/docs` y en una respuesta real:
+### 3.1 Contrato común de consumo
 
-- métodos y rutas exactos para listar, consultar, crear, actualizar y desactivar;
-- nombres de las propiedades JSON y envolturas de las respuestas;
-- campos obligatorios, valores permitidos para `document_type` y formato esperado de teléfono/correo;
-- formato de los errores de validación y respuesta cuando una operación no está disponible.
+Todas las rutas de negocio se montan bajo `/api` y pasan por autenticación y autorización RBAC en el backend. No se debe desactivar ni eludir esa protección para avanzar la interfaz: hasta ISS-08, probar los servicios con `HttpTestingController` y datos de prueba. Una llamada real sin token puede responder `401`/`403`.
 
-El resumen técnico identifica estos datos del cliente: `document_type`, `document_number`, `first_name`, `last_name`, `company_name`, `phone`, `email`, `address` e `is_active`. Úsalos como referencia del dominio, no como sustituto de comprobar la forma JSON exacta del endpoint. No supongas que una respuesta usa una envoltura singular/plural ni que el backend acepta `PUT`, `PATCH` o una ruta de baja sin verificarlo.
+Los controladores CRUD compartidos reciben `limit` y `offset` (por defecto `20` y `0`; `limit` de `1` a `100`) y responden la lista como `{ items, total, limit, offset }`. El detalle y la creación suelen responder el registro directamente, no una envoltura `{ entidad }`. Los controladores especializados y las acciones de dominio pueden tener respuestas distintas; cada servicio debe tipar y desenvolver lo que devuelve **su** controlador, sin asumir una envoltura común.
 
-Reglas conocidas que debe reflejar la experiencia: el documento es único por tipo y número; el correo es único cuando se informa. La validación del frontend ayuda al usuario, pero la respuesta del backend sigue siendo la autoridad para duplicados y reglas de negocio.
+Para el frontend:
 
-**Autenticación:** el resumen técnico indica que las rutas de negocio pasan por autenticación y RBAC. Si la API devuelve `401` o `403`, no desactives la protección ni conviertas el error en éxito; coordina la prueba integrada con el mecanismo de sesión de ISS-08.
+- Cada API de feature expone métodos tipados para las operaciones que existen en la tabla de 3.2; la pantalla no construye URLs ni conoce formatos de respuesta.
+- La tabla debe respetar paginación remota y `total`; no asumir que `GET` entrega todos los registros. Aplicar búsqueda solo sobre los datos cargados, a menos que el backend exponga un filtro.
+- Los formularios son Reactive Forms y emiten payloads válidos; el componente de lista controla llamadas, signals de `loading`/`saving`/`error`, notificaciones y recarga tras guardar.
+- Las referencias entre entidades se eligen con selects de registros existentes y se envían como IDs, no como etiquetas. No calcular en el cliente importes que el backend determina.
+- Errores de validación, duplicados, referencias inexistentes y conflictos de estado se presentan explícitamente; no se convierten en éxitos ni en listas vacías silenciosas.
 
-### 3.2 Estructura de la funcionalidad
+### 3.2 Matriz de entidades y operaciones reales
 
-Mantener la organización por feature y reutilizar el modelo, servicio HTTP, manejo de errores y notificaciones establecidos en ISS-02. La funcionalidad puede organizarse bajo `src/app/features/customers/`:
+Los verbos corresponden a rutas registradas por el backend. `GET colección` incluye paginación y `GET /:id` consulta un registro. La tabla es deliberadamente específica: las acciones de estado son comandos de negocio, no ediciones CRUD genéricas.
 
-```text
-customers/
-  customer-list/
-    customer-list.ts
-    customer-list.html
-    customer-list.css
-    customer-list.spec.ts
-  customer-form/
-    customer-form.ts
-    customer-form.html
-    customer-form.css
-    customer-form.spec.ts
-```
+| Entidad | Recurso | Operaciones expuestas |
+|---|---|---|
+| Cliente | `/customers` | `GET` colección/detalle, `POST`, `PUT`, `PATCH`, `DELETE` (baja lógica por `isActive`). |
+| Empleado | `/employees` | `GET` colección/detalle, `POST`, `PUT`, `PATCH`, `DELETE` (baja lógica por `isActive`). |
+| Tipo de producto | `/product-types` | `GET` colección/detalle, `POST`, `PUT`, `PATCH`, `DELETE` y `PATCH /:id/deactivate`. La lista normal devuelve tipos activos. |
+| Producto | `/products` | `GET` colección/detalle, `POST`, `PUT`, `PATCH`, `DELETE` (baja lógica), `DELETE /:id/permanent` y `PATCH /:id/deactivate`. |
+| Unidad serializada | `/serialized-units` | `GET` colección/detalle, `POST`, `PUT`, `PATCH`, `PATCH /:id/sell`, `PATCH /:id/in-service`, `DELETE`. La colección admite filtros `productId` y `state`. |
+| Venta | `/sales` | `GET` colección/detalle, `POST`, `PUT`, `PATCH`, `POST` o `PATCH /:id/confirm`, `PATCH /:id/cancel`, `DELETE`. |
+| Detalle de venta | `/sale-details` | `GET` colección/detalle, `POST`, `PUT`, `PATCH`, `PATCH /:id/deactivate`, `DELETE`. |
+| Pago | `/payments` | `GET` colección/detalle, `POST`, `PUT`, `PATCH`, `DELETE`. |
+| Garantía | `/warranties` | `GET` colección/detalle, `POST`, `PUT`, `PATCH`, `DELETE` (baja lógica por `isActive`). |
+| Orden de servicio | `/service-orders` | `GET` colección/detalle, `POST`, `PATCH /:id`, `PATCH /:id/state`. No hay `PUT` ni `DELETE` registrados. |
+| Diagnóstico | `/diagnostics` | `GET` colección/detalle y `POST`. No hay actualización ni eliminación registradas. |
+| Autorización de servicio | `/service-authorizations` | `GET` colección/detalle y `POST`. No hay actualización ni eliminación registradas. |
+| Repuesto | `/spare-parts` | `GET` colección/detalle, `POST`, `PUT`, `PATCH`, `DELETE` (baja lógica por `isActive`). |
+| Consumo de repuesto | `/spare-part-consumptions` | `GET` colección/detalle, `POST`, `PUT`, `PATCH`, `DELETE`. |
 
-La lista consume el servicio de clientes de ISS-02; los componentes no construyen URLs ni desenvuelven respuestas. Si el contrato verificado aún no está representado en el modelo o servicio, completar esa capa antes de acoplar la UI.
+No se deben mostrar botones de edición, baja o eliminación cuando la ruta correspondiente no existe. Antes de cerrar la entrega, contrastar esta matriz con `*.routes.ts` del backend; si una ruta cambia, actualizar primero el servicio de esa entidad y esta tabla.
 
-### 3.3 Lista y estado reactivo
+### 3.3 Reglas particulares por entidad
 
-La pantalla de clientes mantiene con Signals el resultado del backend, indicador de carga, error visible y término de búsqueda. Un `computed` deriva las filas filtradas; no se modifica el arreglo recibido del servicio. El filtro ignora mayúsculas/minúsculas y busca en los campos de identificación y contacto que estén presentes.
+El resumen técnico contiene el catálogo completo de atributos y enums. Estos puntos guían los formularios y evitan invalidar invariantes del servidor:
 
-La tabla muestra, como mínimo, nombre, documento, teléfono/correo cuando existan y estado activo. Los campos opcionales o nulos se presentan sin valores ficticios. El componente reutiliza `PageHeader`, `EmptyState`, `StatusTag` y `NotificationService` si están disponibles tras ISS-02. Para PrimeNG 22, filtrar el arreglo antes de enlazarlo a `p-table`, en vez de depender de una propiedad `globalFilter` retirada.
+1. **Clientes:** documento (`documentType`, `documentNumber`) y `firstName` son obligatorios; documento es único por tipo/número y el correo, cuando se informa, debe ser válido. Presentar `isActive` como estado, no como un texto libre.
+2. **Empleados:** `name` y `role` son obligatorios. `role` se restringe a `SELLER`, `TECHNICIAN` o `ADMIN`.
+3. **Tipos de producto:** `name` es obligatorio; `status` solo admite `active`/`inactive`. La acción de baja llama a `PATCH /:id/deactivate`; `DELETE` es eliminación física y puede fallar si existen productos asociados.
+4. **Productos:** requieren `sku`, `name`, `type`, `productTypeId` y `price`. El tipo de producto se elige de un registro existente. Si `requiresSerial` es verdadero, no se administra su existencia con `stockQuantity`: se gestionan unidades serializadas.
+5. **Unidades serializadas:** requieren `productId`, `serial` y `state`; `serial` (y el secundario si existe) es único. Los estados son `IN_STOCK`, `SOLD`, `IN_SERVICE` y `RETIRED`. Para vender o ingresar a servicio se usan las acciones específicas, y se respetan las transiciones aceptadas por el backend.
+6. **Ventas:** la creación recibe `customerId` y al menos un elemento en `items` (`productId`, `quantity` y, si aplica, `serializedUnitId`). El backend calcula importes y actualiza inventario dentro de una transacción. No editar `subtotal`, impuestos, `total` ni `state` como campos comunes; usar confirmar/cancelar.
+7. **Detalles de venta:** relacionan venta, producto y, cuando corresponda, unidad serializada. Si se informa `serializedUnitId`, `quantity` debe ser `1`. Mostrar la desactivación como baja lógica; no duplicar el flujo de creación de `items` de una venta.
+8. **Pagos:** `referenceType`/`referenceId` es una referencia polimórfica a `SALE` o `SERVICE_ORDER`; no es una relación seleccionable como si ambos tipos compartieran una FK. Métodos: `CASH`, `CARD`, `TRANSFER`, `OTHER`; estados: `PENDING`, `COMPLETED`, `CANCELLED`.
+9. **Garantías:** relacionan detalle de venta y unidad serializada según el contrato; `endDate` no puede anteceder a `startDate`. Tipos y estados se eligen del enum del backend, no se inventan en la vista.
+10. **Órdenes de servicio:** relacionan cliente, unidad serializada y técnico. `RECURRENCE` exige `originOrderId`; `COMMERCIAL_WARRANTY` exige `warrantyId`. Cambiar el ciclo (`RECEIVED`, `DIAGNOSING`, `AWAITING_AUTHORIZATION`, `IN_REPAIR`, `READY`, `DELIVERED`, `REJECTED`, `CANCELLED`) mediante `PATCH /:id/state`.
+11. **Diagnósticos:** se consultan y crean; vinculan `serviceOrderId` y `technicianId`. Las causas se limitan a `FACTORY_DEFECT`, `WEAR`, `MISUSE`, `MOISTURE`, `IMPACT` y `OTHER`. No ofrecer edición/eliminación no soportada.
+12. **Autorizaciones de servicio:** se consultan y crean vinculadas a `diagnosticId`. Respetar estados `PENDING`/`APPROVED`/`REJECTED` y canales definidos por el backend. No modelar como CRUD editable.
+13. **Repuestos:** `sku` y `name` son obligatorios; SKU es único. Capturar `currentStock` y `minimumStock` como valores numéricos; la baja es lógica.
+14. **Consumos de repuestos:** vinculan `serviceOrderId` y `sparePartId`. `totalCost` debe corresponder a `quantity * unitCost` (tolerancia de un centavo); mostrar el error de validación del backend si no coincide.
 
-Al iniciar y al guardar cambios, la pantalla informa la carga. Si falla la consulta, muestra el error traducido con `toApiMessage` y permite volver a intentar; no reemplaza silenciosamente un fallo por una lista vacía. La lista vacía y la búsqueda sin coincidencias deben tener mensajes distintos.
+### 3.4 Orden recomendado de pantallas y relaciones
 
-### 3.4 Formulario de alta y edición
+Construir las pantallas por dependencias para que los formularios puedan seleccionar referencias válidas:
 
-Usar Reactive Forms (`FormGroup` y `formControlName`), conforme al patrón de formularios de negocio definido en las fases anteriores. El formulario cubre los campos que el contrato confirmado permita escribir: tipo y número de documento, nombres, apellidos, nombre de empresa si aplica, teléfono, correo y dirección. `is_active` se gestiona según las operaciones permitidas por el backend.
+1. **Maestros:** Clientes, Empleados y Tipos de producto.
+2. **Inventario:** Productos, Unidades serializadas y Repuestos.
+3. **Venta:** Ventas y sus Detalles; luego Pagos y Garantías.
+4. **Servicio técnico:** Órdenes de servicio, Diagnósticos, Autorizaciones y Consumos de repuestos.
 
-- En creación, inicializar valores vacíos y aplicar solo las validaciones confirmadas por el contrato.
-- En edición, precargar el registro seleccionado y distinguir explícitamente entre `null`, cadena vacía y campo omitido según lo que acepte la API.
-- Deshabilitar el envío mientras se guarda y evitar solicitudes duplicadas.
-- Mostrar errores de validación junto al campo y errores de servidor mediante el mecanismo compartido de notificaciones.
-- Tras crear o editar correctamente, cerrar el diálogo, notificar el resultado y recargar/actualizar la lista desde la respuesta real del servicio.
-- Cancelar el diálogo no debe enviar una solicitud ni alterar el registro mostrado.
+Relaciones importantes: tipo de producto → producto → unidad serializada; cliente/empleado → venta → detalles → garantía; venta u orden de servicio → pago; orden de servicio → diagnóstico → autorización; orden de servicio + repuesto → consumo. Los selects deben filtrar por relación cuando sea necesario y nunca enviar IDs que no pertenezcan al registro padre.
 
-No enviar `company_name` como sustituto de una relación con otra entidad: en MovilCare es un dato opcional del perfil del cliente según el modelo documentado.
+### 3.5 Criterios de aceptación del ISS-03
 
-### 3.5 Baja y errores de duplicidad
-
-Si el backend expone una operación de baja lógica, pedir confirmación y actualizar `is_active` mediante esa operación. No implementar borrado físico ni inferir una ruta `DELETE` solo porque el nombre de la tarea diga CRUD. Si la baja no existe, mostrar el estado como solo lectura y registrar esa limitación para el backend.
-
-Los conflictos de documento o correo duplicado deben comunicarse de forma comprensible sin ocultar el error HTTP. Ante fallo de crear, editar o desactivar, conservar la pantalla y los datos introducidos para que puedan corregirse o reintentarse.
-
-### 3.6 Ruta e integración con el layout
-
-Añadir la ruta de clientes con carga diferida y conservar las rutas actuales de inicio, `construir` y fallback. Conectar la opción **Clientes** del menú de Gestión comercial con esa ruta; evitar que la selección del menú sea únicamente un cambio de título cuando ya exista una pantalla navegable. Mantener el layout común y no duplicar `Header`, `Aside` ni `Footer`.
-
-### 3.7 Pruebas y criterios de aceptación
-
-Pruebas mínimas del feature:
-
-- renderiza clientes y muestra documento, nombre y estado;
-- filtra por documento/nombre/contacto sin distinguir mayúsculas y maneja valores nulos;
-- presenta correctamente carga, error de API, lista vacía y cero coincidencias;
-- abre el formulario en alta y edición, precarga datos y valida campos según el contrato;
-- llama al servicio apropiado al guardar y no envía al cancelar;
-- informa conflictos de duplicidad y otros errores sin limpiar el formulario;
-- confirma y ejecuta la baja lógica solo si está soportada;
-- navega a Clientes desde el menú y conserva el resto de rutas;
-- `ng build` y las pruebas focalizadas terminan correctamente.
-
-**Criterios de aceptación (ISS-03) — adaptados a MovilCare**
-
-- [ ] La pantalla consume exclusivamente el recurso real `/api/customers` mediante el servicio definido en ISS-02.
-- [ ] El contrato JSON y las operaciones se verifican contra Swagger/backend; no se inventan claves de envoltura, campos ni métodos HTTP.
-- [ ] La tabla permite localizar clientes por documento, nombre y datos de contacto y muestra claramente el estado.
-- [ ] Alta y edición usan Reactive Forms, validaciones coherentes con backend y Signals para el estado de pantalla.
-- [ ] Los errores de duplicidad, validación, autorización y conectividad se presentan explícitamente.
-- [ ] La baja es lógica y solo se ofrece si el backend la soporta; no se agrega borrado físico implícito.
-- [ ] La opción Clientes abre la ruta real sin romper el layout ni el prototipo existente.
-- [ ] Pruebas focalizadas y `ng build` pasan.
-
-> El alcance de ISS-03 es únicamente el módulo de clientes. Productos, inventario, ventas, órdenes de servicio, garantías y administración se implementan en sus respectivos ISS para mantener cada entrega pequeña y verificable.
+- [ ] La navegación expone las 14 pantallas de negocio listadas en 3.2; no se agregan pantallas de autenticación/RBAC en este issue.
+- [ ] Cada pantalla implementa solo los verbos disponibles para su entidad y usa un servicio HTTP tipado propio.
+- [ ] Las listas soportan `limit`/`offset` y reflejan `total`; detalle y escritura desenvuelven la respuesta real del controlador.
+- [ ] Los formularios usan atributos API `camelCase`, validan campos obligatorios y enums, y respetan las reglas de 3.3.
+- [ ] Las acciones de confirmar/cancelar venta, vender unidad, poner unidad en servicio, desactivar y cambiar estado de orden llaman las rutas de dominio específicas.
+- [ ] No se calculan ni sobrescriben desde la UI los importes de venta/consumo que valida o calcula el backend.
+- [ ] Cada pantalla distingue carga, vacío, error y guardado; las acciones destructivas solicitan confirmación y los errores se muestran al usuario.
+- [ ] Las pruebas cubren contratos de servicios (URL, verbo, query/body, respuesta y error) y validaciones/reglas de cada formulario, sin depender de un backend activo.
+- [ ] `ng build` y las pruebas focalizadas pasan. La prueba de integración con bearer token queda pendiente de ISS-08; no se reemplaza por una desactivación de seguridad del backend.

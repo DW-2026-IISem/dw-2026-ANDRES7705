@@ -1,3 +1,3 @@
 export const environment = {
-  primeUiLicense: '',
+  primeUiLicense: 'eyJpZCI6ImU5YWEwOWQ5LThhOTUtNDg5NC05NmVlLWIwMmJiYTM5MDJhNyIsInByb2R1Y3QiOiJwcmltZXVpIiwidGllciI6ImNvbW11bml0eSIsInR5cGUiOiJkZXYiLCJpYXQiOjE3OTM3MjMxNDQsImV4cCI6MTgyNTI1OTE0NH0.C_a-r6eWBrhwpiTU1GYdj3JEEFsdCo8M5TgQf1uWs_JalRT_v9fPET7C3fPjmiA6_KL9u2bggwjRh9qNcmXrDQ',
 };

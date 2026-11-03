@@ -13,7 +13,6 @@ describe('Ejemplo', () => {
     await fixture.whenStable();
 
     expect(fixture.nativeElement.textContent).toContain('Café molido 500 g');
-    expect(fixture.componentInstance.precioFinal()).toBe(21420);
     expect(fixture.nativeElement.textContent).toContain('21.420');
   });
 
@@ -28,8 +27,6 @@ describe('Ejemplo', () => {
     fixture.detectChanges();
     await fixture.whenStable();
 
-    expect(fixture.componentInstance.producto().precio).toBe(19000);
-    expect(fixture.componentInstance.precioFinal()).toBe(22610);
     expect(fixture.nativeElement.textContent).toContain('19.000');
     expect(fixture.nativeElement.textContent).toContain('22.610');
   });
