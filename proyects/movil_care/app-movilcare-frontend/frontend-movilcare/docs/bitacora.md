@@ -3296,3 +3296,173 @@ Relaciones importantes: tipo de producto → producto → unidad serializada; cl
 - [ ] Cada pantalla distingue carga, vacío, error y guardado; las acciones destructivas solicitan confirmación y los errores se muestran al usuario.
 - [ ] Las pruebas cubren contratos de servicios (URL, verbo, query/body, respuesta y error) y validaciones/reglas de cada formulario, sin depender de un backend activo.
 - [ ] `ng build` y las pruebas focalizadas pasan. La prueba de integración con bearer token queda pendiente de ISS-08; no se reemplaza por una desactivación de seguridad del backend.
+
+## ISS-04 · CRUD de clientes y relación con ventas (MovilCare)
+
+**Fase: I · Depende de ISS-02 e ISS-03 · Habilita: gestión de ventas.**
+
+El issue de referencia implementaba contactos pertenecientes a empresas (`Contacts`/`Companies`). MovilCare no tiene esas entidades: el equivalente de negocio para este issue es **Cliente (`Customer`)**, relacionado con las ventas por `Sale.customerId`. No crear modelos ni rutas de contactos o empresas para conservar el ejemplo original.
+
+### 4.1 Alcance
+
+Implementar la pantalla de clientes como el primer CRUD concreto del dominio MovilCare, siguiendo las convenciones de Signals, formularios reactivos, tabla, diálogos y mensajes definidos en ISS-03.
+
+- Incluir listado paginado, búsqueda local sobre la página cargada, creación, edición, consulta por ID desde el servicio y baja lógica.
+- Mostrar tanto clientes activos como inactivos; la lista del backend no filtra por estado.
+- En el formulario de venta, únicamente clientes activos pueden seleccionarse: el backend rechaza crear o reasignar una venta a un cliente inactivo.
+- El campo `companyName` es un dato opcional del cliente, **no** una relación con otra tabla.
+- No mostrar conteo, historial ni listado de ventas dentro de la pantalla de clientes: aunque existe la relación `Customer.hasMany(Sale)`, el endpoint de clientes no incluye ventas ni hay una ruta documentada de ventas por cliente. No inventar endpoints ni datos derivados.
+- No incluir autenticación, login, guards, interceptores ni pantallas RBAC. Las llamadas protegidas se prueban con `HttpTestingController` hasta ISS-08.
+
+### 4.2 Contrato de la API
+
+Recurso: `/customers`, bajo `environment.apiUrl`.
+
+| Operación | Ruta | Respuesta / uso |
+|---|---|---|
+| Listar | `GET /customers?limit=20&offset=0` | `{ items, total, limit, offset }`. `limit` permitido: 1–100. |
+| Consultar | `GET /customers/:id` | Objeto `Customer` directamente. |
+| Crear | `POST /customers` | Objeto creado directamente; requiere `documentType`, `documentNumber` y `firstName`. |
+| Reemplazar | `PUT /customers/:id` | Objeto actualizado; requiere los campos obligatorios de creación. |
+| Editar | `PATCH /customers/:id` | Objeto actualizado; admite solo campos editables y al menos uno. |
+| Dar de baja | `DELETE /customers/:id` | Baja lógica: el backend cambia `isActive` a `false` y responde el registro. No borra físicamente al cliente. |
+
+No existe `PATCH /customers/:id/deactivate`. Para la acción de baja lógica, llamar a `DELETE`; no implementar una URL supuesta. La edición normal debe usar `PATCH` para no restablecer campos opcionales que no se modificaron. Las respuestas no usan una envoltura `{ customer }`.
+
+El backend aplica autenticación y permisos RBAC a estas rutas. Una respuesta `401`/`403` antes de ISS-08 no se debe ocultar ni resolver desactivando la seguridad del servidor.
+
+### 4.3 Modelo y formulario
+
+La API recibe nombres `camelCase`; `underscored: true` solo afecta columnas de base de datos. El modelo es:
+
+| Campo | Tipo y validación de interfaz |
+|---|---|
+| `documentType` | Obligatorio; enum `CC`, `CE`, `NIT`, `PASSPORT`, `TI`. |
+| `documentNumber` | Obligatorio; texto de máximo 30 caracteres. |
+| `firstName` | Obligatorio; texto de máximo 100 caracteres. |
+| `lastName` | Opcional; máximo 100 caracteres. |
+| `companyName` | Opcional; máximo 150 caracteres; dato descriptivo, no FK. |
+| `phone` | Opcional; máximo 20 caracteres. |
+| `email` | Opcional; correo válido de máximo 120 caracteres; único cuando se informa. |
+| `address` | Opcional; máximo 200 caracteres. |
+| `isActive` | Booleano; el backend lo inicializa en `true`. `DELETE` lo cambia a `false`. |
+
+El documento es único por el par `documentType` + `documentNumber`. Mostrar el error del backend en caso de duplicado (409) y los errores de validación/correo inválido (400); no asumir que el correo es obligatorio. Recortar espacios en campos de texto antes de emitir el payload y convertir campos opcionales vacíos a `null` si esa es la convención adoptada por el modelo de frontend.
+
+### 4.4 Relación con ventas
+
+Una venta requiere `customerId` y el backend verifica que el cliente exista y esté activo al crearla. Por tanto:
+
+- La selección del cliente pertenece al formulario de ventas y envía el `id`, no el nombre.
+- La pantalla de clientes no administra ventas ni permite borrar físicamente un cliente.
+- La baja lógica no debe ocultar silenciosamente las ventas históricas asociadas.
+- Si un cliente está inactivo, se muestra en el listado administrativo con su estado, pero no se ofrece como opción para una venta nueva.
+- El endpoint `GET /customers` devuelve páginas de clientes, incluidos los inactivos; no usar la página actual como catálogo completo de clientes activos para ventas. La integración del selector debe solicitar los datos necesarios según el contrato disponible y manejar el límite de paginación.
+
+### 4.5 Estructura sugerida y comportamiento
+
+```text
+src/app/features/customers/
+├── customer-api.ts
+├── customer-list/
+│   ├── customer-list.ts
+│   ├── customer-list.html
+│   └── customer-list.css
+└── customer-form/
+    ├── customer-form.ts
+    ├── customer-form.html
+    └── customer-form.css
+```
+
+`CustomerApi` mantiene la construcción de URL y el tipado de respuestas. La lista conserva `items` y `total` de la paginación remota, muestra identificador, nombre completo, documento, correo/teléfono y estado, y distingue carga, vacío y error. El formulario es reutilizable para crear/editar: recibe el registro actual y el estado de guardado, emite el payload y no invoca directamente la API. Tras crear o editar, cierra el diálogo y recarga desde el backend. La baja requiere confirmación y actualiza la lista al completar.
+
+### 4.6 Pruebas y criterios de aceptación
+
+- [ ] `CustomerApi` prueba URL, query de paginación, verbos, cuerpos y respuestas reales: lista paginada, entidad directa y baja lógica.
+- [ ] El formulario valida enum de documento, obligatorios, longitudes y formato opcional de correo; no marca como requeridos `lastName`, `companyName`, `phone`, `email` ni `address`.
+- [ ] La tabla muestra activos e inactivos y conserva la paginación del servidor; la búsqueda se limita a las filas cargadas.
+- [ ] Crear y editar envían los campos API `camelCase`; editar usa `PATCH`; dar de baja usa `DELETE` tras confirmación.
+- [ ] Los errores de duplicado, validación, red, `401` y `403` se presentan de manera explícita.
+- [ ] La relación con ventas se respeta sin inventar historial ni rutas: ventas solo aceptan clientes activos y envían `customerId`.
+- [ ] No se implementan entidades de empresa/contacto ni funcionalidades de autenticación/RBAC.
+- [ ] Las pruebas focalizadas y `ng build` pasan; no se requiere un backend activo para las pruebas unitarias.
+
+## ISS-05 · CRUD de empleados y relaciones con ventas y servicio técnico (MovilCare)
+
+**Fase: I · Depende de ISS-02 e ISS-03 · Habilita: asignación de vendedores, técnicos y diagnósticos.**
+
+El issue de referencia implementaba direcciones pertenecientes a empresas (`Address`/`Company`), entidades ajenas a MovilCare. Se adapta a **Empleado (`Employee`)**, maestro existente que se relaciona con ventas, órdenes de servicio y diagnósticos. No crear direcciones ni empresas para replicar el ejemplo.
+
+### 5.1 Alcance
+
+Implementar el CRUD administrativo de empleados con la misma estructura de ISS-04: servicio tipado, tabla paginada, formulario reactivo para alta/edición, confirmación de baja lógica y estados de carga/error.
+
+- Listar empleados activos e inactivos; la lista estándar no filtra por estado.
+- Crear, consultar por ID, reemplazar, editar parcialmente y dar de baja según las rutas reales.
+- `role` describe el perfil de negocio del empleado (`SELLER`, `TECHNICIAN`, `ADMIN`); no es un rol RBAC ni concede permisos para iniciar sesión.
+- No se incluyen usuarios, credenciales, asignación de permisos, autenticación ni operaciones RBAC. La autorización de la API queda protegida y se probará con `HttpTestingController` hasta ISS-08.
+- El empleado puede aparecer como vendedor en ventas (`sellerId`) o técnico en órdenes/diagnósticos (`technicianId`). La entidad no incluye un historial de ventas/servicios ni se debe inventar un endpoint asociado.
+
+### 5.2 Contrato de la API
+
+Recurso: `/employees`, bajo `environment.apiUrl`.
+
+| Operación | Ruta | Respuesta / uso |
+|---|---|---|
+| Listar | `GET /employees?limit=20&offset=0` | `{ items, total, limit, offset }`; `limit` va de 1 a 100. |
+| Consultar | `GET /employees/:id` | Objeto `Employee` directamente. |
+| Crear | `POST /employees` | Objeto creado directamente; requiere `name` y `role`. |
+| Reemplazar | `PUT /employees/:id` | Objeto actualizado; requiere `name` y `role`. |
+| Editar | `PATCH /employees/:id` | Objeto actualizado; admite uno o más campos editables. |
+| Dar de baja | `DELETE /employees/:id` | Baja lógica: pone `isActive` en `false` y responde el registro. |
+
+La ruta no tiene `PATCH /:id/deactivate`: utilizar `DELETE` para la baja lógica. Las respuestas de detalle/escritura son el registro directo, no `{ employee }`. Preferir `PATCH` en la edición normal para enviar únicamente cambios y no restablecer campos omitidos por `PUT`.
+
+### 5.3 Modelo y formulario
+
+Los nombres del contrato HTTP son `camelCase`; `underscored: true` solo afecta a las columnas de base de datos.
+
+| Campo | Tipo y validación de interfaz |
+|---|---|
+| `name` | Obligatorio, texto de máximo 150 caracteres. |
+| `document` | Opcional, texto de máximo 30 caracteres y único si se informa. |
+| `role` | Obligatorio; enum `SELLER`, `TECHNICIAN` o `ADMIN`. |
+| `email` | Opcional; correo válido de máximo 120 caracteres y único si se informa. |
+| `isActive` | Booleano; el backend lo inicializa en `true`; la baja lógica lo cambia a `false`. |
+
+No enviar `id`, timestamps, campos de autenticación ni un campo `status` de RBAC. Mostrar errores de duplicado (409) y validación (400) en el formulario. En edición, el estado no se modifica con el payload: se cambia únicamente mediante la ruta de baja.
+
+### 5.4 Relaciones y selección en otros módulos
+
+- **Ventas:** `Sale.sellerId` es opcional. Al crear o actualizar una venta, el backend comprueba que el empleado exista y esté activo. El selector de vendedor debe usar empleados activos y enviar el ID como `sellerId`.
+- **Órdenes de servicio:** `ServiceOrder.technicianId` es opcional en el modelo; el formulario de orden debe permitir dejarlo sin asignar si el flujo lo admite. El servidor valida el formato/relación, por lo que la UI no debe inventar una asignación obligatoria.
+- **Diagnósticos:** `Diagnostic.technicianId` es obligatorio. El selector debe permitir elegir un empleado y enviar ese ID; no asumir que la pantalla de empleados proporciona un endpoint filtrado por rol/estado.
+- El API de empleados lista con paginación y no documenta filtros por rol o estado. No incrementar el límite por encima de 100 ni presentar una página parcial como si fuera el catálogo completo para los selects; cargar páginas según el contrato o diferir el selector hasta que exista un mecanismo soportado.
+- Los roles del empleado son datos de negocio. No se debe inferir ni mostrar acceso al sistema a partir del enum `Employee.role`.
+
+### 5.5 Estructura sugerida y comportamiento
+
+```text
+src/app/features/employees/
+├── employee-api.ts
+├── employee-list/
+│   ├── employee-list.ts
+│   ├── employee-list.html
+│   └── employee-list.css
+└── employee-form/
+    ├── employee-form.ts
+    ├── employee-form.html
+    └── employee-form.css
+```
+
+La tabla muestra nombre, documento, correo, rol y estado. El formulario compartido para crear/editar recibe el empleado seleccionado y emite un payload; no llama a la API. Tras un guardado exitoso se cierra el diálogo y se recarga la página desde el backend. La baja lógica solicita confirmación, invoca `DELETE /employees/:id` y conserva visible el empleado inactivo en la lista. Errores de red, validación, duplicado, `401` y `403` deben quedar explícitos; distinguirlos de la pantalla vacía.
+
+### 5.6 Pruebas y criterios de aceptación
+
+- [ ] `EmployeeApi` prueba URL, query de paginación, verbos, cuerpos y respuesta real (envoltura paginada para lista, objeto directo para detalle/escritura).
+- [ ] El formulario valida `name`, `role`, longitudes y formato opcional de `email`; `document` y `email` no son obligatorios.
+- [ ] La tabla muestra estado y rol, incluye activos/inactivos y respeta `items`, `total`, `limit` y `offset`.
+- [ ] Crear y editar utilizan los nombres de API `camelCase`; editar usa `PATCH`; la baja confirmada usa `DELETE`, sin endpoint inventado `/deactivate`.
+- [ ] Los selectores de venta/servicio envían `sellerId`/`technicianId` y respetan las restricciones de obligatoriedad y empleado activo descritas en 5.4.
+- [ ] No se inventan endpoints de historial, filtros de catálogo, autenticación o RBAC.
+- [ ] Las pruebas unitarias no requieren un backend activo; `ng build` y las pruebas focalizadas pasan.
