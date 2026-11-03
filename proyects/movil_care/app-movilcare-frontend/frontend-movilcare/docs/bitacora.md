@@ -397,7 +397,7 @@ Abre http://localhost:4200. Debe verse la pantalla de 1.5: la tarjeta Objeto pro
 
 No hay URL por pantalla: en ISS-01 el router está configurado pero sin rutas, así que cualquier dirección muestra la misma composición.
 
-Sin este ajuste, ng build termina con un warning (no error). En ISS-11 se explica por qué no conviene subirlo más allá de 1 MB.
+Sin este ajuste, ng build termina con un warning (no error). El límite debe mantenerse alineado con el presupuesto acordado para el bundle inicial; no se debe elevar solo para ocultar dependencias o carga innecesaria.
 
 ### 1.9 Anatomía del componente demo/ejemplo y signals
 
@@ -1926,7 +1926,7 @@ npm start
 - [X] 2.2 Se distinguen `is_active`, `status` de RBAC y los enums del dominio (`state`, `role`, `service_type`, etc.).
 - [X] 2.3 Cada servicio usa `this.base` construido desde `environment.apiUrl`.
 - [X] 2.3 `list()/get()/create()` devuelven la entidad real y no el envelope del JSON.
-- [X] 2.3 Cada servicio expone los endpoints reales del backend: clientes, empleados, ventas, pagos, garantías, órdenes, repuestos, usuarios y permisos.
+- [X] 2.3 Cada servicio expone endpoints reales de los dominios integrados. Para autenticación/RBAC, la API disponible incluye login, refresh, logout, usuarios, roles y concesiones de recursos a roles; no expone una matriz de permisos efectivos.
 - [X] 2.4 `toApiMessage` distingue `status === 0` (backend caído) de un `403`.
 - [X] 2.4 `NotificationService` traduce a `MessageService` con duraciones por severidad.
 - [X] 2.5 `PageHeader`, `EmptyState` y `StatusTag` compilan como standalone y no añaden CSS.
@@ -1961,11 +1961,11 @@ Crea los dos archivos y registra el reemplazo. Si ya existen, edítalos sin repe
  * Entorno de producción (`ng build`).
  *
  * `apiUrl` termina en `/api` SIN slash final: con uno, las llamadas saldrían
- * como `//companies` y Express las trataría como otra ruta.
+ * como `//auth/login` y Express las trataría como otra ruta.
+ * Antes del build de producción, reemplazar el dominio de ejemplo por el host real del API.
  *
- * `requireAuth`: mitad frontal del interruptor de fases. Nadie lo lee hasta
- * El issue posterior de autenticación (Fase II). Se empareja con `AUTH_ENABLED` del backend: mover una sola
- * mitad produce `401 Missing Bearer token` (ISS-11 §11.1).
+ * Las rutas no públicas del API requieren autenticación y permisos RBAC.
+ * La autenticación no se habilita mediante un interruptor del frontend.
  *
  * `primeUiLicense`: clave **Community** de PrimeUI (PrimeNG 22). Solicítala en
  * https://primeui.dev · requisitos en https://primeui.dev/licenses. Déjala en `''`
@@ -1975,8 +1975,7 @@ Crea los dos archivos y registra el reemplazo. Si ya existen, edítalos sin repe
 export const environment = {
   production: true,
   appName: 'MovilCare Express',
-  apiUrl: 'http://localhost:4000/api',
-  requireAuth: true,
+  apiUrl: 'https://<dominio-del-api>/api',
   primeUiLicense: '',
 };
 ```
@@ -1992,7 +1991,6 @@ export const environment = {
   production: false,
   appName: 'MovilCare Express',
   apiUrl: 'http://localhost:4000/api',
-  requireAuth: true,
   primeUiLicense: '',
 };
 ```
@@ -2391,7 +2389,7 @@ export interface InvoicePayload {
 ```typescript
 import { Status, Timestamps } from './api.model';
 
-/** Tabla `users` — /api/usuarios. Nunca incluye `password`. */
+/** Tabla `users` — API /api/users. Las respuestas omiten `password`. */
 export interface User extends Timestamps {
   id: number;
   username: string;
@@ -2436,7 +2434,7 @@ export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 export const HTTP_METHODS: HttpMethod[] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 
-/** Tabla `resources` — /api/recursos (catálogo de 58 pares method+path). */
+/** Catálogo interno RBAC; no hay una ruta HTTP de recursos montada actualmente. */
 export interface Resource extends Timestamps {
   id: number;
   path: string;
@@ -2458,7 +2456,7 @@ export interface ResourcePayload {
 ```typescript
 import { Status, Timestamps } from './api.model';
 
-/** Pivote `role_users` — /api/asignaciones-rol */
+/** Pivote interno `role_users`; no hay ruta HTTP montada para este recurso. */
 export interface RoleUser extends Timestamps {
   id: number;
   user_id: number;
@@ -2467,7 +2465,7 @@ export interface RoleUser extends Timestamps {
 }
 export type RoleUserPayload = Pick<RoleUser, 'user_id' | 'role_id'>;
 
-/** Pivote `resource_roles` — /api/concesiones-rol. Cada fila ES un permiso. */
+/** Pivote interno `resource_roles`; la API solo expone POST /api/concesiones-rol. */
 export interface ResourceRole extends Timestamps {
   id: number;
   resource_id: number;
@@ -2477,37 +2475,28 @@ export interface ResourceRole extends Timestamps {
 export type ResourceRolePayload = Pick<ResourceRole, 'role_id' | 'resource_id'>;
 ```
 
-`auth.model.ts` — los tokens y permisos efectivos. No se modela el RefreshToken interno: `token_hash` nunca debe entrar al frontend.
+`auth.model.ts` — respuesta de sesión e identidad básica. El backend no expone permisos efectivos ni sesiones RefreshToken al frontend.
 
 ```typescript
-import { HttpMethod } from './resource.model';
-
-export interface SessionTokens {
-  access_token: string;
-  token_type: 'Bearer';
-  expires_in: number;
-  refresh_token: string;
-  refresh_expires_in: number;
+export interface LoginRequest {
+  identifier: string;
+  password: string;
 }
 
-export interface EffectivePermission {
-  resource_id: number;
-  method: HttpMethod;
-  path: string;
-  description: string | null;
-  role_id: number;
-  role_name: string;
-}
-
-/** Respuesta segura de /api/sesiones; el DTO excluye token_hash y añade is_expired. */
-export interface UserSession extends Timestamps {
+export interface SessionUser {
   id: number;
-  user_id: number;
-  family_id: string;
-  device_info: string | null;
-  expires_at: string;
-  status: Status;
-  is_expired: boolean;
+  username: string;
+  email: string;
+}
+
+export interface SessionResponse {
+  message: string;
+  accessToken: string;
+  tokenType: 'Bearer';
+  expiresIn: string;
+  refreshToken: string;
+  refreshTokenExpiresAt: string;
+  user: SessionUser;
 }
 ```
 
@@ -2536,10 +2525,8 @@ ng generate service features/delivery-proofs/delivery-proof-api --skip-tests --d
 ng generate service features/invoices/invoice-api --skip-tests --defaults
 ng generate service features/admin/users/user-api --skip-tests --defaults
 ng generate service features/admin/roles/role-api --skip-tests --defaults
-ng generate service features/admin/resources/resource-api --skip-tests --defaults
-ng generate service features/admin/role-users/role-user-api --skip-tests --defaults
 ng generate service features/admin/resource-roles/resource-role-api --skip-tests --defaults
-ng generate service features/auth/session-api --skip-tests --defaults
+ng generate service core/services/auth --skip-tests --defaults
 ng generate service core/services/notification --skip-tests --defaults
 ```
 
@@ -2557,14 +2544,14 @@ Los paths no se deducen del nombre español de la entidad. Se usan exactamente c
 | TrackingEvent | `/tracking_events` |
 | DeliveryProof | `/delivery_proofs` |
 | Invoice | `/invoices` |
-| User | `/usuarios` |
+| User | `/users` |
 | Role | `/roles` |
-| Resource | `/recursos` |
-| RoleUser | `/asignaciones-rol` |
-| ResourceRole | `/concesiones-rol` |
-| Sesiones propias | `/sesiones` |
+| Resource | Sin ruta HTTP montada |
+| RoleUser | Sin ruta HTTP montada |
+| ResourceRole | `/concesiones-rol` (solo `POST`) |
+| Sesión | `/auth/login`, `/auth/refresh`, `/auth/logout` |
 
-`SessionApi` cubre además `POST /sesion/login`, `POST /sesion/refresh`, `POST /sesion/logout`, `GET /sesion/perfil` y `GET /permisos`. No enviar `token_hash` al cliente. Salvo login/refresh, las rutas de negocio y RBAC requieren autenticación y permiso; se probarán con `HttpTestingController` hasta implementar el issue posterior de autenticación.
+`AuthService` cubre `POST /auth/login`, `POST /auth/refresh` y `POST /auth/logout`. El login y refresh entregan el usuario básico junto con los tokens; no existen `GET /auth/profile`, `GET /users/me`, `GET /permissions` ni `/sesiones`. `token_hash` solo se almacena internamente en el backend. Las demás rutas montadas en `/api` requieren autenticación y permiso RBAC; se prueban con `HttpTestingController` sin debilitar la protección del servidor.
 
 `--skip-tests` aquí sí es deliberado: los servicios se prueban con `HttpTestingController`, agrupados por contrato y dominio, no con stubs vacíos por archivo. Los endpoints de negocio y RBAC requieren token y permiso según `api-backend.md`; las pruebas los simulan y no necesitan el backend levantado.
 
@@ -3949,3 +3936,409 @@ La pantalla controla `loading`/`saving`/`error`, notificaciones, confirmación d
 - [ ] La edición parcial utiliza `PATCH`; `isActive` no se modifica como campo editable.
 - [ ] La baja lógica confirma la acción, llama a `DELETE /:id` y conserva la fila como inactiva; no se comunica como eliminación física.
 - [ ] Se distinguen carga, error, lista vacía y guardado; las pruebas usan `HttpTestingController` y no requieren una API activa. `ng build` y las pruebas focalizadas pasan.
+
+## ISS-12 · Gestión del ciclo de órdenes de servicio (MovilCare)
+
+**Fase: I · Depende de ISS-02, ISS-03, ISS-08 e ISS-11 · Habilita: diagnósticos y autorizaciones de servicio.**
+
+El issue de referencia implementaba eventos de seguimiento de envíos. MovilCare no tiene `TrackingEvent`, `Shipment` ni `Messenger` en este dominio. Se adapta a **Orden de servicio (`ServiceOrder`)**, el registro central del diagnóstico, reparación y devolución de un equipo serializado. No crear eventos de ubicación, gravedad logística ni recursos de mensajería.
+
+### 12.1 Alcance y reglas de negocio
+
+Implementar el listado paginado, consulta, creación, edición limitada de datos operativos y cambio de estado de las órdenes de servicio.
+
+- Al crear una orden, el cliente debe estar activo y la unidad serializada debe estar activa y en estado `SOLD`. La operación se ejecuta en una transacción y cambia la unidad a `IN_SERVICE`.
+- `COMMERCIAL_WARRANTY` requiere una garantía activa, `VALID`, vigente en `openedAt` y aplicable a la misma unidad (o sin unidad específica). `RECURRENCE` requiere `originOrderId`, y la orden de origen debe pertenecer a la misma unidad.
+- La orden nueva siempre inicia en `RECEIVED`; el cliente no envía `state` al crear.
+- Los cambios de estado solo se hacen con `PATCH /:id/state`, siguiendo las transiciones y precondiciones de 12.3. No ofrecer un selector de estado general ni implementar `PUT`/`DELETE`.
+- Para entrar en `IN_REPAIR` debe existir al menos un diagnóstico; una `PAID_REPAIR` también requiere una autorización `APPROVED` vinculada a un diagnóstico de la orden.
+- Al pasar a `DELIVERED`, `REJECTED` o `CANCELLED`, el backend devuelve la unidad serializada a `SOLD` y fija `closedAt`. Estas transiciones pueden cambiar inventario de forma transaccional y deben confirmarse en la interfaz.
+- No crear diagnósticos, autorizaciones, consumos de repuestos ni pagos desde el formulario de orden. Son recursos separados con sus propios endpoints.
+- No incluir autenticación/RBAC. Las rutas están protegidas; probar solicitudes con `HttpTestingController` hasta implementar el issue de sesión, sin debilitar la seguridad del backend.
+
+### 12.2 Contrato de la API
+
+Recurso: `/service-orders`, bajo `environment.apiUrl`. La lista y el detalle usan el controlador CRUD compartido; no incluyen automáticamente las asociaciones de cliente, unidad, técnico, garantía, orden de origen, diagnósticos o autorizaciones.
+
+| Operación | Ruta | Respuesta / uso |
+|---|---|---|
+| Listar | `GET /service-orders?limit=20&offset=0` | `{ items, total, limit, offset }`. `limit`: 1–100 y `offset`: entero no negativo. |
+| Consultar | `GET /service-orders/:id` | Objeto `ServiceOrder` directamente. |
+| Crear | `POST /service-orders` | Objeto creado directamente; requiere `number`, `customerId`, `serializedUnitId`, `serviceType`, `reportedIssue` y `openedAt`. |
+| Editar datos operativos | `PATCH /service-orders/:id` | Objeto actualizado directamente; admite solo `technicianId`, `reportedIssue`, `intakeCondition`, `receivedAccessories` y `estimatedDeliveryDate`. Body no vacío. |
+| Cambiar estado | `PATCH /service-orders/:id/state` | Enviar `{ state }`; responde el objeto actualizado directamente. |
+
+No hay `PUT /service-orders/:id` ni `DELETE /service-orders/:id`. La creación también admite `technicianId`, `warrantyId`, `originOrderId`, `intakeCondition`, `receivedAccessories`, `estimatedDeliveryDate` y `total`. `number` es obligatorio, único y de máximo 20 caracteres; no se genera en el backend. `total` puede omitirse y entonces inicia en 0. Los campos `closedAt` y `state` no son editables por el formulario de alta.
+
+La API devuelve `400` ante body o valores inválidos; `404` ante orden inexistente en consulta o transición; `409` ante cliente/unidad no disponibles, garantía no aplicable, orden de origen de otra unidad, transición inválida o precondiciones faltantes. Presentar los errores devueltos; no avanzar el estado optimistamente ni mostrar un cambio como exitoso antes de recibir respuesta.
+
+### 12.3 Estados y transiciones
+
+Los valores del enum son `RECEIVED`, `DIAGNOSING`, `AWAITING_AUTHORIZATION`, `IN_REPAIR`, `READY`, `DELIVERED`, `REJECTED` y `CANCELLED`. Las transiciones permitidas por el controlador son:
+
+| Estado actual | Próximos estados permitidos | Reglas adicionales |
+|---|---|---|
+| `RECEIVED` | `DIAGNOSING`, `REJECTED`, `CANCELLED` | — |
+| `DIAGNOSING` | `AWAITING_AUTHORIZATION`, `IN_REPAIR`, `REJECTED`, `CANCELLED` | Para `IN_REPAIR`, debe existir un diagnóstico; `PAID_REPAIR` además necesita autorización aprobada. |
+| `AWAITING_AUTHORIZATION` | `IN_REPAIR`, `REJECTED`, `CANCELLED` | Mismas precondiciones de diagnóstico y autorización para `IN_REPAIR`. |
+| `IN_REPAIR` | `READY` | — |
+| `READY` | `DELIVERED` | Cierra la orden y devuelve la unidad a `SOLD`. |
+| `DELIVERED`, `REJECTED`, `CANCELLED` | Ninguna | Estados terminales. `REJECTED`/`CANCELLED` también cierran la orden y devuelven la unidad a `SOLD`. |
+
+Una transición no permitida responde `409` con `currentState`. `DIAGNOSING`, `AWAITING_AUTHORIZATION` e `IN_REPAIR` no son estados intercambiables: deben seguir el flujo admitido y cumplir las precondiciones. La UI puede mostrar acciones contextuales según estado, pero el servidor sigue siendo la autoridad.
+
+### 12.4 Modelo y formulario
+
+Los nombres HTTP usan `camelCase`; `underscored: true` solo afecta columnas de base de datos.
+
+| Campo | Tipo y uso en interfaz |
+|---|---|
+| `number` | Texto obligatorio, máximo 20 caracteres; debe ser único. |
+| `customerId` | ID positivo obligatorio; solo ofrecer clientes activos. |
+| `serializedUnitId` | ID positivo obligatorio; elegir unidad activa en estado `SOLD`. El backend cambia su estado al abrir la orden. |
+| `technicianId` | ID positivo opcional o `null`; elegir un empleado si se asigna. |
+| `serviceType` | Enum `COMMERCIAL_WARRANTY`, `PAID_REPAIR` o `RECURRENCE`. |
+| `warrantyId` | Obligatorio para `COMMERCIAL_WARRANTY`; solo una garantía activa, `VALID`, vigente en `openedAt` y aplicable a la unidad es válida. |
+| `originOrderId` | Obligatorio para `RECURRENCE`; debe pertenecer a la misma unidad serializada. |
+| `reportedIssue` | Texto obligatorio no vacío. |
+| `intakeCondition` | Texto opcional o `null`. |
+| `receivedAccessories` | Texto opcional o `null`, máximo 255 caracteres. |
+| `openedAt` | Fecha/hora válida y obligatoria. |
+| `estimatedDeliveryDate` | Fecha/hora opcional o `null`. |
+| `total` | Monto no negativo con hasta dos decimales; opcional al crear y default 0. Puede llegar como `number | string`. |
+| `state`, `closedAt` | Solo lectura; se establecen al crear y en la transición de estado correspondiente. |
+
+Al seleccionar `serviceType`, hacer obligatoria la referencia correspondiente (`warrantyId` u `originOrderId`) y limpiar referencias incompatibles cuando aplique. Si cambia unidad o fecha de apertura, revalidar la garantía seleccionada. No asumir que el backend filtra estas opciones: `/warranties` y `/service-orders` pueden requerir cargar páginas y filtrar cuidadosamente en el cliente, o consultar detalles por ID. Para `PAID_REPAIR`, la autorización se valida al intentar entrar en reparación; informar el conflicto si todavía no está aprobada.
+
+### 12.5 Pantalla y comportamiento
+
+```text
+src/app/features/service-orders/
+├── service-order-api.ts
+├── service-order-list/
+│   ├── service-order-list.ts
+│   ├── service-order-list.html
+│   └── service-order-list.css
+└── service-order-form/
+    ├── service-order-form.ts
+    ├── service-order-form.html
+    └── service-order-form.css
+```
+
+`ServiceOrderApi` centraliza paginación, consulta, alta, `PATCH` de datos operativos y cambio de estado. La tabla muestra número, cliente, unidad serializada, tipo de servicio, técnico, fecha de apertura y estado. Como las respuestas no incluyen asociaciones, resolver las etiquetas con catálogos y mostrar un fallback explícito con el ID si una referencia no está cargada.
+
+El formulario compartido emite un payload sin invocar la API. El componente de lista maneja `loading`/`saving`/`error`, notificaciones, confirmaciones para cambios terminales y recarga del registro desde el backend. La edición de campos operativos usa únicamente `PATCH /:id`; el estado usa el endpoint separado. Enlazar a diagnósticos, autorizaciones y pagos sin duplicar sus formularios. Registrar la vista en **Servicio técnico → Órdenes**, con una ruta como `/ordenes-servicio`; no conservar textos o etiquetas de eventos de seguimiento logístico.
+
+### 12.6 Pruebas y criterios de aceptación
+
+- [ ] `ServiceOrderApi` prueba URL, query, métodos, payloads y respuestas reales: lista paginada y objetos directos para consulta, alta y actualizaciones.
+- [ ] No se implementan botones ni métodos `PUT` o `DELETE`; las ediciones usan el conjunto exacto de campos de `PATCH`.
+- [ ] La creación requiere cliente activo, unidad activa `SOLD`, `number`, tipo, descripción y fecha; `COMMERCIAL_WARRANTY`/`RECURRENCE` validan sus referencias obligatorias y la unidad/fecha asociada.
+- [ ] El payload de alta no envía `state` ni `closedAt`; tras el éxito la unidad queda `IN_SERVICE` según el backend.
+- [ ] Los cambios de estado siguen la matriz de transiciones; no se permiten transiciones inválidas y se muestran errores `409` con el estado actual.
+- [ ] Entrar a `IN_REPAIR` requiere diagnóstico y, para `PAID_REPAIR`, autorización aprobada; se muestran las precondiciones que falle el servidor.
+- [ ] `DELIVERED`, `REJECTED` y `CANCELLED` solicitan confirmación; tras el éxito se refrescan el estado, `closedAt` y el estado de la unidad.
+- [ ] La lista respeta `items`, `total`, `limit` y `offset`, y no asume asociaciones expandidas. Se distinguen carga, vacío, error y guardado.
+- [ ] Las pruebas usan `HttpTestingController`, cubren transiciones y errores sin requerir backend activo; `ng build` y pruebas focalizadas pasan.
+
+## ISS-13 · Registro de diagnósticos técnicos (MovilCare)
+
+**Fase: I · Depende de ISS-02, ISS-03, ISS-05 e ISS-12 · Habilita: autorizaciones de servicio y avance de órdenes a reparación.**
+
+El issue de referencia implementaba comprobantes de entrega asociados a envíos, con receptor, firma, fotografía y coordenadas. MovilCare no tiene `DeliveryProof` ni `Shipment`; se adapta a **Diagnóstico (`Diagnostic`)**, asociado a una orden de servicio y a un técnico. No crear comprobantes, archivos, geolocalización ni una regla de “un diagnóstico por orden”: el modelo permite más de un diagnóstico por orden y el backend requiere al menos uno para iniciar la reparación.
+
+### 13.1 Alcance y reglas de negocio
+
+Implementar el listado paginado, consulta individual y creación de diagnósticos. El backend no ofrece edición ni eliminación.
+
+- Un diagnóstico describe causa, hallazgo, cobertura de garantía y costos estimados para una orden.
+- `serviceOrderId` y `technicianId` deben referenciar registros existentes. El controlador no valida que la orden esté en un estado específico, que el técnico esté activo ni que sea el mismo asignado a la orden; no documentar estas comprobaciones como garantías del servidor. La interfaz puede priorizar órdenes abiertas y empleados activos con perfil `TECHNICIAN`, sin reemplazar la respuesta de validación.
+- Las causas se limitan al enum del modelo. `warrantyCovered` puede ser `true`, `false` o `null` (sin determinar).
+- Al guardar un diagnóstico con `warrantyCovered: true`, un hook del modelo pone `ServiceOrder.total` en cero cuando la orden asociada es `COMMERCIAL_WARRANTY`. No recalcular ese total en el cliente.
+- Una orden requiere al menos un diagnóstico para pasar a `IN_REPAIR`; una orden `PAID_REPAIR` también requiere una autorización aprobada asociada a uno de sus diagnósticos. La autorización se registra en la pantalla/flujo separado correspondiente.
+- No crear la orden, autorización, pago ni consumo de repuestos desde el formulario de diagnóstico.
+- No incluir autenticación/RBAC. Las rutas están protegidas; probar solicitudes con `HttpTestingController` hasta el issue de sesión, sin debilitar la seguridad del backend.
+
+### 13.2 Contrato de la API
+
+Recurso: `/diagnostics`, bajo `environment.apiUrl`, registrado dentro del router de órdenes de servicio. Usa el controlador CRUD compartido; no incluye asociaciones expandidas.
+
+| Operación | Ruta | Respuesta / uso |
+|---|---|---|
+| Listar | `GET /diagnostics?limit=20&offset=0` | `{ items, total, limit, offset }`; `limit`: 1–100 y `offset`: entero no negativo. |
+| Consultar | `GET /diagnostics/:id` | Objeto `Diagnostic` directamente. |
+| Crear | `POST /diagnostics` | Objeto creado directamente; requiere `serviceOrderId`, `technicianId`, `description`, `cause` y `diagnosedAt`. |
+
+No existen `PUT`, `PATCH` ni `DELETE` para `/diagnostics`; no mostrar acciones de edición o baja. Los campos opcionales permitidos para creación son `warrantyCovered`, `laborCost` y `estimatedTotal`. Los montos tienen default 0 si se omiten. Las consultas y altas aplican los límites y respuestas del CRUD compartido; un ID inexistente responde `404`, los bodies/valores inválidos responden `400`, y los errores inesperados `500`.
+
+El hook de `Diagnostic` ejecuta el efecto sobre `ServiceOrder.total` tras guardar el diagnóstico con cobertura afirmativa; el POST responde el diagnóstico directamente, no una envoltura `{ diagnostic }` ni el total de la orden actualizado. Si la pantalla necesita reflejar la orden, volver a consultarla después de guardar.
+
+### 13.3 Modelo y formulario
+
+Los nombres del contrato HTTP son `camelCase`; `underscored: true` solo afecta columnas de base de datos.
+
+| Campo | Tipo y validación de interfaz |
+|---|---|
+| `serviceOrderId` | ID entero positivo obligatorio; seleccionar una orden identificable por su número, unidad y estado. |
+| `technicianId` | ID entero positivo obligatorio; seleccionar el empleado técnico. Para la experiencia de usuario, ofrecer empleados activos con `role: TECHNICIAN`; el backend solo comprueba la referencia existente. |
+| `description` | Texto obligatorio no vacío; registrar diagnóstico y hallazgos sin imponer un máximo no declarado por el modelo. |
+| `cause` | Enum obligatorio: `FACTORY_DEFECT`, `WEAR`, `MISUSE`, `MOISTURE`, `IMPACT` u `OTHER`. |
+| `warrantyCovered` | Booleano nullable: `true`, `false` o `null` si aún no se determina. |
+| `laborCost` | Monto decimal no negativo, default 0; puede llegar como `number | string`. |
+| `estimatedTotal` | Monto decimal no negativo, default 0; puede llegar como `number | string`. |
+| `diagnosedAt` | Fecha/hora válida y obligatoria. |
+
+`warrantyCovered: true` no valida por sí solo que exista una garantía vigente; la garantía de una orden `COMMERCIAL_WARRANTY` se comprueba al crear la orden. No derivar ni enviar `ServiceOrder.total` desde el formulario de diagnóstico.
+
+### 13.4 Pantalla y comportamiento
+
+```text
+src/app/features/diagnostics/
+├── diagnostic-api.ts
+├── diagnostic-list/
+│   ├── diagnostic-list.ts
+│   ├── diagnostic-list.html
+│   └── diagnostic-list.css
+└── diagnostic-form/
+    ├── diagnostic-form.ts
+    ├── diagnostic-form.html
+    └── diagnostic-form.css
+```
+
+`DiagnosticApi` centraliza paginación, consulta por ID y creación. La tabla muestra orden de servicio, técnico, causa, cobertura determinada/pendiente, costos estimados y fecha de diagnóstico. Las respuestas no incluyen las asociaciones; resolver las etiquetas con las páginas de órdenes y empleados y mostrar un fallback explícito con el ID cuando una referencia no esté disponible. La búsqueda de texto, si se agrega, opera solo sobre la página cargada porque el endpoint no expone filtros.
+
+El formulario compartido emite un payload y no llama a la API; el componente de lista controla `loading`/`saving`/`error`, notificaciones y recarga. Después de crear, mostrar el diagnóstico confirmado por el servidor y refrescar la orden si se presenta su total. No ofrecer edición, baja lógica ni eliminación física. Registrar la vista en **Servicio técnico → Diagnósticos**, con una ruta como `/diagnosticos`; no conservar textos o acciones de comprobante de entrega.
+
+### 13.5 Pruebas y criterios de aceptación
+
+- [ ] `DiagnosticApi` prueba URL, query, verbos y respuestas reales: lista paginada y objetos directos para consulta/alta.
+- [ ] La lista respeta `items`, `total`, `limit` y `offset`, y resuelve las etiquetas de orden/técnico sin asumir asociaciones en la respuesta.
+- [ ] El formulario valida requeridos, causa, fecha, costos no negativos y el carácter nullable de `warrantyCovered`.
+- [ ] El payload usa `camelCase` y solo envía campos permitidos; no incluye estado de orden ni total recalculado desde la UI.
+- [ ] La creación usa `POST /diagnostics`; la vista no muestra acciones `PUT`, `PATCH` o `DELETE` que no existen.
+- [ ] Se explica y prueba el efecto de `warrantyCovered: true` sobre `ServiceOrder.total` en órdenes `COMMERCIAL_WARRANTY`, refrescando la orden en vez de calcular el efecto en el cliente.
+- [ ] Se muestran explícitamente errores del backend; no se presenta el diagnóstico como guardado cuando el POST falla.
+- [ ] Se distinguen carga, error, lista vacía y guardado. Las pruebas usan `HttpTestingController` y no requieren una API activa; `ng build` y las pruebas focalizadas pasan.
+
+## ISS-14 · Inicio de sesión y sesión JWT con RBAC (MovilCare)
+
+**Fase: II · Depende de ISS-02 e ISS-03 y de la API de autenticación/RBAC disponible.**
+
+El issue de referencia usa `/sesion/login`, `/sesion/perfil` y `/permisos`, guarda una matriz de permisos en el cliente y presupone tokens con nombres `snake_case`. MovilCare usa `/auth/login`, `/auth/refresh` y `/auth/logout`; los contratos son `camelCase`. No existen endpoints `/auth/profile`, `/users/me` ni `/permissions`, y el login no devuelve permisos efectivos. Adaptar el issue al contrato existente sin agregar rutas de backend ni presentar roles del empleado como permisos del sistema.
+
+### 14.1 Alcance y reglas de autorización
+
+Implementar el inicio y cierre de sesión en Angular, conservar los tokens en memoria durante la sesión activa y adjuntar el access token a las solicitudes protegidas. Agregar guards para la experiencia de navegación, sin tratarlos como un límite de seguridad.
+
+- Las rutas `/api/auth/login`, `/api/auth/refresh` y `/api/auth/logout` se registran antes de los middlewares globales de autenticación y autorización.
+- Las demás rutas montadas en `/api` pasan por `authenticate` y `authorizeResource`: requieren un access token válido y un permiso activo para el método y la ruta. Esto incluye recursos de negocio, usuarios, roles y concesiones.
+- El backend es la autoridad para cada operación. La UI debe manejar `401` (sesión ausente, inválida o vencida) y `403` (usuario autenticado sin permiso) de forma distinta. Un guard o una opción de menú nunca reemplaza la autorización del servidor.
+- El token de acceso contiene la identidad (`sub` y `username`), no una matriz de permisos. La autorización del servidor consulta las asignaciones activas de usuario→rol→recurso.
+- `GET /users/:id` puede devolver el usuario con sus roles, pero está protegido por RBAC y no es un endpoint de perfil garantizado para todo usuario. El login ya entrega la identidad básica; no hacer depender el acceso a la aplicación de una llamada a `/users/:id`.
+- No hay endpoint para consultar los permisos efectivos del usuario. No inventar `GET /permissions`, derivar permisos efectivos de una lista de roles ni declarar que `Role[]` o `Employee.role` habilita operaciones. La pantalla puede mostrar la identidad recibida en login/refresh; cualquier vista de roles requiere una petición autorizada y no es requisito para establecer sesión.
+- No crear autenticación alternativa ni un interruptor `requireAuth: false`: la API ya protege sus rutas. Las pruebas unitarias del frontend pueden simular respuestas con `HttpTestingController`, pero no se debe debilitar la protección del backend.
+- No persistir credenciales ni tokens en `localStorage`. Para este alcance, mantenerlos en memoria; tras recargar la página se inicia sesión nuevamente. Si más adelante se necesita persistencia, definir primero una solución de sesión y almacenamiento acorde con el backend, en vez de copiar el almacenamiento local de la referencia.
+
+### 14.2 Configuración del frontend
+
+En los entornos Angular existentes, conservar la configuración de PrimeNG y añadir la URL base real del API bajo `apiUrl`, por ejemplo `http://localhost:4000/api` en desarrollo. No colocar credenciales ni tokens en los archivos de entorno. La misma configuración debe estar disponible en producción con su URL correspondiente.
+
+Configurar `provideHttpClient(withInterceptors([...]))` en `app.config.ts`, manteniendo el estilo standalone y la configuración actual del proyecto. Registrar las rutas de autenticación sin reemplazar la ruta inicial funcional de MovilCare por un dashboard de la referencia.
+
+### 14.3 Modelos de sesión
+
+Definir tipos para el contrato real; las fechas JSON se reciben como texto ISO y `expiresIn` es una duración textual configurada por el backend, no un número de segundos.
+
+```typescript
+export interface LoginRequest {
+  identifier: string;
+  password: string;
+}
+
+export interface SessionUser {
+  id: number;
+  username: string;
+  email: string;
+}
+
+export interface SessionResponse {
+  message: string;
+  accessToken: string;
+  tokenType: 'Bearer';
+  expiresIn: string;
+  refreshToken: string;
+  refreshTokenExpiresAt: string;
+  user: SessionUser;
+}
+
+export interface LogoutResponse {
+  message: string;
+}
+```
+
+El servidor acepta `identifier` como nombre de usuario o correo; compara el identificador normalizado y solo permite iniciar sesión a usuarios con estado `active`. No enviar `username`/`email` por separado ni esperar `access_token`, `refresh_token`, `expires_in`, `ProfilePayload` o `PermissionsPayload`.
+
+### 14.4 Contrato de autenticación
+
+Todos los endpoints se forman con `${environment.apiUrl}/auth/...`.
+
+| Operación | Método y ruta | Body | Respuesta de éxito |
+|---|---|---|---|
+| Iniciar sesión | `POST /auth/login` | `{ identifier, password }` | `SessionResponse`; incluye `message`, tokens y usuario básico. |
+| Renovar sesión | `POST /auth/refresh` | `{ refreshToken }` | `SessionResponse`; rota el refresh token y devuelve el usuario básico. |
+| Cerrar sesión | `POST /auth/logout` | `{ refreshToken }` | `{ message }`; revoca el refresh token presentado. |
+
+El login responde `400` ante body inválido, `401` ante credenciales inválidas o cuenta inactiva y `500` ante un error inesperado. Refresh responde `400` si falta o no es texto el token, `401` si es inválido, expiró o fue revocado, y `500` ante un error inesperado. Logout requiere enviar `refreshToken`; el controlador actual responde `400` si falta y `200` al completar la operación. No documentar una respuesta `401` para logout como garantía del controlador.
+
+El refresh token es de un solo uso: cada renovación lo rota, por lo que se deben reemplazar juntos `accessToken` y `refreshToken`. Si el refresh falla, borrar la sesión local y dirigir al login; no reintentar indefinidamente.
+
+### 14.5 Estado de sesión y AuthService
+
+Crear un `SessionStore` pequeño como fuente de verdad para `accessToken`, `refreshToken` y `user`, preferiblemente con signals y propiedades de solo lectura. `isAuthenticated` se deriva de la presencia del access token. `clear()` debe borrar todos los valores en memoria. No incluir roles, recursos o permisos sintéticos.
+
+`AuthService` centraliza:
+
+- `login(credentials)`: `POST /auth/login`; al éxito guardar ambos tokens y el usuario de la respuesta.
+- `refresh()`: enviar el refresh token actual a `POST /auth/refresh`; solo al éxito reemplazar el par completo de tokens y actualizar el usuario.
+- `logout()`: enviar el refresh token a `POST /auth/logout` y limpiar siempre el estado local, incluso si falla la petición. Si el servidor no responde, informar que el cierre local se completó pero que no se pudo confirmar la revocación remota; no ocultar el error como un cierre exitoso.
+
+No encadenar login con consultas inexistentes de perfil o permisos. La respuesta del login ya contiene la identidad mínima requerida para la sesión. La navegación al destino solicitado ocurre solo después de guardar la respuesta válida.
+
+### 14.6 Interceptores JWT y errores
+
+El interceptor de autenticación agrega `Authorization: Bearer <accessToken>` a las solicitudes protegidas. Excluir exactamente las llamadas `/auth/login`, `/auth/refresh` y `/auth/logout` para que no lleven el access token ni provoquen un ciclo de renovación. Evitar coincidencias amplias que excluyan rutas no relacionadas.
+
+Ante un `401` de una llamada protegida:
+
+1. Si no hay refresh token, limpiar el estado y redirigir a `/login`, preservando el destino interno solicitado.
+2. Si la respuesta tardía corresponde a un access token anterior al que ya está en el store, reintentar una sola vez con el token vigente; no volver a enviar el refresh token ya rotado.
+3. Si ya hay una renovación en curso, compartir esa petición (single-flight) para evitar rotaciones concurrentes del mismo refresh token.
+4. En caso contrario, llamar una sola vez a `/auth/refresh`, actualizar ambos tokens y reintentar la solicitud original una sola vez.
+5. Si la renovación falla, limpiar sesión y redirigir a login; propagar el error al llamador.
+
+No intentar renovar por un `401` originado en login, refresh o logout. Un `403` no significa que el token expiró: no iniciar refresh ni cerrar sesión automáticamente; mostrar un mensaje de acceso no autorizado y mantener la sesión. Los demás errores deben conservar el mensaje del API o mostrar un error explícito de red/servidor.
+
+### 14.7 Login, guards y navegación
+
+Crear una pantalla de login propia de MovilCare, con `identifier` y `password`, validaciones de campos requeridos, estado de envío y mensaje de error. No mostrar ni registrar la contraseña, access token o refresh token. Usar `guestGuard` para evitar que una sesión activa vuelva al formulario y `authGuard` para proteger las páginas que consumen endpoints protegidos.
+
+Tras `401`, guardar la ruta interna como `returnUrl`; al entrar por login, validarla como ruta relativa local (no aceptar URL absoluta, `//` ni volver a `/login`) y navegar a ella después de autenticarse. Para cualquier ruta inicial o destino no válido, conservar el destino funcional que ya tenga la aplicación; no inventar `/dashboard`.
+
+Agregar una vista de perfil solo si se necesita para mostrar `SessionStore.user` y ofrecer cerrar sesión. No llamarla “perfil sincronizado con el backend” ni recargar permisos: no existe un endpoint de ese tipo. Las rutas y vistas administrativas de usuarios/roles permanecen sujetas a sus permisos RBAC y no forman parte del formulario de login.
+
+### 14.8 Pruebas y criterios de aceptación
+
+- [ ] Los modelos y solicitudes usan exactamente `identifier`, `password`, `refreshToken`, `accessToken`, `tokenType`, `expiresIn`, `refreshTokenExpiresAt` y `user` en `camelCase`.
+- [ ] Login guarda la respuesta real del servidor sin requerir llamadas posteriores a `/auth/profile`, `/users/me` o `/permissions`.
+- [ ] Refresh manda el token anterior, reemplaza ambos tokens tras la rotación y comparte una renovación para solicitudes `401` concurrentes.
+- [ ] Una respuesta `401` tardía para un token ya reemplazado reintenta con el token vigente, sin reutilizar el refresh token anterior.
+- [ ] El interceptor excluye login/refresh/logout, adjunta Bearer a llamadas protegidas y reintenta cada solicitud como máximo una vez.
+- [ ] `401` renueva o devuelve al login según corresponda; `403` informa falta de autorización sin renovar ni borrar la sesión.
+- [ ] Logout limpia el estado local aunque falle la petición y distingue ese caso de una revocación confirmada por el servidor.
+- [ ] Guards mantienen la navegación prevista y validan `returnUrl` como ruta interna; no se atribuyen facultades de seguridad que pertenecen al backend.
+- [ ] No se guardan tokens en `localStorage` ni se simula una matriz de permisos efectivos que la API no entrega.
+- [ ] Las pruebas con `HttpTestingController` cubren contratos, errores, exclusiones del interceptor, renovación concurrente, reintento único, guards y logout sin requerir un backend activo.
+
+## ISS-15 · Guards de sesión y manejo de autorización RBAC (MovilCare)
+
+**Fase: II · Depende de ISS-14 y de la integración de las pantallas de negocio de ISS-03 a ISS-13.**
+
+El issue de referencia filtra las rutas, los botones y el menú usando `SessionStore.permissions()` y endpoints heredados como `/api/clientes`. En MovilCare, el backend autoriza cada petición mediante `authenticate` y `authorizeResource`, pero no entrega al cliente permisos efectivos ni expone un catálogo HTTP de recursos. Por tanto, este issue implementa protección de navegación basada en la sesión y una UX clara para `403`; **no puede implementar filtrado de permisos por usuario en el cliente** sin un contrato futuro de lectura de permisos.
+
+### 15.1 Capas de acceso y límites
+
+- `authGuard` impide abrir por navegación las pantallas que consumen endpoints protegidos cuando no hay sesión en `SessionStore`. En ese caso redirige a `/login` con `returnUrl` local y validado.
+- `guestGuard` evita volver al formulario de login cuando existe sesión y devuelve a la ruta inicial funcional de MovilCare (actualmente `/construir`), no a un `/dashboard` heredado.
+- La autorización real permanece en el backend. Cada petición protegida valida el token, que el usuario siga activo y que exista una asignación activa usuario→rol→recurso para el método y la ruta.
+- No crear un `permissionGuard` que finja decidir permisos en el navegador, ni una directiva `*appHasPermission` con permisos estáticos. El JWT solo contiene identidad, y `SessionStore` del ISS-14 no guarda permisos.
+- No inferir autorizaciones a partir de `Employee.role` (`SELLER`, `TECHNICIAN`, `ADMIN`), del nombre de un rol RBAC ni de campos recibidos por el usuario. El backend no entrega el conjunto efectivo de recursos permitido.
+- No usar `environment.requireAuth`, `AUTH_ENABLED` ni un modo laboratorio para omitir guards o seguridad. El backend ya protege globalmente las rutas privadas.
+- Un `401` significa sesión inválida/ausente y se resuelve con el flujo de refresh/login del ISS-14. Un `403` indica que la solicitud no está autorizada; no renueva tokens, no limpia la sesión y no se traduce a “sin sesión”.
+
+### 15.2 Contrato disponible para autorización
+
+Las rutas abiertas de autenticación son `POST /api/auth/login`, `POST /api/auth/refresh` y `POST /api/auth/logout`. Las restantes rutas montadas en `/api` ejecutan `authenticate` y `authorizeResource`.
+
+El middleware del backend compara el método HTTP y `req.path` dentro del router `/api` con el patrón del recurso, por lo que la clave de recurso no incluye el prefijo `/api`. El matcher acepta segmentos `:id` y exige igual número de segmentos. Esta tabla documenta rutas API de lectura para las vistas de MovilCare; **no significa que el frontend pueda consultar dichas concesiones**:
+
+| Vista de negocio | Ruta de interfaz sugerida | Recurso que autoriza la API |
+|---|---|---|
+| Clientes | `/clientes` | `GET /customers` y, al consultar detalle, `GET /customers/:id` |
+| Empleados | `/empleados` | `GET /employees` y `GET /employees/:id` |
+| Tipos de producto | `/tipos-producto` | `GET /product-types` y `GET /product-types/:id` |
+| Productos | `/productos` | `GET /products` y `GET /products/:id` |
+| Unidades serializadas | `/unidades-serializadas` | `GET /serialized-units` y `GET /serialized-units/:id` |
+| Ventas | `/ventas` | `GET /sales` y `GET /sales/:id` |
+| Detalles de venta | `/detalles-venta` | `GET /sale-details` y `GET /sale-details/:id` |
+| Pagos | `/pagos` | `GET /payments` y `GET /payments/:id` |
+| Garantías | `/garantias` | `GET /warranties` y `GET /warranties/:id` |
+| Órdenes de servicio | `/ordenes-servicio` | `GET /service-orders` y `GET /service-orders/:id` |
+| Diagnósticos | `/diagnosticos` | `GET /diagnostics` y `GET /diagnostics/:id` |
+| Autorizaciones de servicio | `/autorizaciones-servicio` | `GET /service-authorizations` y `GET /service-authorizations/:id` |
+| Repuestos | `/repuestos` | `GET /spare-parts` y `GET /spare-parts/:id` |
+| Consumos de repuestos | `/consumos-repuestos` | `GET /spare-part-consumptions` y `GET /spare-part-consumptions/:id` |
+
+Las rutas de interfaz son ejemplos para registrar las pantallas del dominio; preservar la navegación real cuando se integren los componentes y no reemplazar la ruta `/construir` que existe hoy. Los recursos API descritos corresponden a `src/features/auth/scripts/initialize-rbac.ts` y a los routers de negocio. Acciones particulares (confirmar/cancelar venta, cambiar estado de orden, vender unidad o desactivaciones) usan su propio método y patrón registrado en backend; no deducirlas del permiso de listado ni construirlas como permisos CRUD genéricos.
+
+El backend actual expone `GET/POST/PUT/PATCH/DELETE` en varios recursos de negocio, con excepciones y acciones especializadas documentadas en los ISS de cada entidad. En RBAC, `GET/POST /users`, `GET /users/:id`, `PATCH/DELETE /users/:id` y `GET/POST /roles` existen; `POST /concesiones-rol` asigna un recurso a un rol. No hay routers montados para consultar `resources`, asignaciones usuario–rol o la lista de concesiones. No agregar vistas o permisos `GET /resources`, `GET /role-users`, `GET /resource-roles` ni una página de perfil basada en `/users/me`.
+
+El catálogo de `initialize-rbac.ts` sí registra patrones para `/employees` y los recursos de negocio descritos, pero no define recursos de lectura/escritura para `/roles` ni `/concesiones-rol`. Como `authorizeResource` protege también esos routers, que la ruta exista no garantiza que una operación esté concedida: validar la configuración RBAC del servidor antes de prometer acceso a una pantalla administrativa. Este issue no corrige ni el catálogo ni las asignaciones del backend.
+
+### 15.3 Guards de sesión
+
+Usar guards funcionales standalone y la misma fuente de estado del ISS-14. Aplicar `authGuard` solo a rutas de interfaz cuyos componentes consultan API protegida; páginas puramente locales, `/login` y una página local genérica de acceso denegado no necesitan `authGuard`.
+
+```typescript
+export const authGuard: CanActivateFn = (_route, state) => {
+  const session = inject(SessionStore);
+  const router = inject(Router);
+
+  if (session.isAuthenticated()) {
+    return true;
+  }
+
+  return router.createUrlTree(['/login'], {
+    queryParams: { returnUrl: state.url },
+  });
+};
+```
+
+`guestGuard` deja pasar a quien no tiene sesión; con sesión existente redirige a la ruta segura por defecto de MovilCare (`/construir`) o al destino interno que el login haya validado. No usar `/dashboard` de StoreLab. Los guards solo mejoran navegación: un access token puede expirar después de activarse la ruta, por eso cada llamada sigue pasando por el interceptor y el middleware de Express.
+
+### 15.4 Autorización por pantalla y controles de escritura
+
+Las rutas de negocio pueden incluir `canActivate: [authGuard]`, pero no `data.permission` mientras la API no entregue concesiones efectivas. Al entrar con sesión, no mostrar una denegación predictiva por rol: la primera petición de la pantalla debe dejar que el servidor responda. Si se usa un control para una acción especializada, la operación exacta se verifica en Express y el frontend muestra el error recibido.
+
+No envolver botones de crear/editar/eliminar con `*appHasPermission` ni ocultarlos según un mapa local. Mientras no haya contrato de lectura de permisos:
+
+- Mostrar acciones conforme a las capacidades funcionales de la pantalla y dejar que el servidor aplique la autorización; presentar un `403` contextual si la acción no está concedida.
+- Si la experiencia requiere atenuar u ocultar una acción tras un `403`, hacerlo solo con una señal explícita de rechazo de esa acción, no inferir concesiones para otras rutas o métodos.
+- No asumir que permitir `GET /customers` implica permitir `POST /customers`, ni que un permiso genérico a un recurso autoriza rutas de estado, confirmación, cancelación o baja.
+- Los formularios de administración no forman parte de este issue. Aunque el usuario tenga un rol administrativo, la API no expone catálogo suficiente para construir un editor completo de recursos y concesiones.
+
+### 15.5 Menú y shell de MovilCare
+
+El menú actual se encuentra dentro del prototipo `Construir`; no existe todavía un `Shell` de navegación de negocio conectado a rutas reales. No refactorizar ni reemplazar ese prototipo como parte de esta adaptación.
+
+Al integrar el menú de negocio, mantener su catálogo como configuración de navegación de MovilCare y permitir que los usuarios autenticados vean las secciones disponibles. No filtrar grupos o ítems por permisos que el frontend no conoce. Los ítems apuntan a rutas protegidas por `authGuard`; la API sigue determinando el acceso efectivo. No agregar sección de “Seguridad” basada en `authEnabled` ni entradas a pantallas administrativas no implementadas.
+
+El menú no es un control de seguridad. Manipular su visibilidad o abrir la URL manualmente no debe permitir operaciones; cada operación termina en el API protegido.
+
+### 15.6 Respuesta `403` y acceso denegado
+
+Mantener el comportamiento del ISS-14: `403` no dispara refresh ni logout. Mostrar el mensaje recibido del API con una notificación contextual y conservar la sesión. Si se incorpora `/forbidden`, que sea una pantalla genérica accesible localmente con explicación y navegación para volver; no mostrar un supuesto “permiso requerido” obtenido de un dato local ni asegurar que un administrador pueda asignarlo desde una pantalla que no existe.
+
+Si la pantalla ya dispone del método y ruta de la operación rechazada, puede presentarlos como contexto técnico para soporte, sin llamarlos permisos efectivos del usuario. No convertir otros errores (validación `400`, conflicto `409`, error de red o `500`) en `403`.
+
+### 15.7 Pruebas y criterios de aceptación
+
+- [ ] Las rutas de UI que usan datos protegidos aplican `authGuard`; las rutas locales y de autenticación conservan su navegación funcional.
+- [ ] Sin sesión, el guard retorna un `UrlTree` a `/login` con `returnUrl`; con sesión, permite activar la ruta.
+- [ ] `guestGuard` redirige una sesión activa a `/construir` o al destino interno validado, nunca a un `/dashboard` inexistente.
+- [ ] Ningún guard/directiva inventa permisos desde roles, `Employee.role`, el JWT o un arreglo hardcodeado; no se usa `requireAuth` para omitir controles.
+- [ ] Las llamadas de las vistas apuntan a los paths reales de MovilCare; el permiso de API se evalúa con el método y patrón exactos, sin prefijo `/api` en el catálogo RBAC.
+- [ ] El menú no promete filtrado de permisos. Los accesos API reciben Bearer y permanecen protegidos por `authenticate` + `authorizeResource`.
+- [ ] Un `401` sigue el flujo de sesión del ISS-14; un `403` mantiene la sesión, no renueva y muestra denegación contextual.
+- [ ] No se incluyen pantallas administrativas de permisos, rutas de catálogo de recursos inexistentes ni acciones de escritura ocultas por una matriz ficticia.
+- [ ] Los tests cubren guards con `RouterTestingHarness` o `TestBed`, `UrlTree` y destinos; `HttpTestingController` verifica `401`/`403` y que `403` no dispare refresh ni borre sesión.
+- [ ] `git diff --check`, build Angular y pruebas focalizadas pasan cuando se implemente el issue.
